@@ -29,4 +29,4 @@ clean:
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
-.PHONY: all clean
+.PHONY: all clean test
