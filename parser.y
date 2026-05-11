@@ -33,7 +33,7 @@ static ASTNode *create_comparison(ComparisonField field, ComparisonOperator cmp,
     node->comparison.field = field;
     node->comparison.cmp = cmp;
     if (str_val) {
-        node->comparison.value.str_value = strdup(str_val);
+        node->comparison.value.str_value = str_val;
     } else {
         node->comparison.value.int_value = int_val;
     }

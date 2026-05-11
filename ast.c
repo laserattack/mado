@@ -8,6 +8,7 @@ extern FILE *yyin;
 extern ASTNode *ast_root;
 extern int yyparse(void);
 extern void yyrestart(FILE *);
+extern void yylex_destroy(void);
 
 ASTNode* parse(const char *query) {
     yyin = fmemopen((void*)query, strlen(query), "r");
@@ -17,6 +18,7 @@ ASTNode* parse(const char *query) {
     yyparse();
     fclose(yyin);
     yyrestart(NULL);
+    yylex_destroy();
 
     return ast_root;
 }
@@ -33,7 +35,8 @@ void ast_free(ASTNode *node) {
             ast_free(node->unary.expr);
             break;
         case NODE_COMPARISON:
-            if (node->comparison.field == CMP_TAG) {
+            if (node->comparison.field == CMP_TAG ||
+                node->comparison.field == CMP_STATUS) {
                 free(node->comparison.value.str_value);
             }
             break;
