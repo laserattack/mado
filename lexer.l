@@ -1,8 +1,8 @@
 %{
 
-#include "lexer.h"
+#include <stdarg.h>
 
-union YYSTYPE yylval;
+#include "parser.tab.h"
 
 int yywrap(void) {
     return 1;

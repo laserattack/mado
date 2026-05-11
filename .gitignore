@@ -1,3 +1,4 @@
 lex.yy.c
-test_runner
+*.tab.*
 tamd
+digest.txt
