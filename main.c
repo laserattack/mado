@@ -225,6 +225,8 @@ static Task *task_parse(const char *task_dir) {
     Task *task = calloc(1, sizeof(Task));
     task->priority = 0;
     task->path = strdup(task_dir);
+    task->status = strdup("");
+    task->name = strdup("");
 
     char *line = NULL;
     size_t line_len = 0;
@@ -367,6 +369,13 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
                 case CMP_TAG: {
                     char *cond_tag = node->comparison.value.str_value;
+
+                    // Special case: empty string means "no tags"
+                    if (cond_tag && cond_tag[0] == '\0') {
+                        return arrlen(task->tags) == 0;
+                    }
+
+                    // Normal case: check if tag exists
                     for (int i = 0; i < arrlen(task->tags); i++) {
                         if (strcmp(task->tags[i], cond_tag) == 0) {
                             return 1;
