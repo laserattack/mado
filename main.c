@@ -36,13 +36,14 @@ typedef struct Task {
 
 // ================ GLOBAL VARS
 
-static const char *main_dir_name = "TASKS";
+static const char *g_main_dir_name = "TASKS";
+static const int g_max_header_lines = 10;
 
-static const char *task_dir_regex = "^[0-9]{8}T[0-9]{6}$";
-static const char *name_regex = "^- NAME:[[:space:]]*(.*)$";
-static const char *priority_regex = "^- PRIORITY:[[:space:]]*([0-9]{1,4})$";
-static const char *tags_regex = "^- TAGS:[[:space:]]*(.*)$";
-static const char *status_regex = "^- STATUS:[[:space:]]*(.*)$";
+static const char *g_task_dir_regex = "^[0-9]{8}T[0-9]{6}$";
+static const char *g_name_regex = "^- NAME:[[:space:]]*(.*)$";
+static const char *g_priority_regex = "^- PRIORITY:[[:space:]]*([0-9]{1,4})$";
+static const char *g_tags_regex = "^- TAGS:[[:space:]]*(.*)$";
+static const char *g_status_regex = "^- STATUS:[[:space:]]*(.*)$";
 
 // ================ SOME USEFUL STUFF
 
@@ -153,7 +154,7 @@ RET:
 static void tasks_dir_init() {
     char *cwd = get_current_dir_name();
     char tasks_dir[PATH_MAX];
-    snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd, main_dir_name);
+    snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd, g_main_dir_name);
 
     if (file_exists(tasks_dir)) {
         printf("Tasks directory already exists: %s\n", tasks_dir);
@@ -211,21 +212,24 @@ static Task *task_parse(const char *task_dir) {
     size_t line_len = 0;
     ssize_t read;
 
-    while ((read = getline(&line, &line_len, f)) != -1) {
+    int lines_processed = 0;
+
+    while (lines_processed < g_max_header_lines && (read = getline(&line, &line_len, f)) != -1) {
         if (read > 0 && line[read - 1] == '\n') {
             line[read - 1] = '\0';
         }
+        lines_processed++;
 
         char *value;
 
-        if ((value = regex_extract_first_group(line, name_regex)) != NULL) {
+        if ((value = regex_extract_first_group(line, g_name_regex)) != NULL) {
             free(task->name);
             task->name = strdup(trim(value));
             free(value);
-        } else if ((value = regex_extract_first_group(line, priority_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, g_priority_regex)) != NULL) {
             task->priority = atoi(value);
             free(value);
-        } else if ((value = regex_extract_first_group(line, tags_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, g_tags_regex)) != NULL) {
             char *tags_str = trim(value);
             if (tags_str && *tags_str) {
                 char *saveptr;
@@ -239,7 +243,7 @@ static Task *task_parse(const char *task_dir) {
                 }
             }
             free(value);
-        } else if ((value = regex_extract_first_group(line, status_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, g_status_regex)) != NULL) {
             free(task->status);
             task->status = strdup(trim(value));
             free(value);
@@ -262,7 +266,7 @@ static Task **tasks_get_all(const char *main_dir) {
     while ((entry = readdir(dir)) != NULL) {
         if (strcmp(entry->d_name, ".") == 0 ||
             strcmp(entry->d_name, "..") == 0 ||
-            !regex_match(entry->d_name, task_dir_regex)) {
+            !regex_match(entry->d_name, g_task_dir_regex)) {
             continue;
         }
 
@@ -415,7 +419,7 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op, v
     if (!filter) die("Failed to parse query: '%s'", query);
 
     // find main dir
-    char *main_dir = find_dir_up(main_dir_name);
+    char *main_dir = find_dir_up(g_main_dir_name);
     if (!main_dir) die("Tasks directory not found");
 
     // find tasks
@@ -458,7 +462,7 @@ int main(int argc, char **argv) {
             break;
         }
         case 'n': {
-            char *main_dir = find_dir_up(main_dir_name);
+            char *main_dir = find_dir_up(g_main_dir_name);
             if (!main_dir) die("Tasks directory not found");
             task_create_dir_and_md(main_dir);
             free(main_dir);
