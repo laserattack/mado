@@ -129,7 +129,7 @@ static char *find_dir_up(const char *dir_name) {
 
     while (1) {
         char test[PATH_MAX];
-        sprintf(test, "%s/%s", path, dir_name);
+        snprintf(test, sizeof(test), "%s/%s", path, dir_name);
 
         if (file_exists(test)) {
             result = realpath(test, NULL);
