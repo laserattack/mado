@@ -38,7 +38,8 @@ void ast_free(ASTNode *node) {
             break;
         case NODE_COMPARISON:
             if (node->comparison.field == CMP_TAG ||
-                node->comparison.field == CMP_STATUS) {
+                node->comparison.field == CMP_STATUS ||
+                node->comparison.field == CMP_NAME) {
                 free(node->comparison.value.str_value);
             }
             break;
@@ -76,6 +77,7 @@ void ast_print(ASTNode *node, int indent) {
                 case CMP_PRIORITY: printf("priority "); break;
                 case CMP_TAG:      printf("tag "); break;
                 case CMP_STATUS:   printf("status "); break;
+                case CMP_NAME:     printf("name "); break;
             }
             switch (node->comparison.cmp) {
                 case CMP_GT: printf("> "); break;

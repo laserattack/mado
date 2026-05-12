@@ -17,7 +17,8 @@ typedef enum {
 typedef enum {
     CMP_PRIORITY,
     CMP_TAG,
-    CMP_STATUS
+    CMP_STATUS,
+    CMP_NAME
 } ComparisonField;
 
 typedef enum {

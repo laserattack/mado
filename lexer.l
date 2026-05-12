@@ -24,6 +24,7 @@ DIGIT       [0-9]
 WHITESPACE  [ \t\r]
 PRIORITY    priority|PRIORITY
 STATUS      status|STATUS
+NAME        name|NAME
 TAG         tag|TAG
 AND         and|AND
 OR          or|OR
@@ -40,6 +41,7 @@ NEWLINE     \n
 
 {PRIORITY}      { return TOKEN_PRIORITY; }
 {STATUS}        { return TOKEN_STATUS; }
+{NAME}          { return TOKEN_NAME; }
 {TAG}           { return TOKEN_TAG; }
 {AND}           { return TOKEN_AND; }
 {OR}            { return TOKEN_OR; }

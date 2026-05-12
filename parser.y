@@ -55,7 +55,7 @@ static ASTNode *create_all(void) {
 }
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
-%token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS
+%token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME
 %token TOKEN_ALL
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
 %token TOKEN_LPAREN TOKEN_RPAREN
@@ -112,6 +112,12 @@ condition:
     }
     | TOKEN_STATUS TOKEN_EQ TOKEN_IDENT {
         $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
+    }
+    | TOKEN_NAME TOKEN_EQ TOKEN_STRING {
+        $$ = create_comparison(CMP_NAME, CMP_EQ, 0, $3);
+    }
+    | TOKEN_NAME TOKEN_EQ TOKEN_IDENT {
+        $$ = create_comparison(CMP_NAME, CMP_EQ, 0, $3);
     }
     ;
 
