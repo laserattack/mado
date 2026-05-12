@@ -5,13 +5,18 @@
 #include <limits.h>
 #include <libgen.h>
 #include <unistd.h>
+#include <stdarg.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <regex.h>
 #include <ctype.h>
 
+char *argv0;
+
 #define STB_DS_IMPLEMENTATION
 #include "thirdparty/stb_ds.h"
+
+#include "thirdparty/arg.h"
 
 #include "ast.h"
 
@@ -30,7 +35,7 @@ typedef struct Task {
 
 // ================ GLOBAL VARS
 
-static const char *main_dir_name = "TAMD";
+static const char *main_dir_name = "TASKS";
 
 static const char *task_dir_regex = "^[0-9]{8}T[0-9]{6}$";
 static const char *name_regex = "^- NAME:[[:space:]]*(.*)$";
@@ -39,6 +44,16 @@ static const char *tags_regex = "^- TAGS:[[:space:]]*(.*)$";
 static const char *status_regex = "^- STATUS:[[:space:]]*(.*)$";
 
 // ================ SOME USEFUL STUFF
+
+static void die(const char *errstr, ...)
+{
+    va_list ap;
+    va_start(ap, errstr);
+    vfprintf(stderr, errstr, ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
+    exit(1);
+}
 
 static char *trim(char *str) {
     if (!str) return str;
@@ -53,7 +68,6 @@ static char *trim(char *str) {
 
     return str;
 }
-
 
 // ================ REGEX
 
@@ -322,30 +336,43 @@ static void tasks_print(Task **tasks) {
 
 // ================ ENTRYPOINT
 
+static void usage(void) {
+    die("usage: %s [-h] [-q query]\n"
+        "  -h          show this help\n"
+        "  -q query    filter tasks by query (e.g. 'priority > 5')",
+        argv0);
+}
+
 int main(int argc, char **argv) {
-    ASTNode *filter = NULL;
+    ARGBEGIN {
+        case 'q': {
+            char *query = ARGF();
 
-    if (argc >= 2) {
-        filter = parse(argv[1]);
-        if (!filter) {
-            fprintf(stderr, "Failed to parse query: %s\n", argv[1]);
-            return 1;
+            // compile filter
+            ASTNode *filter = parse(query);
+            if (!filter) die("Failed to parse query: '%s'", query);
+
+            // find main dir
+            char *main_dir = find_dir_up(main_dir_name);
+            if (!main_dir) die("Tasks directory not found");
+
+            // find tasks
+            Task **tasks = tasks_get_all(main_dir);
+            tasks = tasks_filter(tasks, filter);
+            tasks_print(tasks);
+
+            // cleanup
+            tasks_free(tasks);
+            free(main_dir);
+            ast_free(filter);
+            break;
         }
-    }
+         case 'h':
+            usage();
+            break;
+        default:
+            die("Unknown flag '%c'", ARGC());
+    } ARGEND;
 
-    char *main_dir = find_dir_up(main_dir_name);
-    if (!main_dir) {
-        fprintf(stderr, "Tasks directory not found\n");
-        ast_free(filter);
-        return 1;
-    }
-
-    Task **tasks = tasks_get_all(main_dir);
-    tasks = tasks_filter(tasks, filter);
-    tasks_print(tasks);
-
-    tasks_free(tasks);
-    free(main_dir);
-    ast_free(filter);
     return 0;
 }
