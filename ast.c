@@ -27,6 +27,8 @@ void ast_free(ASTNode *node) {
     if (!node) return;
 
     switch (node->type) {
+        case NODE_ALL:
+            break;
         case NODE_BINARY_OP:
             ast_free(node->binary.left);
             ast_free(node->binary.right);
@@ -50,6 +52,10 @@ void ast_print(ASTNode *node, int indent) {
     for (int i = 0; i < indent; i++) printf("  ");
 
     switch (node->type) {
+        case NODE_ALL:
+            printf("ALL\n");
+            break;
+
         case NODE_BINARY_OP:
             switch (node->binary.op) {
                 case OP_AND: printf("AND\n"); break;

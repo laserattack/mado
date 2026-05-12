@@ -40,6 +40,12 @@ static ASTNode *create_comparison(ComparisonField field, ComparisonOperator cmp,
     return node;
 }
 
+static ASTNode *create_all(void) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_ALL;
+    return node;
+}
+
 %}
 
 %union {
@@ -50,6 +56,7 @@ static ASTNode *create_comparison(ComparisonField field, ComparisonOperator cmp,
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
 %token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS
+%token TOKEN_ALL
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
 %token TOKEN_LPAREN TOKEN_RPAREN
 %token <num> TOKEN_NUMBER
@@ -71,6 +78,7 @@ input:
 
 expr:
     condition                        { $$ = $1; }
+    | TOKEN_ALL                      { $$ = create_all(); }
     | expr TOKEN_AND expr            { $$ = create_binary_op(OP_AND, $1, $3); }
     | expr TOKEN_OR expr             { $$ = create_binary_op(OP_OR, $1, $3); }
     | TOKEN_NOT expr                 { $$ = create_unary_op(OP_NOT, $2); }

@@ -4,7 +4,8 @@
 typedef enum {
     NODE_BINARY_OP,
     NODE_UNARY_OP,
-    NODE_COMPARISON
+    NODE_COMPARISON,
+    NODE_ALL
 } NodeType;
 
 typedef enum {

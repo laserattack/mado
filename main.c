@@ -251,6 +251,9 @@ static int task_matches_condition(Task *task, ASTNode *node) {
     if (!node) return 1;
 
     switch (node->type) {
+        case NODE_ALL:
+            return 1;
+
         case NODE_BINARY_OP:
             switch (node->binary.op) {
                 case OP_AND:

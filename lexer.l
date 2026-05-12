@@ -28,6 +28,7 @@ TAG         tag|TAG
 AND         and|AND
 OR          or|OR
 NOT         not|NOT
+ALL         all|ALL
 IDENT       [a-zA-Z_][a-zA-Z0-9_-]*
 STRING      \"[^\"]*\"
 NEWLINE     \n
@@ -43,6 +44,7 @@ NEWLINE     \n
 {AND}           { return TOKEN_AND; }
 {OR}            { return TOKEN_OR; }
 {NOT}           { return TOKEN_NOT; }
+{ALL}           { return TOKEN_ALL; }
 
 ">"             { return TOKEN_GT; }
 "<"             { return TOKEN_LT; }
