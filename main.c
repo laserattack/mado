@@ -222,12 +222,10 @@ static Task *task_parse(const char *task_dir) {
             free(task->name);
             task->name = strdup(trim(value));
             free(value);
-        }
-        else if ((value = regex_extract_first_group(line, priority_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, priority_regex)) != NULL) {
             task->priority = atoi(value);
             free(value);
-        }
-        else if ((value = regex_extract_first_group(line, tags_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, tags_regex)) != NULL) {
             char *tags_str = trim(value);
             if (tags_str && *tags_str) {
                 char *saveptr;
@@ -241,8 +239,7 @@ static Task *task_parse(const char *task_dir) {
                 }
             }
             free(value);
-        }
-        else if ((value = regex_extract_first_group(line, status_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, status_regex)) != NULL) {
             free(task->status);
             task->status = strdup(trim(value));
             free(value);
