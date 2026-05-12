@@ -57,7 +57,7 @@ static ASTNode *create_all(void) {
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
 %token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME
 %token TOKEN_ALL
-%token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
+%token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ TOKEN_TILDE
 %token TOKEN_LPAREN TOKEN_RPAREN
 %token <num> TOKEN_NUMBER
 %token <str> TOKEN_IDENT TOKEN_STRING
@@ -107,17 +107,35 @@ condition:
     | TOKEN_TAG TOKEN_EQ TOKEN_IDENT {
         $$ = create_comparison(CMP_TAG, CMP_EQ, 0, $3);
     }
+    | TOKEN_TAG TOKEN_TILDE TOKEN_STRING {
+        $$ = create_comparison(CMP_TAG, CMP_SUBSTR, 0, $3);
+    }
+    | TOKEN_TAG TOKEN_TILDE TOKEN_IDENT {
+        $$ = create_comparison(CMP_TAG, CMP_SUBSTR, 0, $3);
+    }
     | TOKEN_STATUS TOKEN_EQ TOKEN_STRING {
         $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
     }
     | TOKEN_STATUS TOKEN_EQ TOKEN_IDENT {
         $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
     }
+    | TOKEN_STATUS TOKEN_TILDE TOKEN_STRING {
+        $$ = create_comparison(CMP_STATUS, CMP_SUBSTR, 0, $3);
+    }
+    | TOKEN_STATUS TOKEN_TILDE TOKEN_IDENT {
+        $$ = create_comparison(CMP_STATUS, CMP_SUBSTR, 0, $3);
+    }
     | TOKEN_NAME TOKEN_EQ TOKEN_STRING {
         $$ = create_comparison(CMP_NAME, CMP_EQ, 0, $3);
     }
     | TOKEN_NAME TOKEN_EQ TOKEN_IDENT {
         $$ = create_comparison(CMP_NAME, CMP_EQ, 0, $3);
+    }
+    | TOKEN_NAME TOKEN_TILDE TOKEN_STRING {
+        $$ = create_comparison(CMP_NAME, CMP_SUBSTR, 0, $3);
+    }
+    | TOKEN_NAME TOKEN_TILDE TOKEN_IDENT {
+        $$ = create_comparison(CMP_NAME, CMP_SUBSTR, 0, $3);
     }
     ;
 

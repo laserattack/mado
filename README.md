@@ -71,6 +71,13 @@ tamd -p 'tag = bug and priority > 5'
 # Delete low priority tasks
 tamd -r 'priority < 5'
 
+# Search by task name (exact match)
+tamd -p 'name = login'
+
+# Search by task name (substring)
+tamd -p 'name ~ login'
+tamd -p 'name ~ "fix login"' # multiple words - quotes required
+
 # Find tasks with complex conditions
 tamd -p '(tag = bug or tag = critical) and status = opened'
 tamd -p 'not (priority < 3 or status = closed)'
@@ -79,24 +86,31 @@ tamd -p '(priority > 5 and tag = urgent) or status = reopened'
 
 ## Query Syntax
 
-The query language supports filtering tasks using keywords
+The query language supports filtering tasks using operators and keywords
+
+### Operators
+
+| Operator | Description |
+|----------|-------------|
+| `and` | Logical AND |
+| `or` | Logical OR |
+| `not` | Logical NOT |
+| `>` | Greater than |
+| `<` | Less than |
+| `>=` | Greater than or equal |
+| `<=` | Less than or equal |
+| `=` | Equal / exact match |
+| `~` | Substring match (contains) |
 
 ### Keywords
 
 | Keyword | Type    | Operators          | Example                |
 |---------|---------|--------------------|------------------------|
 | `priority` | integer | `>`, `<`, `>=`, `<=`, `=` | `priority > 5` |
-| `tag`      | string  | `=`                | `tag = bug`            |
-| `status`   | string  | `=`                | `status = opened`      |
+| `tag`      | string  | `=`, `~`           | `tag = bug`, `tag ~ crit` |
+| `status`   | string  | `=`, `~`           | `status = opened`, `status ~ open` |
+| `name`     | string  | `=`, `~`           | `name = "Fix bug"`, `name ~ login` |
 | `all`      | special | -                  | `all`                  |
-
-### Operators
-
-| Operator | Description |
-|----------|-------------|
-| `and` | Logical AND (both conditions must be true) |
-| `or` | Logical OR (at least one condition must be true) |
-| `not` | Logical NOT (negates a condition) |
 
 ## Installation
 

@@ -25,6 +25,7 @@ typedef enum {
     CMP_GT,
     CMP_LT,
     CMP_EQ,
+    CMP_SUBSTR,
     CMP_GE,
     CMP_LE
 } ComparisonOperator;
