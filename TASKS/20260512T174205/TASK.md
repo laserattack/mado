@@ -1,0 +1,4 @@
+- NAME: add license
+- PRIORITY: 10
+- TAGS: license,docs
+- STATUS: closed
