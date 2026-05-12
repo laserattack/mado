@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -137,6 +138,52 @@ RET:
 }
 
 // ================ MAIN LOGIC
+
+static void tasks_dir_init() {
+    char *cwd = get_current_dir_name();
+    char tasks_dir[PATH_MAX];
+    snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd, main_dir_name);
+
+    if (file_exists(tasks_dir)) {
+        printf("Tasks directory already exists: %s\n", tasks_dir);
+    } else {
+        if (mkdir(tasks_dir, 0755) == 0) {
+            printf("Created tasks directory: %s\n", tasks_dir);
+        } else {
+            die("Failed to create tasks directory: %s", tasks_dir);
+        }
+    }
+
+    free(cwd);
+}
+
+static void task_create_dir_and_md(const char *main_dir) {
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+
+    char dir_name[16];
+    strftime(dir_name, sizeof(dir_name), "%Y%m%dT%H%M%S", tm);
+
+    char task_path[PATH_MAX-10];
+    snprintf(task_path, sizeof(task_path), "%s/%s", main_dir, dir_name);
+
+    if (file_exists(task_path)) die("Task directory already exists: %s", task_path);
+    if (mkdir(task_path, 0755) != 0) die("Failed to create task directory: %s", task_path);
+
+    char readme_path[PATH_MAX];
+    snprintf(readme_path, sizeof(readme_path), "%s/TASK.md", task_path);
+
+    FILE *f = fopen(readme_path, "w");
+    if (!f) die("Failed to create TASK.md in: %s", task_path);
+
+    fprintf(f, "- NAME:\n");
+    fprintf(f, "- PRIORITY:\n");
+    fprintf(f, "- TAGS:\n");
+    fprintf(f, "- STATUS:\n");
+    fclose(f);
+
+    printf("%s:1:1\n", readme_path);
+}
 
 static Task *task_file_parse(const char *task_file) {
     FILE *f = fopen(task_file, "r");
@@ -340,15 +387,33 @@ static void tasks_print(Task **tasks) {
 // ================ ENTRYPOINT
 
 static void usage(void) {
-    die("usage: %s [-h] [-q query]\n"
+    die("usage: %s [-h] [-i] [-p query]\n"
         "  -h          show this help\n"
-        "  -q query    filter tasks by query (e.g. 'priority > 5')",
+        "  -i          initialize TASKS directory in current location\n"
+        "  -n          create new task\n"
+        "  -p query    print tasks using query (e.g. 'priority > 5')",
         argv0);
 }
 
 int main(int argc, char **argv) {
     ARGBEGIN {
-        case 'q': {
+        case 'i': {
+            tasks_dir_init();
+            break;
+        }
+        case 'n': {
+            // find main dir
+            char *main_dir = find_dir_up(main_dir_name);
+            if (!main_dir) die("Tasks directory not found");
+
+            // create task
+            task_create_dir_and_md(main_dir);
+
+            // cleanup
+            free(main_dir);
+            break;
+        }
+        case 'p': {
             char *query = ARGF();
 
             // compile filter
@@ -370,11 +435,13 @@ int main(int argc, char **argv) {
             ast_free(filter);
             break;
         }
-         case 'h':
+        case 'h': {
             usage();
             break;
-        default:
+        }
+        default: {
             die("Unknown flag '%c'", ARGC());
+        }
     } ARGEND;
 
     return 0;
