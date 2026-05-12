@@ -14,6 +14,7 @@ void yyerror(const char *fmt, ...) {
     fprintf(stderr, "Tokenize error: ");
     vfprintf(stderr, fmt, args);
     va_end(args);
+    fprintf(stderr, "\n");
     exit(1);
 }
 
@@ -69,7 +70,7 @@ NEWLINE     \n
                 }
 
 .               {
-                    yyerror("unexpected char: '%s'\n", yytext);
+                    yyerror("unexpected char: '%s'", yytext);
                 }
 
 %%

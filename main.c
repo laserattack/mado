@@ -15,12 +15,12 @@
 
 #include "ast.h"
 
-
 #define UNUSED(x) (void)(x)
 
 // ================ TYPES
 
 typedef struct Task {
+    char *path; // absolute path to TASK.md
     char *name;
     uint16_t priority;
     char **tags; // dynarr
@@ -124,12 +124,13 @@ RET:
 
 // ================ MAIN LOGIC
 
-static Task *parse_task_file(const char *task_file) {
+static Task *task_file_parse(const char *task_file) {
     FILE *f = fopen(task_file, "r");
     if (!f) return NULL;
 
     Task *task = calloc(1, sizeof(Task));
     task->priority = 0;
+    task->path = strdup(task_file);
 
     char *line = NULL;
     size_t line_len = 0;
@@ -179,7 +180,7 @@ static Task *parse_task_file(const char *task_file) {
     return task;
 }
 
-static Task **get_all_tasks(const char *main_dir) {
+static Task **tasks_get_all(const char *main_dir) {
     DIR *dir = opendir(main_dir);
     if (!dir) return NULL;
 
@@ -200,7 +201,7 @@ static Task **get_all_tasks(const char *main_dir) {
             continue;
         }
 
-        Task *task = parse_task_file(task_file);
+        Task *task = task_file_parse(task_file);
         if (task) {
             arrput(tasks, task);
         }
@@ -210,59 +211,141 @@ static Task **get_all_tasks(const char *main_dir) {
     return tasks;
 }
 
-static void free_tasks(Task **tasks) {
+static void task_free(Task *task) {
+    if (!task) return;
+
+    free(task->path);
+    free(task->name);
+    free(task->status);
+    for (int j = 0; j < arrlen(task->tags); j++) {
+        free(task->tags[j]);
+    }
+    arrfree(task->tags);
+    free(task);
+}
+
+static void tasks_free(Task **tasks) {
     if (!tasks) return;
 
     for (int i = 0; i < arrlen(tasks); i++) {
-        Task *t = tasks[i];
-        free(t->name);
-        free(t->status);
-        for (int j = 0; j < arrlen(t->tags); j++) {
-            free(t->tags[j]);
-        }
-        arrfree(t->tags);
-        free(t);
+        task_free(tasks[i]);
     }
     arrfree(tasks);
 }
 
-static void print_tasks(Task **tasks) {
-    if (!tasks) {
-        printf("No tasks found\n");
-        return;
-    }
+static int task_matches_condition(Task *task, ASTNode *node) {
+    if (!node) return 1;
 
-    for (int i = 0; i < arrlen(tasks); i++) {
-        Task *t = tasks[i];
-        printf("NAME: %s\n", t->name ? t->name : "");
-        printf("PRIORITY: %d\n", t->priority);
-        printf("STATUS: %s\n", t->status ? t->status : "");
-        printf("TAGS: ");
-        if (arrlen(t->tags) == 0) {
-            printf("");
-        } else {
-            for (int j = 0; j < arrlen(t->tags); j++) {
-                printf("%s ", t->tags[j]);
+    switch (node->type) {
+        case NODE_BINARY_OP:
+            switch (node->binary.op) {
+                case OP_AND:
+                    return task_matches_condition(task, node->binary.left) &&
+                           task_matches_condition(task, node->binary.right);
+                case OP_OR:
+                    return task_matches_condition(task, node->binary.left) ||
+                           task_matches_condition(task, node->binary.right);
+                default: return 0;
             }
-        }
-        printf("\n\n");
+
+        case NODE_UNARY_OP:
+            if (node->unary.op == OP_NOT) {
+                return !task_matches_condition(task, node->unary.expr);
+            }
+            return 0;
+
+        case NODE_COMPARISON:
+            switch (node->comparison.field) {
+                case CMP_PRIORITY: {
+                    int task_val = task->priority;
+                    int cond_val = node->comparison.value.int_value;
+                    switch (node->comparison.cmp) {
+                        case CMP_GT: return task_val > cond_val;
+                        case CMP_LT: return task_val < cond_val;
+                        case CMP_GE: return task_val >= cond_val;
+                        case CMP_LE: return task_val <= cond_val;
+                        case CMP_EQ: return task_val == cond_val;
+                        default: return 0;
+                    }
+                }
+
+                case CMP_TAG: {
+                    char *cond_tag = node->comparison.value.str_value;
+                    for (int i = 0; i < arrlen(task->tags); i++) {
+                        if (strcmp(task->tags[i], cond_tag) == 0) {
+                            return 1;
+                        }
+                    }
+                    return 0;
+                }
+
+                case CMP_STATUS: {
+                    char *cond_status = node->comparison.value.str_value;
+                    if (!task->status) return 0;
+                    return strcmp(task->status, cond_status) == 0;
+                }
+
+                default: return 0;
+            }
+
+        default: return 0;
     }
 }
 
+static Task **tasks_filter(Task **tasks, ASTNode *filter) {
+    if (!tasks || arrlen(tasks) == 0 || !filter) {
+        return tasks;
+    }
+
+    Task **filtered = NULL;
+    for (int i = 0; i < arrlen(tasks); i++) {
+        Task *t = tasks[i];
+        if (task_matches_condition(t, filter)) {
+            arrput(filtered, t);
+        } else {
+            task_free(t);
+        }
+    }
+
+    arrfree(tasks);
+    return filtered;
+}
+
+static void tasks_print(Task **tasks) {
+    if (!tasks) return;
+
+    for (int i = 0; i < arrlen(tasks); i++) {
+        Task *t = tasks[i];
+        printf("%s:1:1\n", t->path);
+    }
+}
+
+// ================ ENTRYPOINT
+
 int main(int argc, char **argv) {
-    UNUSED(argc);
-    UNUSED(argv);
+    ASTNode *filter = NULL;
+
+    if (argc >= 2) {
+        filter = parse(argv[1]);
+        if (!filter) {
+            fprintf(stderr, "Failed to parse query: %s\n", argv[1]);
+            return 1;
+        }
+    }
 
     char *main_dir = find_dir_up(main_dir_name);
     if (!main_dir) {
-        fprintf(stderr, "main directory not found\n");
+        fprintf(stderr, "Tasks directory not found\n");
+        ast_free(filter);
         return 1;
     }
 
-    Task **tasks = get_all_tasks(main_dir);
-    print_tasks(tasks);
+    Task **tasks = tasks_get_all(main_dir);
+    tasks = tasks_filter(tasks, filter);
+    tasks_print(tasks);
 
-    free_tasks(tasks);
+    tasks_free(tasks);
     free(main_dir);
+    ast_free(filter);
     return 0;
 }
