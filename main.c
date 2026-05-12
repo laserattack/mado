@@ -444,42 +444,47 @@ static void usage(void) {
 }
 
 int main(int argc, char **argv) {
+    int flags_processed = 0;
+
     ARGBEGIN {
         case 'h': {
             usage();
+            flags_processed = 1;
             break;
         }
         case 'i': {
             tasks_dir_init();
+            flags_processed = 1;
             break;
         }
         case 'n': {
-            // find main dir
             char *main_dir = find_dir_up(main_dir_name);
             if (!main_dir) die("Tasks directory not found");
-            // create task
             task_create_dir_and_md(main_dir);
-            // cleanup
             free(main_dir);
+            flags_processed = 1;
             break;
         }
         case 'p': {
             char *query = ARGF();
             if (!query) die("-p requires a query argument");
             tasks_process_with_filter(query, task_op_print, NULL);
+            flags_processed = 1;
             break;
         }
         case 'r': {
             char *query = ARGF();
             if (!query) die("-r requires a query argument");
             tasks_process_with_filter(query, task_op_delete, NULL);
+            flags_processed = 1;
             break;
         }
         default: {
             die("Unknown flag '%c'", ARGC());
-            break;
         }
     } ARGEND;
+
+    if (!flags_processed) usage();
 
     return 0;
 }

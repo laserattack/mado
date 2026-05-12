@@ -57,6 +57,7 @@ You can fill it out as needed, for example:
 - STATUS: opened
 
 The login page returns 500 error when using special characters.
+...
 ```
 
 When you have many tasks, you'll want to filter them:
