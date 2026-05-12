@@ -1,5 +1,4 @@
-#include <stdio.h>
-#include <time.h>
+#include <sys/stat.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,16 +6,17 @@
 #include <libgen.h>
 #include <unistd.h>
 #include <stdarg.h>
-#include <sys/stat.h>
 #include <dirent.h>
+#include <stdio.h>
 #include <regex.h>
 #include <ctype.h>
+#include <time.h>
+#include <ftw.h>
 
 char *argv0;
 
 #define STB_DS_IMPLEMENTATION
 #include "thirdparty/stb_ds.h"
-
 #include "thirdparty/arg.h"
 
 #include "ast.h"
@@ -26,7 +26,7 @@ char *argv0;
 // ================ TYPES
 
 typedef struct Task {
-    char *path; // absolute path to TASK.md
+    char *path; // absolute path to task dir
     char *name;
     uint16_t priority;
     char **tags; // dynarr
@@ -104,6 +104,17 @@ static char *regex_extract_first_group(const char *line, const char *pattern) {
 }
 
 // ================ WORK WITH FS
+
+static int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf) {
+    UNUSED(sb);
+    UNUSED(typeflag);
+    UNUSED(ftwbuf);
+    return remove(fpath);
+}
+
+static void rmrf(const char *path) {
+    nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
+}
 
 static int file_exists(const char *path) {
     struct stat st;
@@ -185,13 +196,16 @@ static void task_create_dir_and_md(const char *main_dir) {
     printf("%s:1:1\n", readme_path);
 }
 
-static Task *task_file_parse(const char *task_file) {
+static Task *task_parse(const char *task_dir) {
+    char task_file[PATH_MAX];
+    snprintf(task_file, sizeof(task_file), "%s/TASK.md", task_dir);
+
     FILE *f = fopen(task_file, "r");
     if (!f) return NULL;
 
     Task *task = calloc(1, sizeof(Task));
     task->priority = 0;
-    task->path = strdup(task_file);
+    task->path = strdup(task_dir);
 
     char *line = NULL;
     size_t line_len = 0;
@@ -255,17 +269,16 @@ static Task **tasks_get_all(const char *main_dir) {
             continue;
         }
 
+        char task_dir[PATH_MAX-10];
+        snprintf(task_dir, sizeof(task_dir), "%s/%s", main_dir, entry->d_name);
+
         char task_file[PATH_MAX];
-        snprintf(task_file, sizeof(task_file), "%s/%s/TASK.md", main_dir, entry->d_name);
+        snprintf(task_file, sizeof(task_file), "%s/TASK.md", task_dir);
 
-        if (!file_exists(task_file)) {
-            continue;
-        }
+        if (!file_exists(task_file)) continue;
 
-        Task *task = task_file_parse(task_file);
-        if (task) {
-            arrput(tasks, task);
-        }
+        Task *task = task_parse(task_dir);
+        if (task) arrput(tasks, task);
     }
 
     closedir(dir);
@@ -375,28 +388,70 @@ static Task **tasks_filter(Task **tasks, ASTNode *filter) {
     return filtered;
 }
 
-static void tasks_print(Task **tasks) {
+typedef void (*task_operation_fn)(Task **tasks, void *ctx);
+
+static void task_op_print(Task **tasks, void *ctx) {
+    UNUSED(ctx);
     if (!tasks) return;
 
     for (int i = 0; i < arrlen(tasks); i++) {
         Task *t = tasks[i];
-        printf("%s:1:1\n", t->path);
+        printf("%s/TASK.md:1:1\n", t->path);
     }
+}
+
+static void task_op_delete(Task **tasks, void *ctx) {
+    UNUSED(ctx);
+
+    if (!tasks) return;
+
+    for (int i = 0; i < arrlen(tasks); i++) {
+        Task *t = tasks[i];
+        rmrf(t->path);
+        printf("Removed: %s\n", t->path);
+    }
+}
+
+static void tasks_process_with_filter(const char *query, task_operation_fn op, void *ctx) {
+    // compile filter
+    ASTNode *filter = parse(query);
+    if (!filter) die("Failed to parse query: '%s'", query);
+
+    // find main dir
+    char *main_dir = find_dir_up(main_dir_name);
+    if (!main_dir) die("Tasks directory not found");
+
+    // find tasks
+    Task **tasks = tasks_get_all(main_dir);
+    tasks = tasks_filter(tasks, filter);
+
+    // execute operation
+    op(tasks, ctx);
+
+    // cleanup
+    tasks_free(tasks);
+    free(main_dir);
+    ast_free(filter);
 }
 
 // ================ ENTRYPOINT
 
 static void usage(void) {
-    die("usage: %s [-h] [-i] [-p query]\n"
+    die("usage: %s [-h] [-i] [n] [-p query] [-r query]\n"
         "  -h          show this help\n"
-        "  -i          initialize TASKS directory in current location\n"
+        "  -i          initialize main directory in current location\n"
         "  -n          create new task\n"
-        "  -p query    print tasks using query (e.g. 'priority > 5')",
+        "  -p query    print tasks using query (e.g. 'priority > 5')\n"
+        "  -r query    remove tasks matching query",
         argv0);
 }
 
 int main(int argc, char **argv) {
     ARGBEGIN {
+        case 'h': {
+            usage();
+            break;
+        }
         case 'i': {
             tasks_dir_init();
             break;
@@ -405,42 +460,27 @@ int main(int argc, char **argv) {
             // find main dir
             char *main_dir = find_dir_up(main_dir_name);
             if (!main_dir) die("Tasks directory not found");
-
             // create task
             task_create_dir_and_md(main_dir);
-
             // cleanup
             free(main_dir);
             break;
         }
         case 'p': {
             char *query = ARGF();
-
-            // compile filter
-            ASTNode *filter = parse(query);
-            if (!filter) die("Failed to parse query: '%s'", query);
-
-            // find main dir
-            char *main_dir = find_dir_up(main_dir_name);
-            if (!main_dir) die("Tasks directory not found");
-
-            // find tasks
-            Task **tasks = tasks_get_all(main_dir);
-            tasks = tasks_filter(tasks, filter);
-            tasks_print(tasks);
-
-            // cleanup
-            tasks_free(tasks);
-            free(main_dir);
-            ast_free(filter);
+            if (!query) die("-p requires a query argument");
+            tasks_process_with_filter(query, task_op_print, NULL);
             break;
         }
-        case 'h': {
-            usage();
+        case 'r': {
+            char *query = ARGF();
+            if (!query) die("-r requires a query argument");
+            tasks_process_with_filter(query, task_op_delete, NULL);
             break;
         }
         default: {
             die("Unknown flag '%c'", ARGC());
+            break;
         }
     } ARGEND;
 
