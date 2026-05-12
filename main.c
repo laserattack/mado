@@ -83,7 +83,7 @@ static void init_regexes(void) {
         die("Failed to compile task_dir regex");
     if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
         die("Failed to compile name regex");
-    if (regcomp(&g_priority_regex, "^- PRIORITY:[[:space:]]*([0-9]{1,4})$", REG_EXTENDED) != 0)
+    if (regcomp(&g_priority_regex, "^- PRIORITY:[[:space:]]*([0-9]{1,3})$", REG_EXTENDED) != 0)
         die("Failed to compile priority regex");
     if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
         die("Failed to compile tags regex");
@@ -212,7 +212,7 @@ static void task_create_dir_and_md(const char *main_dir) {
     fprintf(f, "- STATUS:\n");
     fclose(f);
 
-    printf("%s:1:1\n", readme_path);
+    printf("%s:1:1:|STATUS:|PRIORITY:0|TAGS:\n", readme_path);
 }
 
 static Task *task_parse(const char *task_dir) {
@@ -415,7 +415,16 @@ static void task_op_print(Task **tasks, void *ctx) {
 
     for (int i = 0; i < arrlen(tasks); i++) {
         Task *t = tasks[i];
-        printf("%s/TASK.md:1:1\n", t->path);
+
+        printf("%s/TASK.md:1:1:|STATUS:%s|PRIORITY:%d|TAGS:", t->path, t->status, t->priority);
+
+        for (int j = 0; j < arrlen(t->tags); j++) {
+            printf("%s", t->tags[j]);
+            if (j < arrlen(t->tags) - 1) {
+                printf(",");
+            }
+        }
+        printf("\n");
     }
 }
 

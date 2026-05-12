@@ -36,7 +36,6 @@ file tree.
 ``` bash
 # Create your first task
 tamd -n
-# Output: /home/user/myproject/TASKS/20260512T172534/TASK.md:1:1
 ```
 
 The task will be created with the following content:
