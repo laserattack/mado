@@ -10,17 +10,8 @@ int main(int argc, char **argv) {
     }
 
     const char *query = argv[1];
-    printf("Query: %s\n", query);
-
     ASTNode *ast = parse(query);
-    if (!ast) {
-        fprintf(stderr, "Failed to parse query\n");
-        return 1;
-    }
-
-    printf("AST:\n");
     ast_print(ast, 0);
-
     ast_free(ast);
     return 0;
 }

@@ -6,7 +6,7 @@
 #include "ast.h"
 
 extern int yylex(void);
-extern void yyerror(const char *s);
+extern void yyerror(const char *fmt, ...);
 
 ASTNode *ast_root = NULL;
 
