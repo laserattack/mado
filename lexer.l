@@ -21,8 +21,9 @@ void yyerror(const char *fmt, ...) {
 
 DIGIT       [0-9]
 WHITESPACE  [ \t\r]
-PRIORITY    priority
-TAG         tag
+PRIORITY    priority|PRIORITY
+STATUS      status|STATUS
+TAG         tag|TAG
 AND         and|AND
 OR          or|OR
 NOT         not|NOT
@@ -36,6 +37,7 @@ NEWLINE     \n
 {NEWLINE}+      { /* ignore */ }
 
 {PRIORITY}      { return TOKEN_PRIORITY; }
+{STATUS}        { return TOKEN_STATUS; }
 {TAG}           { return TOKEN_TAG; }
 {AND}           { return TOKEN_AND; }
 {OR}            { return TOKEN_OR; }

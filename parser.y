@@ -49,7 +49,7 @@ static ASTNode *create_comparison(ComparisonField field, ComparisonOperator cmp,
 }
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
-%token TOKEN_PRIORITY TOKEN_TAG
+%token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
 %token TOKEN_LPAREN TOKEN_RPAREN
 %token <num> TOKEN_NUMBER
@@ -98,6 +98,12 @@ condition:
     }
     | TOKEN_TAG TOKEN_EQ TOKEN_IDENT {
         $$ = create_comparison(CMP_TAG, CMP_EQ, 0, $3);
+    }
+    | TOKEN_STATUS TOKEN_EQ TOKEN_STRING {
+        $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
+    }
+    | TOKEN_STATUS TOKEN_EQ TOKEN_IDENT {
+        $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
     }
     ;
 
