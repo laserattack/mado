@@ -37,13 +37,16 @@ typedef struct Task {
 // ================ GLOBAL VARS
 
 static const char *g_main_dir_name = "TASKS";
-static const int g_max_header_lines = 10;
+static const int g_max_header_lines = 30;
 
-static const char *g_task_dir_regex = "^[0-9]{8}T[0-9]{6}$";
-static const char *g_name_regex = "^- NAME:[[:space:]]*(.*)$";
-static const char *g_priority_regex = "^- PRIORITY:[[:space:]]*([0-9]{1,4})$";
-static const char *g_tags_regex = "^- TAGS:[[:space:]]*(.*)$";
-static const char *g_status_regex = "^- STATUS:[[:space:]]*(.*)$";
+// precompiled regexp for file parsing
+static regex_t g_task_dir_regex;
+static regex_t g_name_regex;
+static regex_t g_priority_regex;
+static regex_t g_tags_regex;
+static regex_t g_status_regex;
+
+static int g_regex_initialized = 0;
 
 // ================ SOME USEFUL STUFF
 
@@ -73,35 +76,50 @@ static char *trim(char *str) {
 
 // ================ REGEX
 
-static int regex_match(const char *name, const char *regex_str) {
-    regex_t regex;
-    int ret;
+static void init_regexes(void) {
+    if (g_regex_initialized) return;
 
-    regcomp(&regex, regex_str, REG_EXTENDED);
-    ret = regexec(&regex, name, 0, NULL, 0);
-    regfree(&regex);
+    if (regcomp(&g_task_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0)
+        die("Failed to compile task_dir regex");
+    if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
+        die("Failed to compile name regex");
+    if (regcomp(&g_priority_regex, "^- PRIORITY:[[:space:]]*([0-9]{1,4})$", REG_EXTENDED) != 0)
+        die("Failed to compile priority regex");
+    if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
+        die("Failed to compile tags regex");
+    if (regcomp(&g_status_regex, "^- STATUS:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
+        die("Failed to compile status regex");
 
-    return ret == 0;
+    g_regex_initialized = 1;
 }
 
-static char *regex_extract_first_group(const char *line, const char *pattern) {
-    regex_t regex;
+static void free_regexes(void) {
+    if (!g_regex_initialized) return;
+
+    regfree(&g_task_dir_regex);
+    regfree(&g_name_regex);
+    regfree(&g_priority_regex);
+    regfree(&g_tags_regex);
+    regfree(&g_status_regex);
+}
+
+static int regex_match(const char *name, regex_t *regex) {
+    return regexec(regex, name, 0, NULL, 0) == 0;
+}
+
+static char *regex_extract_first_group(const char *line, regex_t *regex) {
     regmatch_t matches[2];
-    int ret;
-    char *result = NULL;
 
-    regcomp(&regex, pattern, REG_EXTENDED);
-    ret = regexec(&regex, line, 2, matches, 0);
-
-    if (ret == 0 && matches[1].rm_so != -1) {
+    if (regexec(regex, line, 2, matches, 0) == 0 && matches[1].rm_so != -1) {
         int len = matches[1].rm_eo - matches[1].rm_so;
-        result = malloc(len + 1);
-        strncpy(result, line + matches[1].rm_so, len);
-        result[len] = '\0';
+        char *result = malloc(len + 1);
+        if (result) {
+            strncpy(result, line + matches[1].rm_so, len);
+            result[len] = '\0';
+        }
+        return result;
     }
-
-    regfree(&regex);
-    return result;
+    return NULL;
 }
 
 // ================ WORK WITH FS
@@ -222,14 +240,14 @@ static Task *task_parse(const char *task_dir) {
 
         char *value;
 
-        if ((value = regex_extract_first_group(line, g_name_regex)) != NULL) {
+        if ((value = regex_extract_first_group(line, &g_name_regex)) != NULL) {
             free(task->name);
             task->name = strdup(trim(value));
             free(value);
-        } else if ((value = regex_extract_first_group(line, g_priority_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_priority_regex)) != NULL) {
             task->priority = atoi(value);
             free(value);
-        } else if ((value = regex_extract_first_group(line, g_tags_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_tags_regex)) != NULL) {
             char *tags_str = trim(value);
             if (tags_str && *tags_str) {
                 char *saveptr;
@@ -243,7 +261,7 @@ static Task *task_parse(const char *task_dir) {
                 }
             }
             free(value);
-        } else if ((value = regex_extract_first_group(line, g_status_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_status_regex)) != NULL) {
             free(task->status);
             task->status = strdup(trim(value));
             free(value);
@@ -266,7 +284,7 @@ static Task **tasks_get_all(const char *main_dir) {
     while ((entry = readdir(dir)) != NULL) {
         if (strcmp(entry->d_name, ".") == 0 ||
             strcmp(entry->d_name, "..") == 0 ||
-            !regex_match(entry->d_name, g_task_dir_regex)) {
+            !regex_match(entry->d_name, &g_task_dir_regex)) {
             continue;
         }
 
@@ -448,47 +466,44 @@ static void usage(void) {
 }
 
 int main(int argc, char **argv) {
-    int flags_processed = 0;
+    init_regexes();
 
     ARGBEGIN {
         case 'h': {
             usage();
-            flags_processed = 1;
-            break;
+            goto cleanup;
         }
         case 'i': {
             tasks_dir_init();
-            flags_processed = 1;
-            break;
+            goto cleanup;
         }
         case 'n': {
             char *main_dir = find_dir_up(g_main_dir_name);
             if (!main_dir) die("Tasks directory not found");
             task_create_dir_and_md(main_dir);
             free(main_dir);
-            flags_processed = 1;
-            break;
+            goto cleanup;
         }
         case 'p': {
             char *query = ARGF();
             if (!query) die("-p requires a query argument");
             tasks_process_with_filter(query, task_op_print, NULL);
-            flags_processed = 1;
-            break;
+            goto cleanup;
         }
         case 'r': {
             char *query = ARGF();
             if (!query) die("-r requires a query argument");
             tasks_process_with_filter(query, task_op_delete, NULL);
-            flags_processed = 1;
-            break;
+            goto cleanup;
         }
         default: {
             die("Unknown flag '%c'", ARGC());
         }
     } ARGEND;
 
-    if (!flags_processed) usage();
+    usage();
 
+cleanup:
+    free_regexes();
     return 0;
 }

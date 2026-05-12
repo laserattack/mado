@@ -1,7 +1,9 @@
 - NAME: there are too many allocations???
 - PRIORITY: 100
-- TAGS: critical, allocation, memory, refactor, optomization, malloc
-- STATUS: opened
+- TAGS: critical, allocation, memory, refactor, optomization, malloc, regex, regexp
+- STATUS: closed
+
+# Problem
 
 ```
 ~/projects/tamd
@@ -21,4 +23,29 @@
 ==5324==
 ==5324== For lists of detected and suppressed errors, rerun with: -s
 ==5324== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
+```
+
+# What has been done to solve the problem
+
+- [x] precompile regexs
+- [x] limit task parsing to first 10 lines and rename globals
+
+```
+~/projects/tamd
+[serr@lap]-> valgall tamd -p 'tag = malloc'
+==13011== Memcheck, a memory error detector
+==13011== Copyright (C) 2002-2024, and GNU GPL'd, by Julian Seward et al.
+==13011== Using Valgrind-3.25.1 and LibVEX; rerun with -h for copyright info
+==13011== Command: tamd -p tag\ =\ malloc
+==13011==
+/home/serr/projects/tamd/TASKS/20260512T194003/TASK.md:1:1
+==13011==
+==13011== HEAP SUMMARY:
+==13011==     in use at exit: 0 bytes in 0 blocks
+==13011==   total heap usage: 1,731 allocs, 1,731 frees, 298,386 bytes allocated
+==13011==
+==13011== All heap blocks were freed -- no leaks are possible
+==13011==
+==13011== For lists of detected and suppressed errors, rerun with: -s
+==13011== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ```
