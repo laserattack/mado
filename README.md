@@ -109,6 +109,15 @@ make
 
 This will produce an executable file `./tamd`.
 
+## Requirements
+
+- **Linux only** (uses GNU extensions: `get_current_dir_name`, `fmemopen`)
+- **Build dependencies**:
+  - C compiler (gcc/clang)
+  - `make`
+  - `flex`
+  - `bison`
+
 ## Acknowledgments
 
 Inspired by [Compiler for a Query
