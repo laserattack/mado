@@ -80,12 +80,14 @@ void ast_print(ASTNode *node, int indent) {
                 case CMP_NAME:     printf("name "); break;
             }
             switch (node->comparison.cmp) {
-                case CMP_GT:     printf("> "); break;
-                case CMP_LT:     printf("< "); break;
-                case CMP_EQ:     printf("= "); break;
-                case CMP_SUBSTR: printf("~ "); break;
-                case CMP_GE:     printf(">= "); break;
-                case CMP_LE:     printf("<= "); break;
+                case CMP_GT:      printf("> "); break;
+                case CMP_LT:      printf("< "); break;
+                case CMP_EQ:      printf("= "); break;
+                case CMP_NE:      printf("!= "); break;
+                case CMP_SUBSTR:  printf("~ "); break;
+                case CMP_NSUBSTR: printf("!~ "); break;
+                case CMP_GE:      printf(">= "); break;
+                case CMP_LE:      printf("<= "); break;
             }
             if (node->comparison.field == CMP_PRIORITY) {
                 printf("%d\n", node->comparison.value.int_value);

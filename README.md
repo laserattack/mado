@@ -92,25 +92,32 @@ The query language supports filtering tasks using operators and keywords
 
 | Operator | Description |
 |----------|-------------|
-| `and` | Logical AND |
-| `or` | Logical OR |
-| `not` | Logical NOT |
 | `>` | Greater than |
 | `<` | Less than |
 | `>=` | Greater than or equal |
 | `<=` | Less than or equal |
 | `=` | Equal / exact match |
+| `!=` | Not equal |
 | `~` | Substring match (contains) |
+| `!~` | Not contains (substring absence) |
+
+### Logical Operators
+
+| Operator | Description |
+|----------|-------------|
+| `and` | Logical AND |
+| `or` | Logical OR |
+| `not` | Logical NOT |
 
 ### Keywords
 
-| Keyword | Type    | Operators          | Example                |
-|---------|---------|--------------------|------------------------|
-| `priority` | integer | `>`, `<`, `>=`, `<=`, `=` | `priority > 5` |
-| `tag`      | string  | `=`, `~`           | `tag = bug`, `tag ~ crit` |
-| `status`   | string  | `=`, `~`           | `status = opened`, `status ~ open` |
-| `name`     | string  | `=`, `~`           | `name = "Fix bug"`, `name ~ login` |
-| `all`      | special | -                  | `all`                  |
+| Keyword | Type    | Operators                      | Example                           |
+|---------|---------|--------------------------------|-----------------------------------|
+| `priority` | integer | `>`, `<`, `>=`, `<=`, `=`, `!=` | `priority > 5`, `priority != 10` |
+| `tag`      | string  | `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
+| `status`   | string  | `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
+| `name`     | string  | `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
+| `all`      | special | -                              | `all`                  |
 
 ## Installation
 

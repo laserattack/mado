@@ -363,6 +363,7 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                         case CMP_GE: return task_val >= cond_val;
                         case CMP_LE: return task_val <= cond_val;
                         case CMP_EQ: return task_val == cond_val;
+                        case CMP_NE: return task_val != cond_val;
                         default: return 0;
                     }
                 }
@@ -372,18 +373,25 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
                     // Special case: empty string means "no tags"
                     if (cond_tag && cond_tag[0] == '\0') {
-                        return arrlen(task->tags) == 0;
+                        int has_no_tags = arrlen(task->tags) == 0;
+                        if (node->comparison.cmp == CMP_EQ) return has_no_tags;
+                        if (node->comparison.cmp == CMP_NE) return !has_no_tags;
+                        if (node->comparison.cmp == CMP_SUBSTR) return 1;
+                        if (node->comparison.cmp == CMP_NSUBSTR) return 0;
                     }
 
-                    // Normal case: check if tag exists
                     for (int i = 0; i < arrlen(task->tags); i++) {
                         if (node->comparison.cmp == CMP_EQ) {
                             if (strcmp(task->tags[i], cond_tag) == 0) return 1;
+                        } else if (node->comparison.cmp == CMP_NE) {
+                            if (strcmp(task->tags[i], cond_tag) == 0) return 0;
                         } else if (node->comparison.cmp == CMP_SUBSTR) {
                             if (strstr(task->tags[i], cond_tag) != NULL) return 1;
+                        } else if (node->comparison.cmp == CMP_NSUBSTR) {
+                            if (strstr(task->tags[i], cond_tag) != NULL) return 0;
                         }
                     }
-                    return 0;
+                    return (node->comparison.cmp == CMP_NE || node->comparison.cmp == CMP_NSUBSTR);
                 }
 
                 case CMP_STATUS: {
@@ -391,8 +399,12 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                     if (!task->status) return 0;
                     if (node->comparison.cmp == CMP_EQ) {
                         return strcmp(task->status, cond_status) == 0;
+                    } else if (node->comparison.cmp == CMP_NE) {
+                        return strcmp(task->status, cond_status) != 0;
                     } else if (node->comparison.cmp == CMP_SUBSTR) {
                         return strstr(task->status, cond_status) != NULL;
+                    } else if (node->comparison.cmp == CMP_NSUBSTR) {
+                        return strstr(task->status, cond_status) == NULL;
                     }
                     return 0;
                 }
@@ -402,8 +414,12 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                     if (!task->name) return 0;
                     if (node->comparison.cmp == CMP_EQ) {
                         return strcmp(task->name, cond_name) == 0;
+                    } else if (node->comparison.cmp == CMP_NE) {
+                        return strcmp(task->name, cond_name) != 0;
                     } else if (node->comparison.cmp == CMP_SUBSTR) {
                         return strstr(task->name, cond_name) != NULL;
+                    } else if (node->comparison.cmp == CMP_NSUBSTR) {
+                        return strstr(task->name, cond_name) == NULL;
                     }
                     return 0;
                 }

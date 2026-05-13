@@ -53,7 +53,9 @@ NEWLINE     \n
 ">="            { return TOKEN_GE; }
 "<="            { return TOKEN_LE; }
 "="             { return TOKEN_EQ; }
+"!="            { return TOKEN_NE; }
 "~"             { return TOKEN_TILDE; }
+"!~"            { return TOKEN_NE_TILDE; }
 
 "("             { return TOKEN_LPAREN; }
 ")"             { return TOKEN_RPAREN; }
