@@ -1,4 +1,4 @@
-# tamd (tasks and markdown) - Task Management with Query Language
+# tamd - tasks and markdown
 
 A command-line task manager that stores tasks as markdown files and
 supports powerful filtering with a query language.
