@@ -152,7 +152,7 @@ static char *find_dir_up(const char *dir_name) {
 
         if (file_exists(test)) {
             result = realpath(test, NULL);
-            goto RET;
+            goto cleanup;
         }
 
         strcpy(dir, path);
@@ -161,7 +161,7 @@ static char *find_dir_up(const char *dir_name) {
         strcpy(path, parent);
     }
 
-RET:
+cleanup:
     free(path);
     free(dir);
     return result;

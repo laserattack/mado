@@ -11,7 +11,7 @@ int yywrap(void) {
 void yyerror(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    fprintf(stderr, "Tokenize error: ");
+    fprintf(stderr, "Error: ");
     vfprintf(stderr, fmt, args);
     va_end(args);
     fprintf(stderr, "\n");
