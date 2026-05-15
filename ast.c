@@ -27,73 +27,38 @@ void ast_free(ASTNode *node) {
     if (!node) return;
 
     switch (node->type) {
-        case NODE_ALL:
-            break;
-        case NODE_BINARY_OP:
-            ast_free(node->binary.left);
-            ast_free(node->binary.right);
-            break;
-        case NODE_UNARY_OP:
-            ast_free(node->unary.expr);
-            break;
-        case NODE_COMPARISON:
-            if (node->comparison.field == CMP_TAG ||
-                node->comparison.field == CMP_STATUS ||
-                node->comparison.field == CMP_NAME) {
-                free(node->comparison.value.str_value);
+    case NODE_ALL:
+        break;
+    case NODE_BINARY_OP:
+        ast_free(node->binary.left);
+        ast_free(node->binary.right);
+        break;
+    case NODE_UNARY_OP:
+        ast_free(node->unary.expr);
+        break;
+    case NODE_COMPARISON:
+        if (node->comparison.field == CMP_TAG ||
+        node->comparison.field == CMP_STATUS ||
+        node->comparison.field == CMP_NAME) {
+            free(node->comparison.value.str_value);
+        }
+        break;
+    case NODE_LIST_COMPARISON:
+        if (node->list_comparison.field == CMP_PRIORITY) {
+            if (node->list_comparison.num_list) {
+                free(node->list_comparison.num_list->items);
+                free(node->list_comparison.num_list);
             }
-            break;
+        } else {
+            if (node->list_comparison.str_list) {
+                for (int i = 0; i < node->list_comparison.str_list->count; i++) {
+                    free(node->list_comparison.str_list->items[i]);
+                }
+                free(node->list_comparison.str_list->items);
+                free(node->list_comparison.str_list);
+            }
+        }
+        break;
     }
     free(node);
-}
-
-void ast_print(ASTNode *node, int indent) {
-    if (!node) return;
-
-    for (int i = 0; i < indent; i++) printf("  ");
-
-    switch (node->type) {
-        case NODE_ALL:
-            printf("ALL\n");
-            break;
-
-        case NODE_BINARY_OP:
-            switch (node->binary.op) {
-                case OP_AND: printf("AND\n"); break;
-                case OP_OR:  printf("OR\n"); break;
-                default:     printf("BINARY\n"); break;
-            }
-            ast_print(node->binary.left, indent + 1);
-            ast_print(node->binary.right, indent + 1);
-            break;
-
-        case NODE_UNARY_OP:
-            printf("NOT\n");
-            ast_print(node->unary.expr, indent + 1);
-            break;
-
-        case NODE_COMPARISON:
-            switch (node->comparison.field) {
-                case CMP_PRIORITY: printf("priority "); break;
-                case CMP_TAG:      printf("tag "); break;
-                case CMP_STATUS:   printf("status "); break;
-                case CMP_NAME:     printf("name "); break;
-            }
-            switch (node->comparison.cmp) {
-                case CMP_GT:      printf("> "); break;
-                case CMP_LT:      printf("< "); break;
-                case CMP_EQ:      printf("= "); break;
-                case CMP_NE:      printf("!= "); break;
-                case CMP_SUBSTR:  printf("~ "); break;
-                case CMP_NSUBSTR: printf("!~ "); break;
-                case CMP_GE:      printf(">= "); break;
-                case CMP_LE:      printf("<= "); break;
-            }
-            if (node->comparison.field == CMP_PRIORITY) {
-                printf("%d\n", node->comparison.value.int_value);
-            } else {
-                printf("\"%s\"\n", node->comparison.value.str_value);
-            }
-            break;
-    }
 }

@@ -48,6 +48,10 @@ NEWLINE     \n
 {NOT}           { return TOKEN_NOT; }
 {ALL}           { return TOKEN_ALL; }
 
+
+"["             { return TOKEN_LBRACKET; }
+"]"             { return TOKEN_RBRACKET; }
+","             { return TOKEN_COMMA; }
 ">"             { return TOKEN_GT; }
 "<"             { return TOKEN_LT; }
 ">="            { return TOKEN_GE; }
@@ -56,7 +60,6 @@ NEWLINE     \n
 "!="            { return TOKEN_NE; }
 "~"             { return TOKEN_TILDE; }
 "!~"            { return TOKEN_NE_TILDE; }
-
 "("             { return TOKEN_LPAREN; }
 ")"             { return TOKEN_RPAREN; }
 

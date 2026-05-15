@@ -82,6 +82,11 @@ tamd -p 'name ~ "fix login"' # multiple words - quotes required
 tamd -p '(tag = bug or tag = critical) and status = opened'
 tamd -p 'not (priority < 3 or status = closed)'
 tamd -p '(priority > 5 and tag = urgent) or status = reopened'
+
+# You can also use `=` and `~` operators with lists in square brackets to match multiple values:
+tamd -p 'status = [opened, reopened]' # Status equals "opened" OR "reopened"
+tamd -p 'tag !~ [fix, ref]' # Tag does NOT contain "fix" AND does NOT contain "ref"
+tamd -p 'priority = [10, 20, 30]' # Priority equals 10 OR 20 OR 30
 ```
 
 ## Query Syntax
@@ -118,6 +123,9 @@ The query language supports filtering tasks using operators and keywords
 | `status`   | string  | `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
 | `name`     | string  | `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
 | `all`      | special | -                              | `all`                  |
+
+> **Note:** The `=`, `!=`, `~`, `!~` operators also work with lists in square brackets.
+> Examples: `status = [opened, reopened]`, `tag ~ [bug, crit]`
 
 ## Installation
 

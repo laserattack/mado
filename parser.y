@@ -10,6 +10,24 @@ extern void yyerror(const char *fmt, ...);
 
 ASTNode *ast_root = NULL;
 
+static ASTNode *create_list_comparison(ComparisonField field, ComparisonOperator cmp, NumList *list) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_COMPARISON;
+    node->list_comparison.field = field;
+    node->list_comparison.cmp = cmp;
+    node->list_comparison.num_list = list;
+    return node;
+}
+
+static ASTNode *create_list_comparison_str(ComparisonField field, ComparisonOperator cmp, StringList *list) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = NODE_LIST_COMPARISON;
+    node->list_comparison.field = field;
+    node->list_comparison.cmp = cmp;
+    node->list_comparison.str_list = list;
+    return node;
+}
+
 static ASTNode *create_binary_op(Operator op, ASTNode *left, ASTNode *right) {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_BINARY_OP;
@@ -46,11 +64,41 @@ static ASTNode *create_all(void) {
     return node;
 }
 
+static StringList *create_string_list(char *first) {
+    StringList *list = malloc(sizeof(StringList));
+    list->items = malloc(sizeof(char*));
+    list->items[0] = first;
+    list->count = 1;
+    return list;
+}
+
+static void append_string(StringList *list, char *item) {
+    list->count++;
+    list->items = realloc(list->items, list->count * sizeof(char*));
+    list->items[list->count - 1] = item;
+}
+
+static NumList *create_number_list(int first) {
+    NumList *list = malloc(sizeof(NumList));
+    list->items = malloc(sizeof(int));
+    list->items[0] = first;
+    list->count = 1;
+    return list;
+}
+
+static void append_number(NumList *list, int item) {
+    list->count++;
+    list->items = realloc(list->items, list->count * sizeof(int));
+    list->items[list->count - 1] = item;
+}
+
 %}
 
 %union {
     int num;
     char *str;
+    struct StringList *str_list;
+    struct NumList *num_list;
     struct ASTNode *node;
 }
 
@@ -58,11 +106,14 @@ static ASTNode *create_all(void) {
 %token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME
 %token TOKEN_ALL
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ TOKEN_NE TOKEN_TILDE TOKEN_NE_TILDE
+%token TOKEN_LBRACKET TOKEN_RBRACKET TOKEN_COMMA
 %token TOKEN_LPAREN TOKEN_RPAREN
 %token <num> TOKEN_NUMBER
 %token <str> TOKEN_IDENT TOKEN_STRING
 
 %type <node> expr condition
+%type <str_list> string_list
+%type <num_list> number_list
 
 %left TOKEN_OR
 %left TOKEN_AND
@@ -175,6 +226,75 @@ condition:
     }
     | TOKEN_NAME TOKEN_NE_TILDE TOKEN_IDENT {
         $$ = create_comparison(CMP_NAME, CMP_NSUBSTR, 0, $3);
+    }
+    | TOKEN_PRIORITY TOKEN_EQ TOKEN_LBRACKET number_list TOKEN_RBRACKET {
+        $$ = create_list_comparison(CMP_PRIORITY, CMP_EQ, $4);
+    }
+    | TOKEN_PRIORITY TOKEN_NE TOKEN_LBRACKET number_list TOKEN_RBRACKET {
+        $$ = create_list_comparison(CMP_PRIORITY, CMP_NE, $4);
+    }
+    | TOKEN_TAG TOKEN_EQ TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TAG, CMP_EQ, $4);
+    }
+    | TOKEN_TAG TOKEN_NE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TAG, CMP_NE, $4);
+    }
+    | TOKEN_TAG TOKEN_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TAG, CMP_SUBSTR, $4);
+    }
+    | TOKEN_TAG TOKEN_NE_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TAG, CMP_NSUBSTR, $4);
+    }
+    | TOKEN_STATUS TOKEN_EQ TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_STATUS, CMP_EQ, $4);
+    }
+    | TOKEN_STATUS TOKEN_NE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_STATUS, CMP_NE, $4);
+    }
+    | TOKEN_STATUS TOKEN_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_STATUS, CMP_SUBSTR, $4);
+    }
+    | TOKEN_STATUS TOKEN_NE_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_STATUS, CMP_NSUBSTR, $4);
+    }
+    | TOKEN_NAME TOKEN_EQ TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_NAME, CMP_EQ, $4);
+    }
+    | TOKEN_NAME TOKEN_NE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_NAME, CMP_NE, $4);
+    }
+    | TOKEN_NAME TOKEN_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_NAME, CMP_SUBSTR, $4);
+    }
+    | TOKEN_NAME TOKEN_NE_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_NAME, CMP_NSUBSTR, $4);
+    }
+    ;
+
+string_list:
+    TOKEN_STRING {
+        $$ = create_string_list($1);
+    }
+    | TOKEN_IDENT {
+        $$ = create_string_list($1);
+    }
+    | string_list TOKEN_COMMA TOKEN_STRING {
+        append_string($1, $3);
+        $$ = $1;
+    }
+    | string_list TOKEN_COMMA TOKEN_IDENT {
+        append_string($1, $3);
+        $$ = $1;
+    }
+    ;
+
+number_list:
+    TOKEN_NUMBER {
+        $$ = create_number_list($1);
+    }
+    | number_list TOKEN_COMMA TOKEN_NUMBER {
+        append_number($1, $3);
+        $$ = $1;
     }
     ;
 

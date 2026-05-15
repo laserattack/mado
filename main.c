@@ -328,6 +328,7 @@ static void tasks_free(Task **tasks) {
     arrfree(tasks);
 }
 
+// query language iterpreter here
 static int task_matches_condition(Task *task, ASTNode *node) {
     if (!node) return 1;
 
@@ -352,14 +353,113 @@ static int task_matches_condition(Task *task, ASTNode *node) {
             }
             return 0;
 
+        case NODE_LIST_COMPARISON: {
+            ComparisonOperator cmp = node->list_comparison.cmp;
+
+            if (node->list_comparison.field == CMP_PRIORITY) {
+                NumList *list = node->list_comparison.num_list;
+
+                if (cmp == CMP_EQ) {
+                    for (int i = 0; i < list->count; i++) {
+                        if (task->priority == list->items[i]) return 1;
+                    }
+                    return 0;
+                } else if (cmp == CMP_NE) {
+                    for (int i = 0; i < list->count; i++) {
+                        if (task->priority == list->items[i]) return 0;
+                    }
+                    return 1;
+                }
+                return 0;
+            } else {
+                StringList *list = node->list_comparison.str_list;
+
+                if (node->list_comparison.field == CMP_TAG) {
+
+                    // Special case: empty string means "no tags"
+                    int has_empty = 0;
+                    for (int i = 0; i < list->count; i++) {
+                        if (list->items[i] && list->items[i][0] == '\0') {
+                            has_empty = 1;
+                            break;
+                        }
+                    }
+                    if (has_empty) {
+                        int has_no_tags = arrlen(task->tags) == 0;
+                        if (cmp == CMP_EQ) return has_no_tags;
+                        if (cmp == CMP_NE) return !has_no_tags;
+                        if (cmp == CMP_SUBSTR) return 1;
+                        if (cmp == CMP_NSUBSTR) return 0;
+                    }
+
+                    if (cmp == CMP_EQ) {
+                        for (int j = 0; j < arrlen(task->tags); j++) {
+                            for (int i = 0; i < list->count; i++) {
+                                if (strcmp(task->tags[j], list->items[i]) == 0) return 1;
+                            }
+                        }
+                        return 0;
+                    } else if (cmp == CMP_NE) {
+                        for (int j = 0; j < arrlen(task->tags); j++) {
+                            for (int i = 0; i < list->count; i++) {
+                                if (strcmp(task->tags[j], list->items[i]) == 0) return 0;
+                            }
+                        }
+                        return 1;
+                    } else if (cmp == CMP_SUBSTR) {
+                        for (int j = 0; j < arrlen(task->tags); j++) {
+                            for (int i = 0; i < list->count; i++) {
+                                if (strstr(task->tags[j], list->items[i]) != NULL) return 1;
+                            }
+                        }
+                        return 0;
+                    } else if (cmp == CMP_NSUBSTR) {
+                        for (int j = 0; j < arrlen(task->tags); j++) {
+                            for (int i = 0; i < list->count; i++) {
+                                if (strstr(task->tags[j], list->items[i]) != NULL) return 0;
+                            }
+                        }
+                        return 1;
+                    }
+                    return 0;
+                } else {
+                    char *task_value = (node->list_comparison.field == CMP_STATUS) ? task->status : task->name;
+                    if (!task_value) return (cmp == CMP_NE || cmp == CMP_NSUBSTR) ? 1 : 0;
+
+                    if (cmp == CMP_EQ) {
+                        for (int i = 0; i < list->count; i++) {
+                            if (strcmp(task_value, list->items[i]) == 0) return 1;
+                        }
+                        return 0;
+                    } else if (cmp == CMP_NE) {
+                        for (int i = 0; i < list->count; i++) {
+                            if (strcmp(task_value, list->items[i]) == 0) return 0;
+                        }
+                        return 1;
+                    } else if (cmp == CMP_SUBSTR) {
+                        for (int i = 0; i < list->count; i++) {
+                            if (strstr(task_value, list->items[i]) != NULL) return 1;
+                        }
+                        return 0;
+                    } else if (cmp == CMP_NSUBSTR) {
+                        for (int i = 0; i < list->count; i++) {
+                            if (strstr(task_value, list->items[i]) != NULL) return 0;
+                        }
+                        return 1;
+                    }
+                    return 0;
+                }
+            }
+        }
+
         case NODE_COMPARISON:
             switch (node->comparison.field) {
-                case CMP_PRIORITY: {
-                    int task_val = task->priority;
-                    int cond_val = node->comparison.value.int_value;
-                    switch (node->comparison.cmp) {
-                        case CMP_GT: return task_val > cond_val;
-                        case CMP_LT: return task_val < cond_val;
+            case CMP_PRIORITY: {
+                int task_val = task->priority;
+                int cond_val = node->comparison.value.int_value;
+                switch (node->comparison.cmp) {
+                case CMP_GT: return task_val > cond_val;
+                case CMP_LT: return task_val < cond_val;
                         case CMP_GE: return task_val >= cond_val;
                         case CMP_LE: return task_val <= cond_val;
                         case CMP_EQ: return task_val == cond_val;
