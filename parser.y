@@ -106,14 +106,14 @@ static void append_number(NumList *list, int item) {
 %token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME
 %token TOKEN_ALL
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ TOKEN_NE TOKEN_TILDE TOKEN_NE_TILDE
-%token TOKEN_LBRACKET TOKEN_RBRACKET TOKEN_COMMA
-%token TOKEN_LPAREN TOKEN_RPAREN
+%token TOKEN_LPAREN TOKEN_RPAREN TOKEN_LBRACKET TOKEN_RBRACKET TOKEN_COMMA
 
 %token <num> TOKEN_NUMBER
 %token <str> TOKEN_IDENT TOKEN_STRING
 %type <node> expr condition condition_priority condition_tag condition_status condition_name
 %type <str_list> string_list
 %type <num_list> number_list
+%type <str> literal
 
 %left TOKEN_OR
 %left TOKEN_AND
@@ -184,52 +184,28 @@ condition_priority:
     ;
 
 condition_tag:
-    TOKEN_TAG TOKEN_EQ TOKEN_STRING {
+    TOKEN_TAG TOKEN_EQ literal {
         $$ = create_comparison(CMP_TAG, CMP_EQ, 0, $3);
     }
-    | TOKEN_TAG TOKEN_EQ TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_EQ, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_NE TOKEN_STRING {
+    | TOKEN_TAG TOKEN_NE literal {
         $$ = create_comparison(CMP_TAG, CMP_NE, 0, $3);
     }
-    | TOKEN_TAG TOKEN_NE TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_NE, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_TILDE TOKEN_STRING {
+    | TOKEN_TAG TOKEN_TILDE literal {
         $$ = create_comparison(CMP_TAG, CMP_SUBSTR, 0, $3);
     }
-    | TOKEN_TAG TOKEN_TILDE TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_SUBSTR, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_NE_TILDE TOKEN_STRING {
+    | TOKEN_TAG TOKEN_NE_TILDE literal {
         $$ = create_comparison(CMP_TAG, CMP_NSUBSTR, 0, $3);
     }
-    | TOKEN_TAG TOKEN_NE_TILDE TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_NSUBSTR, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_GT TOKEN_STRING {
+    | TOKEN_TAG TOKEN_GT literal {
         $$ = create_comparison(CMP_TAG, CMP_GT, 0, $3);
     }
-    | TOKEN_TAG TOKEN_GT TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_GT, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_LT TOKEN_STRING {
+    | TOKEN_TAG TOKEN_LT literal {
         $$ = create_comparison(CMP_TAG, CMP_LT, 0, $3);
     }
-    | TOKEN_TAG TOKEN_LT TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_LT, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_GE TOKEN_STRING {
+    | TOKEN_TAG TOKEN_GE literal {
         $$ = create_comparison(CMP_TAG, CMP_GE, 0, $3);
     }
-    | TOKEN_TAG TOKEN_GE TOKEN_IDENT {
-        $$ = create_comparison(CMP_TAG, CMP_GE, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_LE TOKEN_STRING {
-        $$ = create_comparison(CMP_TAG, CMP_LE, 0, $3);
-    }
-    | TOKEN_TAG TOKEN_LE TOKEN_IDENT {
+    | TOKEN_TAG TOKEN_LE literal {
         $$ = create_comparison(CMP_TAG, CMP_LE, 0, $3);
     }
     // list
@@ -260,52 +236,28 @@ condition_tag:
     ;
 
 condition_status:
-    TOKEN_STATUS TOKEN_EQ TOKEN_STRING {
+    TOKEN_STATUS TOKEN_EQ literal {
         $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_EQ TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_EQ, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_NE TOKEN_STRING {
+    | TOKEN_STATUS TOKEN_NE literal {
         $$ = create_comparison(CMP_STATUS, CMP_NE, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_NE TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_NE, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_TILDE TOKEN_STRING {
+    | TOKEN_STATUS TOKEN_TILDE literal {
         $$ = create_comparison(CMP_STATUS, CMP_SUBSTR, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_TILDE TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_SUBSTR, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_NE_TILDE TOKEN_STRING {
+    | TOKEN_STATUS TOKEN_NE_TILDE literal {
         $$ = create_comparison(CMP_STATUS, CMP_NSUBSTR, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_NE_TILDE TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_NSUBSTR, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_GT TOKEN_STRING {
+    | TOKEN_STATUS TOKEN_GT literal {
         $$ = create_comparison(CMP_STATUS, CMP_GT, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_GT TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_GT, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_LT TOKEN_STRING {
+    | TOKEN_STATUS TOKEN_LT literal {
         $$ = create_comparison(CMP_STATUS, CMP_LT, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_LT TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_LT, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_GE TOKEN_STRING {
+    | TOKEN_STATUS TOKEN_GE literal {
         $$ = create_comparison(CMP_STATUS, CMP_GE, 0, $3);
     }
-    | TOKEN_STATUS TOKEN_GE TOKEN_IDENT {
-        $$ = create_comparison(CMP_STATUS, CMP_GE, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_LE TOKEN_STRING {
-        $$ = create_comparison(CMP_STATUS, CMP_LE, 0, $3);
-    }
-    | TOKEN_STATUS TOKEN_LE TOKEN_IDENT {
+    | TOKEN_STATUS TOKEN_LE literal {
         $$ = create_comparison(CMP_STATUS, CMP_LE, 0, $3);
     }
     // list
@@ -336,52 +288,28 @@ condition_status:
     ;
 
 condition_name:
-    TOKEN_NAME TOKEN_EQ TOKEN_STRING {
+    TOKEN_NAME TOKEN_EQ literal {
         $$ = create_comparison(CMP_NAME, CMP_EQ, 0, $3);
     }
-    | TOKEN_NAME TOKEN_EQ TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_EQ, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_NE TOKEN_STRING {
+    | TOKEN_NAME TOKEN_NE literal {
         $$ = create_comparison(CMP_NAME, CMP_NE, 0, $3);
     }
-    | TOKEN_NAME TOKEN_NE TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_NE, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_TILDE TOKEN_STRING {
+    | TOKEN_NAME TOKEN_TILDE literal {
         $$ = create_comparison(CMP_NAME, CMP_SUBSTR, 0, $3);
     }
-    | TOKEN_NAME TOKEN_TILDE TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_SUBSTR, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_NE_TILDE TOKEN_STRING {
+    | TOKEN_NAME TOKEN_NE_TILDE literal {
         $$ = create_comparison(CMP_NAME, CMP_NSUBSTR, 0, $3);
     }
-    | TOKEN_NAME TOKEN_NE_TILDE TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_NSUBSTR, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_GT TOKEN_STRING {
+    | TOKEN_NAME TOKEN_GT literal {
         $$ = create_comparison(CMP_NAME, CMP_GT, 0, $3);
     }
-    | TOKEN_NAME TOKEN_GT TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_GT, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_LT TOKEN_STRING {
+    | TOKEN_NAME TOKEN_LT literal {
         $$ = create_comparison(CMP_NAME, CMP_LT, 0, $3);
     }
-    | TOKEN_NAME TOKEN_LT TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_LT, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_GE TOKEN_STRING {
+    | TOKEN_NAME TOKEN_GE literal {
         $$ = create_comparison(CMP_NAME, CMP_GE, 0, $3);
     }
-    | TOKEN_NAME TOKEN_GE TOKEN_IDENT {
-        $$ = create_comparison(CMP_NAME, CMP_GE, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_LE TOKEN_STRING {
-        $$ = create_comparison(CMP_NAME, CMP_LE, 0, $3);
-    }
-    | TOKEN_NAME TOKEN_LE TOKEN_IDENT {
+    | TOKEN_NAME TOKEN_LE literal {
         $$ = create_comparison(CMP_NAME, CMP_LE, 0, $3);
     }
     // list
@@ -412,17 +340,10 @@ condition_name:
     ;
 
 string_list:
-    TOKEN_STRING {
+    literal {
         $$ = create_string_list($1);
     }
-    | TOKEN_IDENT {
-        $$ = create_string_list($1);
-    }
-    | string_list TOKEN_COMMA TOKEN_STRING {
-        append_string($1, $3);
-        $$ = $1;
-    }
-    | string_list TOKEN_COMMA TOKEN_IDENT {
+    | string_list TOKEN_COMMA literal {
         append_string($1, $3);
         $$ = $1;
     }
@@ -436,6 +357,11 @@ number_list:
         append_number($1, $3);
         $$ = $1;
     }
+    ;
+
+literal:
+    TOKEN_STRING
+    | TOKEN_IDENT
     ;
 
 %%

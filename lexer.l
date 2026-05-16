@@ -49,9 +49,9 @@ NEWLINE     \n
 {ALL}           { return TOKEN_ALL; }
 
 
+","             { return TOKEN_COMMA; }
 "["             { return TOKEN_LBRACKET; }
 "]"             { return TOKEN_RBRACKET; }
-","             { return TOKEN_COMMA; }
 ">"             { return TOKEN_GT; }
 "<"             { return TOKEN_LT; }
 ">="            { return TOKEN_GE; }
