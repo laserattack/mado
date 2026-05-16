@@ -15,9 +15,8 @@
 
 char *argv0;
 
-#define STB_DS_IMPLEMENTATION
-#include "thirdparty/stb_ds.h"
-#include "thirdparty/arg.h"
+#include "utils/da.h"
+#include "utils/arg.h"
 
 #include "ast.h"
 
@@ -257,7 +256,7 @@ static Task *task_parse(const char *task_dir) {
                 while (token) {
                     char *clean = trim(token);
                     if (*clean) {
-                        arrput(task->tags, strdup(clean));
+                        dapush(task->tags, strdup(clean));
                     }
                     token = strtok_r(NULL, ",", &saveptr);
                 }
@@ -299,7 +298,7 @@ static Task **tasks_get_all(const char *main_dir) {
         if (!file_exists(task_file)) continue;
 
         Task *task = task_parse(task_dir);
-        if (task) arrput(tasks, task);
+        if (task) dapush(tasks, task);
     }
 
     closedir(dir);
@@ -312,20 +311,20 @@ static void task_free(Task *task) {
     free(task->path);
     free(task->name);
     free(task->status);
-    for (int j = 0; j < arrlen(task->tags); j++) {
+    for (int j = 0; j < dalen(task->tags); j++) {
         free(task->tags[j]);
     }
-    arrfree(task->tags);
+    dafree(task->tags);
     free(task);
 }
 
 static void tasks_free(Task **tasks) {
     if (!tasks) return;
 
-    for (int i = 0; i < arrlen(tasks); i++) {
+    for (int i = 0; i < dalen(tasks); i++) {
         task_free(tasks[i]);
     }
-    arrfree(tasks);
+    dafree(tasks);
 }
 
 // query language iterpreter here
@@ -385,7 +384,7 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                         }
                     }
                     if (has_empty) {
-                        int has_no_tags = arrlen(task->tags) == 0;
+                        int has_no_tags = dalen(task->tags) == 0;
                         if (cmp == CMP_EQ) return has_no_tags;
                         if (cmp == CMP_NE) return !has_no_tags;
                         if (cmp == CMP_SUBSTR) return 1;
@@ -393,28 +392,28 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                     }
 
                     if (cmp == CMP_EQ) {
-                        for (int j = 0; j < arrlen(task->tags); j++) {
+                        for (int j = 0; j < dalen(task->tags); j++) {
                             for (int i = 0; i < list->count; i++) {
                                 if (strcmp(task->tags[j], list->items[i]) == 0) return 1;
                             }
                         }
                         return 0;
                     } else if (cmp == CMP_NE) {
-                        for (int j = 0; j < arrlen(task->tags); j++) {
+                        for (int j = 0; j < dalen(task->tags); j++) {
                             for (int i = 0; i < list->count; i++) {
                                 if (strcmp(task->tags[j], list->items[i]) == 0) return 0;
                             }
                         }
                         return 1;
                     } else if (cmp == CMP_SUBSTR) {
-                        for (int j = 0; j < arrlen(task->tags); j++) {
+                        for (int j = 0; j < dalen(task->tags); j++) {
                             for (int i = 0; i < list->count; i++) {
                                 if (strstr(task->tags[j], list->items[i]) != NULL) return 1;
                             }
                         }
                         return 0;
                     } else if (cmp == CMP_NSUBSTR) {
-                        for (int j = 0; j < arrlen(task->tags); j++) {
+                        for (int j = 0; j < dalen(task->tags); j++) {
                             for (int i = 0; i < list->count; i++) {
                                 if (strstr(task->tags[j], list->items[i]) != NULL) return 0;
                             }
@@ -473,14 +472,14 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
                     // Special case: empty string means "no tags"
                     if (cond_tag && cond_tag[0] == '\0') {
-                        int has_no_tags = arrlen(task->tags) == 0;
+                        int has_no_tags = dalen(task->tags) == 0;
                         if (node->comparison.cmp == CMP_EQ) return has_no_tags;
                         if (node->comparison.cmp == CMP_NE) return !has_no_tags;
                         if (node->comparison.cmp == CMP_SUBSTR) return 1;
                         if (node->comparison.cmp == CMP_NSUBSTR) return 0;
                     }
 
-                    for (int i = 0; i < arrlen(task->tags); i++) {
+                    for (int i = 0; i < dalen(task->tags); i++) {
                         if (node->comparison.cmp == CMP_EQ) {
                             if (strcmp(task->tags[i], cond_tag) == 0) return 1;
                         } else if (node->comparison.cmp == CMP_NE) {
@@ -532,21 +531,21 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 }
 
 static Task **tasks_filter(Task **tasks, ASTNode *filter) {
-    if (!tasks || arrlen(tasks) == 0 || !filter) {
+    if (!tasks || dalen(tasks) == 0 || !filter) {
         return tasks;
     }
 
     Task **filtered = NULL;
-    for (int i = 0; i < arrlen(tasks); i++) {
+    for (int i = 0; i < dalen(tasks); i++) {
         Task *t = tasks[i];
         if (task_matches_condition(t, filter)) {
-            arrput(filtered, t);
+            dapush(filtered, t);
         } else {
             task_free(t);
         }
     }
 
-    arrfree(tasks);
+    dafree(tasks);
     return filtered;
 }
 
@@ -556,14 +555,14 @@ static void task_op_print(Task **tasks, void *ctx) {
     UNUSED(ctx);
     if (!tasks) return;
 
-    for (int i = 0; i < arrlen(tasks); i++) {
+    for (int i = 0; i < dalen(tasks); i++) {
         Task *t = tasks[i];
 
         printf("%s/TASK.md:1:1: STATUS:[%s] NAME:[%s] PRIORITY:[%d] TAGS:[", t->path, t->status, t->name, t->priority);
 
-        for (int j = 0; j < arrlen(t->tags); j++) {
+        for (int j = 0; j < dalen(t->tags); j++) {
             printf("%s", t->tags[j]);
-            if (j < arrlen(t->tags) - 1) {
+            if (j < dalen(t->tags) - 1) {
                 printf(",");
             }
         }
@@ -576,7 +575,7 @@ static void task_op_delete(Task **tasks, void *ctx) {
 
     if (!tasks) return;
 
-    for (int i = 0; i < arrlen(tasks); i++) {
+    for (int i = 0; i < dalen(tasks); i++) {
         Task *t = tasks[i];
         rmrf(t->path);
         printf("Removed: %s\n", t->path);
