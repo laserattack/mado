@@ -10,9 +10,10 @@ extern int yyparse(void);
 extern void yyrestart(FILE *);
 extern void yylex_destroy(void);
 
-ASTNode* parse(const char *query) {
-    yyin = fmemopen((void*)query, strlen(query), "r");
-    if (!yyin) return NULL;
+ASTNode *parse(const char *query) {
+    yyin = fmemopen((void *)query, strlen(query), "r");
+    if (!yyin)
+        return NULL;
 
     ast_root = NULL;
     yyparse();
@@ -24,7 +25,8 @@ ASTNode* parse(const char *query) {
 }
 
 void ast_free(ASTNode *node) {
-    if (!node) return;
+    if (!node)
+        return;
 
     switch (node->type) {
     case NODE_ALL:
@@ -38,8 +40,8 @@ void ast_free(ASTNode *node) {
         break;
     case NODE_COMPARISON:
         if (node->comparison.field == CMP_TAG ||
-        node->comparison.field == CMP_STATUS ||
-        node->comparison.field == CMP_NAME) {
+            node->comparison.field == CMP_STATUS ||
+            node->comparison.field == CMP_NAME) {
             free(node->comparison.value.str_value);
         }
         break;
@@ -51,9 +53,8 @@ void ast_free(ASTNode *node) {
             }
         } else {
             if (node->list_comparison.str_list) {
-                for (int i = 0; i < node->list_comparison.str_list->count; i++) {
+                for (int i = 0; i < node->list_comparison.str_list->count; i++)
                     free(node->list_comparison.str_list->items[i]);
-                }
                 free(node->list_comparison.str_list->items);
                 free(node->list_comparison.str_list);
             }

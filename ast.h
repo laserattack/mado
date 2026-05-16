@@ -9,18 +9,9 @@ typedef enum {
     NODE_ALL
 } NodeType;
 
-typedef enum {
-    OP_AND,
-    OP_OR,
-    OP_NOT
-} Operator;
+typedef enum { OP_AND, OP_OR, OP_NOT } Operator;
 
-typedef enum {
-    CMP_PRIORITY,
-    CMP_TAG,
-    CMP_STATUS,
-    CMP_NAME
-} ComparisonField;
+typedef enum { CMP_PRIORITY, CMP_TAG, CMP_STATUS, CMP_NAME } ComparisonField;
 
 typedef enum {
     CMP_GT,
@@ -74,7 +65,7 @@ typedef struct ASTNode {
     };
 } ASTNode;
 
-extern ASTNode* parse(const char *query);
+extern ASTNode *parse(const char *query);
 extern void ast_free(ASTNode *node);
 extern void ast_print(ASTNode *node, int indent);
 

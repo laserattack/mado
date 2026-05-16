@@ -1,0 +1,4 @@
+- NAME: unicode support
+- PRIORITY: 10
+- TAGS: unicode, feat, search
+- STATUS: opened

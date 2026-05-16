@@ -1,0 +1,4 @@
+- NAME: cmp operators for strings
+- PRIORITY: 10
+- TAGS: feat, search
+- STATUS: opened
