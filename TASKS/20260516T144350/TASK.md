@@ -1,6 +1,1 @@
-- NAME:
-- PRIORITY:
-- TAGS:
-- STATUS:
-
-this is task with empty fields for tests
+this is task with no fields for tests

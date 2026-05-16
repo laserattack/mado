@@ -30,6 +30,7 @@ typedef struct Task {
     uint16_t priority;
     char **tags; // dynarr
     char *status;
+    char *time;
 } Task;
 
 // ================ GLOBAL VARS
@@ -226,7 +227,7 @@ static void task_create_dir_and_md(const char *main_dir) {
     printf("%s:1:1: STATUS:[] NAME:[] PRIORITY:[0] TAGS:[]\n", readme_path);
 }
 
-static Task *task_parse(const char *task_dir) {
+static Task *task_parse(const char *task_dir, const char *task_time) {
     char task_file[PATH_MAX];
     snprintf(task_file, sizeof(task_file), "%s/TASK.md", task_dir);
 
@@ -239,6 +240,7 @@ static Task *task_parse(const char *task_dir) {
     task->path = strdup(task_dir);
     task->status = strdup("");
     task->name = strdup("");
+    task->time = strdup(task_time);
 
     char *line = NULL;
     size_t line_len = 0;
@@ -320,7 +322,7 @@ static Task **tasks_get_all(const char *main_dir) {
         if (!file_exists(task_file))
             continue;
 
-        Task *task = task_parse(task_dir);
+        Task *task = task_parse(task_dir, entry->d_name);
         if (task)
             dapush(tasks, task);
     }
@@ -336,6 +338,7 @@ static void task_free(Task *task) {
     free(task->path);
     free(task->name);
     free(task->status);
+    free(task->time);
     for (int j = 0; j < dalen(task->tags); j++) {
         free(task->tags[j]);
     }
@@ -353,7 +356,6 @@ static void tasks_free(Task **tasks) {
     dafree(tasks);
 }
 
-// query language iterpreter here
 static int task_matches_condition(Task *task, ASTNode *node) {
     if (!node)
         return 1;
@@ -492,11 +494,15 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 }
                 return 0;
             } else {
-                char *task_value = (node->list_comparison.field == CMP_STATUS)
-                                       ? task->status
-                                       : task->name;
-                if (!task_value)
-                    return (cmp == CMP_NE || cmp == CMP_NSUBSTR) ? 1 : 0;
+                char *task_value = NULL;
+
+                if (node->list_comparison.field == CMP_STATUS) {
+                    task_value = task->status;
+                } else if (node->list_comparison.field == CMP_NAME) {
+                    task_value = task->name;
+                } else if (node->list_comparison.field == CMP_TIME) {
+                    task_value = task->time;
+                }
 
                 if (cmp == CMP_EQ) {
                     for (int i = 0; i < list->count; i++) {
@@ -634,6 +640,32 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 return 0;
             }
         } // case CMP_STATUS
+
+        case CMP_TIME: {
+            char *cond_time = node->comparison.value.str_value;
+            if (!task->time)
+                return 0;
+            switch (node->comparison.cmp) {
+            case CMP_EQ:
+                return strcmp(task->time, cond_time) == 0;
+            case CMP_NE:
+                return strcmp(task->time, cond_time) != 0;
+            case CMP_SUBSTR:
+                return strstr(task->time, cond_time) != NULL;
+            case CMP_NSUBSTR:
+                return strstr(task->time, cond_time) == NULL;
+            case CMP_GT:
+                return strcmp(task->time, cond_time) > 0;
+            case CMP_LT:
+                return strcmp(task->time, cond_time) < 0;
+            case CMP_GE:
+                return strcmp(task->time, cond_time) >= 0;
+            case CMP_LE:
+                return strcmp(task->time, cond_time) <= 0;
+            default:
+                return 0;
+            }
+        } // case CMP_TIME
 
         case CMP_NAME: {
             char *cond_name = node->comparison.value.str_value;

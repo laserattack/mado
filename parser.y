@@ -103,15 +103,17 @@ static void append_number(NumList *list, int item) {
 }
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
-%token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME
+%token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME TOKEN_TIME
 %token TOKEN_ALL
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ TOKEN_NE TOKEN_TILDE TOKEN_NE_TILDE
 %token TOKEN_LPAREN TOKEN_RPAREN TOKEN_LBRACKET TOKEN_RBRACKET TOKEN_COMMA
 
 %token <num> TOKEN_NUMBER
 %token <str> TOKEN_IDENT TOKEN_STRING
-%type <node> expr condition condition_priority condition_tag condition_status condition_name
-%type <str_list> string_list
+%token <str> TOKEN_TIME_VALUE
+%type <node> expr condition condition_priority condition_tag condition_status condition_time condition_name
+%type <str_list> literal_list
+%type <str_list> time_list
 %type <num_list> number_list
 %type <str> literal
 
@@ -141,6 +143,7 @@ condition:
     | condition_tag
     | condition_status
     | condition_name
+    | condition_time
     ;
 
 condition_priority:
@@ -209,28 +212,28 @@ condition_tag:
         $$ = create_comparison(CMP_TAG, CMP_LE, 0, $3);
     }
     // list
-    | TOKEN_TAG TOKEN_EQ TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_EQ TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_EQ, $4);
     }
-    | TOKEN_TAG TOKEN_NE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_NE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_NE, $4);
     }
-    | TOKEN_TAG TOKEN_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_TILDE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_SUBSTR, $4);
     }
-    | TOKEN_TAG TOKEN_NE_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_NE_TILDE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_NSUBSTR, $4);
     }
-    | TOKEN_TAG TOKEN_GT TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_GT TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_GT, $4);
     }
-    | TOKEN_TAG TOKEN_LT TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_LT TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_LT, $4);
     }
-    | TOKEN_TAG TOKEN_GE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_GE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_GE, $4);
     }
-    | TOKEN_TAG TOKEN_LE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_TAG TOKEN_LE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_TAG, CMP_LE, $4);
     }
     ;
@@ -261,29 +264,81 @@ condition_status:
         $$ = create_comparison(CMP_STATUS, CMP_LE, 0, $3);
     }
     // list
-    | TOKEN_STATUS TOKEN_EQ TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_EQ TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_EQ, $4);
     }
-    | TOKEN_STATUS TOKEN_NE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_NE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_NE, $4);
     }
-    | TOKEN_STATUS TOKEN_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_TILDE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_SUBSTR, $4);
     }
-    | TOKEN_STATUS TOKEN_NE_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_NE_TILDE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_NSUBSTR, $4);
     }
-    | TOKEN_STATUS TOKEN_GT TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_GT TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_GT, $4);
     }
-    | TOKEN_STATUS TOKEN_LT TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_LT TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_LT, $4);
     }
-    | TOKEN_STATUS TOKEN_GE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_GE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_GE, $4);
     }
-    | TOKEN_STATUS TOKEN_LE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_STATUS TOKEN_LE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_STATUS, CMP_LE, $4);
+    }
+    ;
+
+condition_time:
+    TOKEN_TIME TOKEN_EQ TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_EQ, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_NE TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_NE, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_TILDE TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_SUBSTR, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_NE_TILDE TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_NSUBSTR, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_GT TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_GT, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_LT TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_LT, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_GE TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_GE, 0, $3);
+    }
+    | TOKEN_TIME TOKEN_LE TOKEN_TIME_VALUE {
+        $$ = create_comparison(CMP_TIME, CMP_LE, 0, $3);
+    }
+    // list
+    | TOKEN_TIME TOKEN_EQ TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_EQ, $4);
+    }
+    | TOKEN_TIME TOKEN_NE TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_NE, $4);
+    }
+    | TOKEN_TIME TOKEN_TILDE TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_SUBSTR, $4);
+    }
+    | TOKEN_TIME TOKEN_NE_TILDE TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_NSUBSTR, $4);
+    }
+    | TOKEN_TIME TOKEN_GT TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_GT, $4);
+    }
+    | TOKEN_TIME TOKEN_LT TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_LT, $4);
+    }
+    | TOKEN_TIME TOKEN_GE TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_GE, $4);
+    }
+    | TOKEN_TIME TOKEN_LE TOKEN_LBRACKET time_list TOKEN_RBRACKET {
+        $$ = create_list_comparison_str(CMP_TIME, CMP_LE, $4);
     }
     ;
 
@@ -313,37 +368,37 @@ condition_name:
         $$ = create_comparison(CMP_NAME, CMP_LE, 0, $3);
     }
     // list
-    | TOKEN_NAME TOKEN_EQ TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_EQ TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_EQ, $4);
     }
-    | TOKEN_NAME TOKEN_NE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_NE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_NE, $4);
     }
-    | TOKEN_NAME TOKEN_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_TILDE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_SUBSTR, $4);
     }
-    | TOKEN_NAME TOKEN_NE_TILDE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_NE_TILDE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_NSUBSTR, $4);
     }
-    | TOKEN_NAME TOKEN_GT TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_GT TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_GT, $4);
     }
-    | TOKEN_NAME TOKEN_LT TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_LT TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_LT, $4);
     }
-    | TOKEN_NAME TOKEN_GE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_GE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_GE, $4);
     }
-    | TOKEN_NAME TOKEN_LE TOKEN_LBRACKET string_list TOKEN_RBRACKET {
+    | TOKEN_NAME TOKEN_LE TOKEN_LBRACKET literal_list TOKEN_RBRACKET {
         $$ = create_list_comparison_str(CMP_NAME, CMP_LE, $4);
     }
     ;
 
-string_list:
+literal_list:
     literal {
         $$ = create_string_list($1);
     }
-    | string_list TOKEN_COMMA literal {
+    | literal_list TOKEN_COMMA literal {
         append_string($1, $3);
         $$ = $1;
     }
@@ -355,6 +410,16 @@ number_list:
     }
     | number_list TOKEN_COMMA TOKEN_NUMBER {
         append_number($1, $3);
+        $$ = $1;
+    }
+    ;
+
+time_list:
+    TOKEN_TIME_VALUE {
+        $$ = create_string_list($1);
+    }
+    | time_list TOKEN_COMMA TOKEN_TIME_VALUE {
+        append_string($1, $3);
         $$ = $1;
     }
     ;

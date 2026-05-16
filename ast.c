@@ -41,7 +41,8 @@ void ast_free(ASTNode *node) {
     case NODE_COMPARISON:
         if (node->comparison.field == CMP_TAG ||
             node->comparison.field == CMP_STATUS ||
-            node->comparison.field == CMP_NAME) {
+            node->comparison.field == CMP_NAME ||
+            node->comparison.field == CMP_TIME) {
             free(node->comparison.value.str_value);
         }
         break;

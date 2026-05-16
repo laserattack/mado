@@ -11,7 +11,13 @@ typedef enum {
 
 typedef enum { OP_AND, OP_OR, OP_NOT } Operator;
 
-typedef enum { CMP_PRIORITY, CMP_TAG, CMP_STATUS, CMP_NAME } ComparisonField;
+typedef enum {
+    CMP_PRIORITY,
+    CMP_TAG,
+    CMP_STATUS,
+    CMP_NAME,
+    CMP_TIME
+} ComparisonField;
 
 typedef enum {
     CMP_GT,

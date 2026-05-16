@@ -20,19 +20,22 @@ void yyerror(const char *fmt, ...) {
 
 %}
 
-DIGIT       [0-9]
-WHITESPACE  [ \t\r]
-PRIORITY    priority|PRIORITY
-STATUS      status|STATUS
-NAME        name|NAME
-TAG         tag|TAG
-AND         and|AND
-OR          or|OR
-NOT         not|NOT
-ALL         all|ALL
-IDENT       [a-zA-Z_][a-zA-Z0-9_-]*
-STRING      \"[^\"]*\"
-NEWLINE     \n
+DIGIT              [0-9]
+WHITESPACE         [ \t\r]
+PRIORITY           priority|PRIORITY
+STATUS             status|STATUS
+TIME               time|TIME
+NAME               name|NAME
+TAG                tag|TAG
+AND                and|AND
+OR                 or|OR
+NOT                not|NOT
+ALL                all|ALL
+TIMEFORMAT         [0-9]{8}T([0-9]{6})?
+QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"
+IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
+STRING             \"[^\"]*\"
+NEWLINE            \n
 
 %%
 
@@ -41,13 +44,13 @@ NEWLINE     \n
 
 {PRIORITY}      { return TOKEN_PRIORITY; }
 {STATUS}        { return TOKEN_STATUS; }
+{TIME}          { return TOKEN_TIME; }
 {NAME}          { return TOKEN_NAME; }
 {TAG}           { return TOKEN_TAG; }
 {AND}           { return TOKEN_AND; }
 {OR}            { return TOKEN_OR; }
 {NOT}           { return TOKEN_NOT; }
 {ALL}           { return TOKEN_ALL; }
-
 
 ","             { return TOKEN_COMMA; }
 "["             { return TOKEN_LBRACKET; }
@@ -63,24 +66,36 @@ NEWLINE     \n
 "("             { return TOKEN_LPAREN; }
 ")"             { return TOKEN_RPAREN; }
 
-{DIGIT}+        {
-                    yylval.num = atoi(yytext);
-                    return TOKEN_NUMBER;
-                }
 
-{IDENT}         {
-                    yylval.str = strdup(yytext);
-                    return TOKEN_IDENT;
-                }
+{DIGIT}+              {
+                          yylval.num = atoi(yytext);
+                          return TOKEN_NUMBER;
+                      }
 
-{STRING}        {
-                    yytext[strlen(yytext)-1] = '\0';
-                    yylval.str = strdup(yytext+1);
-                    return TOKEN_STRING;
-                }
+{TIMEFORMAT}          {
+                          yylval.str = strdup(yytext);
+                          return TOKEN_TIME_VALUE;
+                      }
 
-.               {
-                    yyerror("unexpected char: '%s'", yytext);
-                }
+{QUOTED_TIMEFORMAT}   {
+                         yytext[strlen(yytext)-1] = '\0';
+                         yylval.str = strdup(yytext+1);
+                         return TOKEN_TIME_VALUE;
+                      }
+
+{IDENT}               {
+                          yylval.str = strdup(yytext);
+                          return TOKEN_IDENT;
+                      }
+
+{STRING}              {
+                         yytext[strlen(yytext)-1] = '\0';
+                         yylval.str = strdup(yytext+1);
+                         return TOKEN_STRING;
+                      }
+
+.                     {
+                          yyerror("unexpected char: '%s'", yytext);
+                      }
 
 %%
