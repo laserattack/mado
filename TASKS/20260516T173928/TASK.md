@@ -1,7 +1,7 @@
 - NAME: other quotes
 - PRIORITY: 10
 - TAGS: lexer
-- STATUS: opened
+- STATUS: closed
 
 fix it
 
