@@ -610,7 +610,6 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                         return 1;
                 }
             }
-
             return (node->comparison.cmp == CMP_NE ||
                     node->comparison.cmp == CMP_NSUBSTR);
         } // case CMP_TAG

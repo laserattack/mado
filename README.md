@@ -83,9 +83,9 @@ tamd -p '(tag = bug or tag = critical) and status = opened'
 tamd -p 'not (priority < 3 or status = closed)'
 tamd -p '(priority > 5 and tag = urgent) or status = reopened'
 
-# You can also use `=` and `~` operators with lists in square brackets to match multiple values:
+# You can also use operators with lists in square brackets to match multiple values:
 tamd -p 'status = [opened, reopened]' # Status equals "opened" OR "reopened"
-tamd -p 'tag !~ [fix, ref]' # Tag does NOT contain "fix" AND does NOT contain "ref"
+tamd -p 'tag !~ [fix, ref]' # None of the tags contain "fix" or "ref"
 tamd -p 'priority = [10, 20, 30]' # Priority equals 10 OR 20 OR 30
 ```
 
