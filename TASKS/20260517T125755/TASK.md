@@ -1,0 +1,4 @@
+- NAME: only the logic of working with task should be in main.c
+- PRIORITY: 30
+- TAGS: refactor
+- STATUS: in work

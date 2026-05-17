@@ -126,7 +126,7 @@ keywords
 |------|-------------|--------|----------|
 | **number** | Integer value | 0-999 | `0`, `10`, `999` |
 | **string** | Text value | Can be unquoted or quoted with `"` or `'` | `bug`, `"fix login"`, `'critical'` |
-| **timestamp** | Creation time of task | 4-8 digits + optional (`T` + 0-6 digits) | `2026`, `20260516`, `20260516T`, `20260516T120000` |
+| **timestamp** | Creation time of task | 4, 6 or 8 digits + optional (`T` + 0, 2, 4 or 6 digits) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
 
 ### Keywords
 
@@ -139,8 +139,11 @@ keywords
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
-> **Note:** all operators also work with lists in square brackets.
-> Examples: `status = [opened, reopened]`, `tag ~ [bug, crit]`
+> **Note:** all operators also work with lists in square brackets
+> `[]`. Lists are syntactic sugar for multiple `or` conditions.
+> Examples:
+> - `status = [opened, reopened]` is equivalent to `status = opened or status = reopened`
+> - `tag ~ [bug, crit]` is equivalent to `tag ~ bug or tag ~ crit`
 
 ## Installation
 
