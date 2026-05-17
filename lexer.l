@@ -20,7 +20,7 @@ void yyerror(const char *fmt, ...) {
 
 %}
 
-DIGIT              [0-9]
+NUMBER             [0-9]{1,3}
 WHITESPACE         [ \t\r]
 PRIORITY           priority|PRIORITY
 STATUS             status|STATUS
@@ -31,7 +31,7 @@ AND                and|AND
 OR                 or|OR
 NOT                not|NOT
 ALL                all|ALL
-TIMEFORMAT         [0-9]{8}T([0-9]{6})?
+TIMEFORMAT         [0-9]{4,8}(T[0-9]{0,6})?
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
 STRING             \"[^\"]*\"|\'[^\']*\'
@@ -67,7 +67,7 @@ NEWLINE            \n
 ")"             { return TOKEN_RPAREN; }
 
 
-{DIGIT}+              {
+{NUMBER}              {
                           yylval.num = atoi(yytext);
                           return TOKEN_NUMBER;
                       }

@@ -79,8 +79,9 @@ tamd -p 'name ~ login'
 tamd -p 'name ~ "fix login"' # multiple words - quotes required
 
 # Filter by creation time
-tamd -p 'time ~ 20260516T' # Tasks created on 2026-05-16
-tamd -p 'time > 20260516T120000' # Tasks created after 2026-05-16 12:00:00
+tamd -p 'time ~ 20260516' # Tasks created on 2026-05-16
+tamd -p 'time > 20260516T12' # Tasks created after 2026-05-16 12:00:00
+tamd -p 'time >= 2023 and time <= 2025' # Tasks created between 2023 and 2025 (inclusive)
 
 # Find tasks with complex conditions
 tamd -p '(tag = bug or tag = critical) and status = opened'
@@ -119,15 +120,23 @@ keywords
 | `or` | Logical OR |
 | `not` | Logical NOT |
 
+### Types
+
+| Type | Description | Format | Examples |
+|------|-------------|--------|----------|
+| **number** | Integer value | 0-999 | `0`, `10`, `999` |
+| **string** | Text value | Can be unquoted or quoted with `"` or `'` | `bug`, `"fix login"`, `'critical'` |
+| **timestamp** | Creation time of task | 4-8 digits + optional (`T` + 0-6 digits) | `2026`, `20260516`, `20260516T`, `20260516T120000` |
+
 ### Keywords
 
 | Keyword | Type    | Operators                      | Example                           |
 |---------|---------|--------------------------------|-----------------------------------|
-| `priority` | integer | `>`, `<`, `>=`, `<=`, `=`, `!=` | `priority > 5`, `priority != 10` |
+| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=` | `priority > 5`, `priority != 10` |
 | `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
-| `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T123000 and time < 20260510T` |
+| `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
 > **Note:** all operators also work with lists in square brackets.
