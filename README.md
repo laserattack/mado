@@ -71,12 +71,16 @@ tamd -p 'tag = bug and priority > 5'
 # Delete low priority tasks
 tamd -r 'priority < 5'
 
-# Search by task name (exact match)
+# Filter by task name (exact match)
 tamd -p 'name = login'
 
-# Search by task name (substring)
+# Filter by task name (substring)
 tamd -p 'name ~ login'
 tamd -p 'name ~ "fix login"' # multiple words - quotes required
+
+# Filter by creation time
+tamd -p 'time ~ 20260516T' # Tasks created on 2026-05-16
+tamd -p 'time > 20260516T120000' # Tasks created after 2026-05-16 12:00:00
 
 # Find tasks with complex conditions
 tamd -p '(tag = bug or tag = critical) and status = opened'
@@ -91,7 +95,8 @@ tamd -p 'priority = [10, 20, 30]' # Priority equals 10 OR 20 OR 30
 
 ## Query Syntax
 
-The query language supports filtering tasks using operators and keywords
+The query language supports filtering tasks using operators and
+keywords
 
 ### Operators
 
@@ -119,12 +124,13 @@ The query language supports filtering tasks using operators and keywords
 | Keyword | Type    | Operators                      | Example                           |
 |---------|---------|--------------------------------|-----------------------------------|
 | `priority` | integer | `>`, `<`, `>=`, `<=`, `=`, `!=` | `priority > 5`, `priority != 10` |
-| `tag`      | string  | `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
-| `status`   | string  | `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
-| `name`     | string  | `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
+| `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
+| `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
+| `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
+| `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T123000 and time < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
-> **Note:** The `=`, `!=`, `~`, `!~` operators also work with lists in square brackets.
+> **Note:** all operators also work with lists in square brackets.
 > Examples: `status = [opened, reopened]`, `tag ~ [bug, crit]`
 
 ## Installation
@@ -139,7 +145,8 @@ This will produce an executable file `./tamd`.
 
 ## Requirements
 
-- **Linux only** (uses GNU extensions: `get_current_dir_name`, `fmemopen`)
+- **Linux only** (uses GNU extensions: `get_current_dir_name`,
+  `fmemopen`)
 - **Build dependencies**:
   - C compiler (gcc/clang)
   - `make`
