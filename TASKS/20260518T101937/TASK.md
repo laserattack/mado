@@ -1,0 +1,4 @@
+- NAME: add "and-list", change lists syntax
+- PRIORITY: 20
+- TAGS: parser, lexer, feat, refactor
+- STATUS: in work
