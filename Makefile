@@ -15,7 +15,7 @@ PARSER_HEADER = parser.tab.h
 
 AST_SRC = ast.c
 
-all: $(TARGET) $(TEST_TARGET)
+all: $(TARGET)
 
 $(LEX_OUT): $(LEXER)
 	$(FLEX) $(LEXER)
@@ -26,7 +26,13 @@ $(PARSER_OUT) $(PARSER_HEADER): $(PARSER)
 $(TARGET): $(LEX_OUT) $(PARSER_OUT) $(TARGET_SRC) $(AST_SRC)
 	$(CC) $(CFLAGS) $(LEX_OUT) $(PARSER_OUT) $(TARGET_SRC) $(AST_SRC) -o $(TARGET)
 
-clean:
-	rm -f $(LEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(TARGET) $(TEST_TARGET)
+llm:
+	gitingest
 
-.PHONY: all clean
+etags:
+	find . -name "*.[ch]" | etags -
+
+clean:
+	rm -f $(LEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(TARGET) digest.txt TAGS
+
+.PHONY: all clean llm etags

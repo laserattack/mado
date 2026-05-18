@@ -1,22 +1,24 @@
-#include <ctype.h>
 #include <dirent.h>
-#include <ftw.h>
-#include <libgen.h>
 #include <limits.h>
-#include <regex.h>
-#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <time.h>
-#include <unistd.h>
 
 char *argv0;
 
 #include "utils/arg.h"
 #include "utils/da.h"
+
+#define FS_IMPL
+#include "utils/fs.h"
+
+#define UTIL_IMPL
+#include "utils/util.h"
+
+#define REGEX_IMPL
+#include "utils/regex.h"
 
 #include "ast.h"
 
@@ -33,7 +35,7 @@ typedef struct Task {
     char *time;
 } Task;
 
-// ================ GLOBAL VARS
+// ================ GLOBAL
 
 static const char *g_main_dir_name = "TASKS";
 static const int g_max_header_lines = 30;
@@ -47,38 +49,7 @@ static regex_t g_status_regex;
 
 static int g_regex_initialized = 0;
 
-// ================ SOME USEFUL STUFF
-
-static void die(const char *errstr, ...) {
-    va_list ap;
-    va_start(ap, errstr);
-    vfprintf(stderr, errstr, ap);
-    va_end(ap);
-    fprintf(stderr, "\n");
-    exit(1);
-}
-
-static char *trim(char *str) {
-    if (!str)
-        return str;
-
-    while (isspace((unsigned char)*str))
-        str++;
-
-    if (*str == 0)
-        return str;
-
-    char *end = str + strlen(str) - 1;
-    while (end > str && isspace((unsigned char)*end))
-        end--;
-    end[1] = '\0';
-
-    return str;
-}
-
-// ================ REGEX
-
-static void init_regexes(void) {
+static void init_regexes() {
     if (g_regex_initialized)
         return;
 
@@ -98,7 +69,7 @@ static void init_regexes(void) {
     g_regex_initialized = 1;
 }
 
-static void free_regexes(void) {
+static void free_regexes() {
     if (!g_regex_initialized)
         return;
 
@@ -109,74 +80,7 @@ static void free_regexes(void) {
     regfree(&g_status_regex);
 }
 
-static int regex_match(const char *name, regex_t *regex) {
-    return regexec(regex, name, 0, NULL, 0) == 0;
-}
-
-static char *regex_extract_first_group(const char *line, regex_t *regex) {
-    regmatch_t matches[2];
-
-    if (regexec(regex, line, 2, matches, 0) == 0 && matches[1].rm_so != -1) {
-        int len = matches[1].rm_eo - matches[1].rm_so;
-        char *result = malloc(len + 1);
-        if (result) {
-            strncpy(result, line + matches[1].rm_so, len);
-            result[len] = '\0';
-        }
-        return result;
-    }
-    return NULL;
-}
-
-// ================ WORK WITH FS
-
-static int unlink_cb(const char *fpath, const struct stat *sb, int typeflag,
-                     struct FTW *ftwbuf) {
-    UNUSED(sb);
-    UNUSED(typeflag);
-    UNUSED(ftwbuf);
-    return remove(fpath);
-}
-
-static void rmrf(const char *path) {
-    nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS);
-}
-
-static int file_exists(const char *path) {
-    struct stat st;
-    return stat(path, &st) == 0;
-}
-
-// returns normalized absolute path like '/home/serr/projects/TAMD'
-static char *find_dir_up(const char *dir_name) {
-    char *path = get_current_dir_name(); // this is bullshit, returns full path,
-                                         // not just name
-    char *dir = strdup(path);
-    char *result = NULL;
-
-    while (1) {
-        char test[PATH_MAX];
-        snprintf(test, sizeof(test), "%s/%s", path, dir_name);
-
-        if (file_exists(test)) {
-            result = realpath(test, NULL);
-            goto cleanup;
-        }
-
-        strcpy(dir, path);
-        char *parent = dirname(dir);
-        if (strcmp(path, parent) == 0)
-            break;
-        strcpy(path, parent);
-    }
-
-cleanup:
-    free(path);
-    free(dir);
-    return result;
-}
-
-// ================ MAIN LOGIC
+// ================ INTERPRETER
 
 static void tasks_dir_init() {
     char *cwd = get_current_dir_name();
@@ -186,11 +90,10 @@ static void tasks_dir_init() {
     if (file_exists(tasks_dir)) {
         printf("Tasks directory already exists: %s\n", tasks_dir);
     } else {
-        if (mkdir(tasks_dir, 0755) == 0) {
+        if (mkdir(tasks_dir, 0755) == 0)
             printf("Created tasks directory: %s\n", tasks_dir);
-        } else {
+        else
             die("Failed to create tasks directory: %s", tasks_dir);
-        }
     }
 
     free(cwd);
@@ -250,9 +153,8 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
 
     while (lines_processed < g_max_header_lines &&
            (read = getline(&line, &line_len, f)) != -1) {
-        if (read > 0 && line[read - 1] == '\n') {
+        if (read > 0 && line[read - 1] == '\n')
             line[read - 1] = '\0';
-        }
         lines_processed++;
 
         char *value;
@@ -273,9 +175,8 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
                 char *token = strtok_r(tags_str, ",", &saveptr);
                 while (token) {
                     char *clean = trim(token);
-                    if (*clean) {
+                    if (*clean)
                         dapush(task->tags, strdup(clean));
-                    }
                     token = strtok_r(NULL, ",", &saveptr);
                 }
             }
@@ -291,9 +192,8 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
     free(line);
     fclose(f);
 
-    if (dalen(task->tags) == 0) {
+    if (dalen(task->tags) == 0)
         dapush(task->tags, strdup(""));
-    }
 
     return task;
 }
@@ -339,9 +239,8 @@ static void task_free(Task *task) {
     free(task->name);
     free(task->status);
     free(task->time);
-    for (int j = 0; j < dalen(task->tags); j++) {
+    for (int j = 0; j < dalen(task->tags); j++)
         free(task->tags[j]);
-    }
     dafree(task->tags);
     free(task);
 }
@@ -350,9 +249,8 @@ static void tasks_free(Task **tasks) {
     if (!tasks)
         return;
 
-    for (int i = 0; i < dalen(tasks); i++) {
+    for (int i = 0; i < dalen(tasks); i++)
         task_free(tasks[i]);
-    }
     dafree(tasks);
 }
 
@@ -377,9 +275,8 @@ static int task_matches_condition(Task *task, ASTNode *node) {
         }
 
     case NODE_UNARY_OP:
-        if (node->unary.op == OP_NOT) {
+        if (node->unary.op == OP_NOT)
             return !task_matches_condition(task, node->unary.expr);
-        }
         return 0;
 
     case NODE_LIST_COMPARISON: {
@@ -496,13 +393,12 @@ static int task_matches_condition(Task *task, ASTNode *node) {
             } else {
                 char *task_value = NULL;
 
-                if (node->list_comparison.field == CMP_STATUS) {
+                if (node->list_comparison.field == CMP_STATUS)
                     task_value = task->status;
-                } else if (node->list_comparison.field == CMP_NAME) {
+                else if (node->list_comparison.field == CMP_NAME)
                     task_value = task->name;
-                } else if (node->list_comparison.field == CMP_TIME) {
+                else if (node->list_comparison.field == CMP_TIME)
                     task_value = task->time;
-                }
 
                 if (cmp == CMP_EQ) {
                     for (int i = 0; i < list->count; i++) {
@@ -710,11 +606,10 @@ static Task **tasks_filter(Task **tasks, ASTNode *filter) {
     Task **filtered = NULL;
     for (int i = 0; i < dalen(tasks); i++) {
         Task *t = tasks[i];
-        if (task_matches_condition(t, filter)) {
+        if (task_matches_condition(t, filter))
             dapush(filtered, t);
-        } else {
+        else
             task_free(t);
-        }
     }
 
     dafree(tasks);
@@ -736,9 +631,8 @@ static void task_op_print(Task **tasks, void *ctx) {
 
         for (int j = 0; j < dalen(t->tags); j++) {
             printf("%s", t->tags[j]);
-            if (j < dalen(t->tags) - 1) {
+            if (j < dalen(t->tags) - 1)
                 printf(",");
-            }
         }
         printf("]\n");
     }
