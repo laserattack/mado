@@ -88,10 +88,10 @@ tamd -p '(tag = bug or tag = critical) and status = opened'
 tamd -p 'not (priority < 3 or status = closed)'
 tamd -p '(priority > 5 and tag = urgent) or status = reopened'
 
-# You can also use operators with lists in square brackets to match multiple values:
-tamd -p 'status = [opened, reopened]' # Status equals "opened" OR "reopened"
-tamd -p 'tag !~ [fix, ref]' # None of the tags contain "fix" or "ref"
-tamd -p 'priority = [10, 20, 30]' # Priority equals 10 OR 20 OR 30
+# Use anyof(...) and allof(...) to match multiple values:
+tamd -p 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
+tamd -p 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
+tamd -p 'tag = allof(bug, critical)' # Task has BOTH "bug" AND "critical" tags
 ```
 
 ## Query Syntax
@@ -139,11 +139,12 @@ keywords
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
-> **Note:** all operators also work with lists in square brackets
-> `[]`. Lists are syntactic sugar for multiple `or` conditions.
+> **Note:** all operators also work with `anyof(...)` and `allof(...)`.
+> These are syntactic sugar that expand to multiple conditions.
+> `anyof(...)` expands with `or`, `allof(...)` expands with `and`.
 > Examples:
-> - `status = [opened, reopened]` is equivalent to `status = opened or status = reopened`
-> - `tag ~ [bug, crit]` is equivalent to `tag ~ bug or tag ~ crit`
+> - `status = anyof(opened, reopened)` is equivalent to `status = opened or status = reopened`
+> - `tag ~ allof(bug, crit)` is equivalent to `tag ~ bug and tag ~ crit`
 
 ## Installation
 

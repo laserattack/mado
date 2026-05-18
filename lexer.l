@@ -31,6 +31,10 @@ AND                and|AND
 OR                 or|OR
 NOT                not|NOT
 ALL                all|ALL
+
+ALLOF              allof
+ANYOF              anyof
+
 TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8})(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
@@ -52,9 +56,10 @@ NEWLINE            \n
 {NOT}           { return TOKEN_NOT; }
 {ALL}           { return TOKEN_ALL; }
 
+{ALLOF}         { return TOKEN_ALLOF; }
+{ANYOF}         { return TOKEN_ANYOF; }
+
 ","             { return TOKEN_COMMA; }
-"["             { return TOKEN_LBRACKET; }
-"]"             { return TOKEN_RBRACKET; }
 ">"             { return TOKEN_GT; }
 "<"             { return TOKEN_LT; }
 ">="            { return TOKEN_GE; }

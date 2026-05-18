@@ -5,7 +5,6 @@ typedef enum {
     NODE_BINARY_OP,
     NODE_UNARY_OP,
     NODE_COMPARISON,
-    NODE_LIST_COMPARISON,
     NODE_ALL
 } NodeType;
 
@@ -30,16 +29,6 @@ typedef enum {
     CMP_LE
 } ComparisonOperator;
 
-typedef struct StringList {
-    char **items;
-    int count;
-} StringList;
-
-typedef struct NumList {
-    int *items;
-    int count;
-} NumList;
-
 typedef struct ASTNode {
     NodeType type;
     union {
@@ -60,14 +49,6 @@ typedef struct ASTNode {
                 char *str_value;
             } value;
         } comparison;
-        struct {
-            ComparisonField field;
-            ComparisonOperator cmp;
-            union {
-                StringList *str_list;
-                NumList *num_list;
-            };
-        } list_comparison;
     };
 } ASTNode;
 

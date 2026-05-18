@@ -254,53 +254,6 @@ static void tasks_free(Task **tasks) {
     dafree(tasks);
 }
 
-static int cmp_string(const char *a, const char *b, ComparisonOperator op) {
-    switch (op) {
-    case CMP_EQ:
-        return strcmp(a, b) == 0;
-    case CMP_NE:
-        return strcmp(a, b) != 0;
-    case CMP_SUBSTR:
-        return (strstr(a, b) != NULL);
-    case CMP_NSUBSTR:
-        return !(strstr(a, b) != NULL);
-    case CMP_GT:
-        return strcmp(a, b) > 0;
-    case CMP_LT:
-        return strcmp(a, b) < 0;
-    case CMP_GE:
-        return strcmp(a, b) >= 0;
-    case CMP_LE:
-        return strcmp(a, b) <= 0;
-    default:
-        return 0;
-    }
-}
-
-static int cmp_int(int a, int b, ComparisonOperator op) {
-    switch (op) {
-    case CMP_EQ:
-        return a == b;
-    case CMP_NE:
-        return a != b;
-    case CMP_GT:
-        return a > b;
-    case CMP_LT:
-        return a < b;
-    case CMP_GE:
-        return a >= b;
-    case CMP_LE:
-        return a <= b;
-    default:
-        return 0;
-    }
-}
-
-// returns 1 if operator is "negative" (NE, NSUBSTR)
-static int is_negated(ComparisonOperator op) {
-    return op == CMP_NE || op == CMP_NSUBSTR;
-}
-
 static int task_matches_condition(Task *task, ASTNode *node) {
     if (!node)
         return 1;
@@ -326,85 +279,143 @@ static int task_matches_condition(Task *task, ASTNode *node) {
             return !task_matches_condition(task, node->unary.expr);
         return 0;
 
-    case NODE_LIST_COMPARISON: {
-        ComparisonOperator op = node->list_comparison.cmp;
+    case NODE_COMPARISON: {
+        switch (node->comparison.field) {
+        case CMP_PRIORITY: {
+            int task_val = task->priority;
+            int cond_val = node->comparison.value.int_value;
+            switch (node->comparison.cmp) {
+            case CMP_GT:
+                return task_val > cond_val;
+            case CMP_LT:
+                return task_val < cond_val;
+            case CMP_GE:
+                return task_val >= cond_val;
+            case CMP_LE:
+                return task_val <= cond_val;
+            case CMP_EQ:
+                return task_val == cond_val;
+            case CMP_NE:
+                return task_val != cond_val;
+            default:
+                return 0;
+            }
+        } // case CMP_PRIORITY
 
-        // priority list
-        if (node->list_comparison.field == CMP_PRIORITY) {
-            NumList *list = node->list_comparison.num_list;
-            for (int i = 0; i < list->count; i++) {
-                if (is_negated(op)) {
-                    if (task->priority == list->items[i])
+        case CMP_TAG: {
+            char *cond_tag = node->comparison.value.str_value;
+            for (int i = 0; i < dalen(task->tags); i++) {
+                if (node->comparison.cmp == CMP_EQ) {
+                    if (strcmp(task->tags[i], cond_tag) == 0)
+                        return 1;
+                } else if (node->comparison.cmp == CMP_NE) {
+                    if (strcmp(task->tags[i], cond_tag) == 0)
                         return 0;
-                } else {
-                    if (cmp_int(task->priority, list->items[i], op))
+                } else if (node->comparison.cmp == CMP_SUBSTR) {
+                    if (strstr(task->tags[i], cond_tag) != NULL)
+                        return 1;
+                } else if (node->comparison.cmp == CMP_NSUBSTR) {
+                    if (strstr(task->tags[i], cond_tag) != NULL)
+                        return 0;
+                } else if (node->comparison.cmp == CMP_GT) {
+                    if (strcmp(task->tags[i], cond_tag) > 0)
+                        return 1;
+                } else if (node->comparison.cmp == CMP_LT) {
+                    if (strcmp(task->tags[i], cond_tag) < 0)
+                        return 1;
+                } else if (node->comparison.cmp == CMP_GE) {
+                    if (strcmp(task->tags[i], cond_tag) >= 0)
+                        return 1;
+                } else if (node->comparison.cmp == CMP_LE) {
+                    if (strcmp(task->tags[i], cond_tag) <= 0)
                         return 1;
                 }
             }
-            return is_negated(op) ? 1 : 0;
-        }
+            return (node->comparison.cmp == CMP_NE ||
+                    node->comparison.cmp == CMP_NSUBSTR);
+        } // case CMP_TAG
 
-        StringList *list = node->list_comparison.str_list;
-
-        // multiple string field
-        if (node->list_comparison.field == CMP_TAG) {
-            for (int j = 0; j < dalen(task->tags); j++) {
-                for (int i = 0; i < list->count; i++) {
-                    if (is_negated(op)) {
-                        if (cmp_string(task->tags[j], list->items[i], op))
-                            return 0;
-                    } else {
-                        if (cmp_string(task->tags[j], list->items[i], op))
-                            return 1;
-                    }
-                }
+        case CMP_STATUS: {
+            char *cond_status = node->comparison.value.str_value;
+            if (!task->status)
+                return 0;
+            switch (node->comparison.cmp) {
+            case CMP_EQ:
+                return strcmp(task->status, cond_status) == 0;
+            case CMP_NE:
+                return strcmp(task->status, cond_status) != 0;
+            case CMP_SUBSTR:
+                return strstr(task->status, cond_status) != NULL;
+            case CMP_NSUBSTR:
+                return strstr(task->status, cond_status) == NULL;
+            case CMP_GT:
+                return strcmp(task->status, cond_status) > 0;
+            case CMP_LT:
+                return strcmp(task->status, cond_status) < 0;
+            case CMP_GE:
+                return strcmp(task->status, cond_status) >= 0;
+            case CMP_LE:
+                return strcmp(task->status, cond_status) <= 0;
+            default:
+                return 0;
             }
-            return is_negated(op) ? 1 : 0;
-        }
+        } // case CMP_STATUS
 
-        // single string field
-        char *tv = NULL;
-        if (node->list_comparison.field == CMP_STATUS)
-            tv = task->status;
-        else if (node->list_comparison.field == CMP_NAME)
-            tv = task->name;
-        else if (node->list_comparison.field == CMP_TIME)
-            tv = task->time;
+        case CMP_TIME: {
+            char *cond_time = node->comparison.value.str_value;
+            if (!task->time)
+                return 0;
+            switch (node->comparison.cmp) {
+            case CMP_EQ:
+                return strcmp(task->time, cond_time) == 0;
+            case CMP_NE:
+                return strcmp(task->time, cond_time) != 0;
+            case CMP_SUBSTR:
+                return strstr(task->time, cond_time) != NULL;
+            case CMP_NSUBSTR:
+                return strstr(task->time, cond_time) == NULL;
+            case CMP_GT:
+                return strcmp(task->time, cond_time) > 0;
+            case CMP_LT:
+                return strcmp(task->time, cond_time) < 0;
+            case CMP_GE:
+                return strcmp(task->time, cond_time) >= 0;
+            case CMP_LE:
+                return strcmp(task->time, cond_time) <= 0;
+            default:
+                return 0;
+            }
+        } // case CMP_TIME
 
-        for (int i = 0; i < list->count; i++)
-            if (cmp_string(tv, list->items[i], op))
-                return is_negated(op) ? 0 : 1;
+        case CMP_NAME: {
+            char *cond_name = node->comparison.value.str_value;
+            if (!task->name)
+                return 0;
+            switch (node->comparison.cmp) {
+            case CMP_EQ:
+                return strcmp(task->name, cond_name) == 0;
+            case CMP_NE:
+                return strcmp(task->name, cond_name) != 0;
+            case CMP_SUBSTR:
+                return strstr(task->name, cond_name) != NULL;
+            case CMP_NSUBSTR:
+                return strstr(task->name, cond_name) == NULL;
+            case CMP_GT:
+                return strcmp(task->name, cond_name) > 0;
+            case CMP_LT:
+                return strcmp(task->name, cond_name) < 0;
+            case CMP_GE:
+                return strcmp(task->name, cond_name) >= 0;
+            case CMP_LE:
+                return strcmp(task->name, cond_name) <= 0;
+            default:
+                return 0;
+            }
+        } // case CMP_NAME
 
-        return is_negated(op) ? 1 : 0;
-    } // NODE_LIST_COMPARISON
-
-    case NODE_COMPARISON: {
-        ComparisonField field = node->comparison.field;
-        ComparisonOperator op = node->comparison.cmp;
-
-        if (field == CMP_PRIORITY)
-            return cmp_int(task->priority, node->comparison.value.int_value,
-                           op);
-
-        if (field == CMP_TAG) {
-            char *cv = node->comparison.value.str_value;
-            for (int i = 0; i < dalen(task->tags); i++)
-                if (cmp_string(task->tags[i], cv, op))
-                    return is_negated(op) ? 0 : 1;
-            return is_negated(op) ? 1 : 0;
-        }
-
-        char *tv = NULL;
-        if (field == CMP_STATUS)
-            tv = task->status;
-        else if (field == CMP_NAME)
-            tv = task->name;
-        else if (field == CMP_TIME)
-            tv = task->time;
-        if (!tv)
+        default:
             return 0;
-
-        return cmp_string(tv, node->comparison.value.str_value, op);
+        } // switch (node->comparison.field)
     } // case NODE_COMPARISON
 
     default:

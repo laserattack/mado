@@ -8,6 +8,18 @@
 extern int yylex(void);
 extern void yyerror(const char *fmt, ...);
 
+typedef enum { LM_ALLOF, LM_ANYOF } ListModifier;
+
+typedef struct StringList {
+    char **items;
+    int count;
+} StringList;
+
+typedef struct NumList {
+    int *items;
+    int count;
+} NumList;
+
 ASTNode *ast_root = NULL;
 
 static ASTNode *create_binary_op(Operator op, ASTNode *left, ASTNode *right) {
@@ -24,22 +36,6 @@ static ASTNode *create_unary_op(Operator op, ASTNode *expr) {
     node->type = NODE_UNARY_OP;
     node->unary.op = op;
     node->unary.expr = expr;
-    return node;
-}
-
-static ASTNode *create_list_comparison(ComparisonField field,
-                                       ComparisonOperator cmp,
-                                       NumList *num_list,
-                                       StringList *str_list) {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_LIST_COMPARISON;
-    node->list_comparison.field = field;
-    node->list_comparison.cmp = cmp;
-    if (num_list) {
-        node->list_comparison.num_list = num_list;
-    } else {
-        node->list_comparison.str_list = str_list;
-    }
     return node;
 }
 
@@ -63,6 +59,32 @@ static ASTNode *create_all(void) {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_ALL;
     return node;
+}
+
+static ASTNode *expand_list(ComparisonField field, ComparisonOperator op,
+                            StringList *str_list, NumList *num_list,
+                            ListModifier lm) {
+    Operator comb = (lm == LM_ALLOF) ? OP_AND : OP_OR;
+    ASTNode *result = NULL;
+
+    int count = str_list ? str_list->count : num_list->count;
+    for (int i = 0; i < count; i++) {
+        ASTNode *cmp = str_list
+            ? create_comparison(field, op, 0, str_list->items[i])
+            : create_comparison(field, op, num_list->items[i], NULL);
+
+        result = result ? create_binary_op(comb, result, cmp) : cmp;
+    }
+
+    if (str_list) {
+        free(str_list->items);
+        free(str_list);
+    } else {
+        free(num_list->items);
+        free(num_list);
+    }
+
+    return result;
 }
 
 static StringList *create_string_list(char *first) {
@@ -106,9 +128,10 @@ static void append_number(NumList *list, int item) {
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
 %token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME TOKEN_TIME
 %token TOKEN_ALL
+%token TOKEN_ALLOF TOKEN_ANYOF
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
 %token TOKEN_NE TOKEN_TILDE TOKEN_NE_TILDE
-%token TOKEN_LPAREN TOKEN_RPAREN TOKEN_LBRACKET TOKEN_RBRACKET TOKEN_COMMA
+%token TOKEN_LPAREN TOKEN_RPAREN TOKEN_COMMA
 
 %token <num> TOKEN_NUMBER
 %token <str> TOKEN_IDENT TOKEN_STRING TOKEN_TIME_VALUE
@@ -116,7 +139,7 @@ static void append_number(NumList *list, int item) {
 %type <str_list> string_list time_list
 %type <num_list> number_list
 %type <str> string
-%type <num> cmp_op string_field
+%type <num> cmp_op string_field list_modifier
 
 %left TOKEN_OR
 %left TOKEN_AND
@@ -149,8 +172,8 @@ condition_priority:
     TOKEN_PRIORITY cmp_op TOKEN_NUMBER {
         $$ = create_comparison(CMP_PRIORITY, $2, $3, NULL);
     }
-    | TOKEN_PRIORITY cmp_op TOKEN_LBRACKET number_list TOKEN_RBRACKET {
-        $$ = create_list_comparison(CMP_PRIORITY, $2, $4, NULL);
+    | TOKEN_PRIORITY cmp_op list_modifier TOKEN_LPAREN number_list TOKEN_RPAREN {
+        $$ = expand_list(CMP_PRIORITY, $2, NULL, $5, $3);
     }
     ;
 
@@ -158,8 +181,8 @@ condition_time:
     TOKEN_TIME cmp_op TOKEN_TIME_VALUE {
         $$ = create_comparison(CMP_TIME, $2, 0, $3);
     }
-    | TOKEN_TIME cmp_op TOKEN_LBRACKET time_list TOKEN_RBRACKET {
-        $$ = create_list_comparison(CMP_TIME, $2, NULL, $4);
+    | TOKEN_TIME cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
+        $$ = expand_list(CMP_TIME, $2, $5, NULL, $3);
     }
     ;
 
@@ -167,8 +190,8 @@ condition_string:
     string_field cmp_op string {
         $$ = create_comparison($1, $2, 0, $3);
     }
-    | string_field cmp_op TOKEN_LBRACKET string_list TOKEN_RBRACKET {
-        $$ = create_list_comparison($1, $2, NULL, $4);
+    | string_field cmp_op list_modifier TOKEN_LPAREN string_list TOKEN_RPAREN {
+        $$ = expand_list($1, $2, $5, NULL, $3);
     }
     ;
 
@@ -205,6 +228,11 @@ cmp_op:
     | TOKEN_LT       { $$ = CMP_LT; }
     | TOKEN_GE       { $$ = CMP_GE; }
     | TOKEN_LE       { $$ = CMP_LE; }
+    ;
+
+list_modifier:
+    TOKEN_ALLOF   { $$ = LM_ALLOF; }
+    | TOKEN_ANYOF { $$ = LM_ANYOF; }
     ;
 
 string_field:

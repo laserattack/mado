@@ -46,21 +46,6 @@ void ast_free(ASTNode *node) {
             free(node->comparison.value.str_value);
         }
         break;
-    case NODE_LIST_COMPARISON:
-        if (node->list_comparison.field == CMP_PRIORITY) {
-            if (node->list_comparison.num_list) {
-                free(node->list_comparison.num_list->items);
-                free(node->list_comparison.num_list);
-            }
-        } else {
-            if (node->list_comparison.str_list) {
-                for (int i = 0; i < node->list_comparison.str_list->count; i++)
-                    free(node->list_comparison.str_list->items[i]);
-                free(node->list_comparison.str_list->items);
-                free(node->list_comparison.str_list);
-            }
-        }
-        break;
     }
     free(node);
 }
