@@ -26,6 +26,11 @@ char *argv0;
 
 // ================ TYPES
 
+typedef enum {
+    FMT_UNIX,
+    FMT_ONLY_PATH,
+} OutputFormat;
+
 typedef struct Task {
     char *path; // absolute path to task dir
     char *name;
@@ -444,22 +449,29 @@ static Task **tasks_filter(Task **tasks, ASTNode *filter) {
 typedef void (*task_operation_fn)(Task **tasks, void *ctx);
 
 static void task_op_print(Task **tasks, void *ctx) {
-    UNUSED(ctx);
+    OutputFormat fmt = (OutputFormat)(intptr_t)ctx;
     if (!tasks)
         return;
 
     for (int i = 0; i < dalen(tasks); i++) {
         Task *t = tasks[i];
 
-        printf("%s/TASK.md:1:1: STATUS:[%s] NAME:[%s] PRIORITY:[%d] TAGS:[",
-               t->path, t->status, t->name, t->priority);
-
-        for (int j = 0; j < dalen(t->tags); j++) {
-            printf("%s", t->tags[j]);
-            if (j < dalen(t->tags) - 1)
-                printf(",");
+        switch (fmt) {
+        case FMT_ONLY_PATH:
+            printf("%s/TASK.md\n", t->path);
+            break;
+        case FMT_UNIX: // fallthrough
+        default:
+            printf("%s/TASK.md:1:1: STATUS:[%s] NAME:[%s] PRIORITY:[%d] TAGS:[",
+                   t->path, t->status, t->name, t->priority);
+            for (int j = 0; j < dalen(t->tags); j++) {
+                printf("%s", t->tags[j]);
+                if (j < dalen(t->tags) - 1)
+                    printf(",");
+            }
+            printf("]\n");
+            break;
         }
-        printf("]\n");
     }
 }
 
@@ -504,10 +516,14 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
 // ================ ENTRYPOINT
 
 static void usage(void) {
-    die("usage: %s [-h] [-i] [n] [-p query] [-r query]\n"
+    die("usage: %s [-h] [-i] [n] [-f format] [-p query] [-r query]\n"
         "  -h          show this help\n"
         "  -i          initialize main directory in current location\n"
         "  -n          create new task\n"
+        "  -f format   output format for -p:\n"
+        "                unix - path:1:1: STATUS:[...] NAME:[...] ... "
+        "(default)\n"
+        "                path - absolute paths only, one per line\n"
         "  -p query    print tasks using query (e.g. 'priority > 5')\n"
         "  -r query    remove tasks matching query",
         argv0);
@@ -515,47 +531,72 @@ static void usage(void) {
 
 int main(int argc, char **argv) {
     init_regexes();
+    OutputFormat fmt = FMT_UNIX;
+    char *query = NULL;
+    int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0;
 
     ARGBEGIN {
     case 'h': {
-        usage();
-        goto cleanup;
+        do_help = 1;
+        break;
     }
     case 'i': {
-        tasks_dir_init();
-        goto cleanup;
+        do_init = 1;
+        break;
     }
     case 'n': {
+        do_new = 1;
+        break;
+    }
+    case 'f': {
+        char *fmt_str = ARGF();
+        if (!fmt_str)
+            die("-f requires a format argument (unix or path)");
+        if (strcmp(fmt_str, "path") == 0)
+            fmt = FMT_ONLY_PATH;
+        else if (strcmp(fmt_str, "unix") == 0)
+            fmt = FMT_UNIX;
+        else
+            die("Unknown format '%s'. Use 'unix' or 'path'", fmt_str);
+        break;
+    }
+    case 'p': {
+        query = ARGF();
+        if (!query)
+            die("-p requires a query argument");
+        do_print = 1;
+        break;
+    }
+    case 'r': {
+        query = ARGF();
+        if (!query)
+            die("-r requires a query argument");
+        do_remove = 1;
+        break;
+    }
+    default:
+        die("Unknown flag '%c'", ARGC());
+    }
+    ARGEND;
+
+    if (do_help) {
+        usage();
+    } else if (do_init) {
+        tasks_dir_init();
+    } else if (do_new) {
         char *main_dir = find_dir_up(g_main_dir_name);
         if (!main_dir)
             die("Tasks directory not found");
         task_create_dir_and_md(main_dir);
         free(main_dir);
-        goto cleanup;
-    }
-    case 'p': {
-        char *query = ARGF();
-        if (!query)
-            die("-p requires a query argument");
-        tasks_process_with_filter(query, task_op_print, NULL);
-        goto cleanup;
-    }
-    case 'r': {
-        char *query = ARGF();
-        if (!query)
-            die("-r requires a query argument");
+    } else if (do_print) {
+        tasks_process_with_filter(query, task_op_print, (void *)(intptr_t)fmt);
+    } else if (do_remove) {
         tasks_process_with_filter(query, task_op_delete, NULL);
-        goto cleanup;
+    } else {
+        usage();
     }
-    default: {
-        die("Unknown flag '%c'", ARGC());
-    }
-    }
-    ARGEND;
 
-    usage();
-
-cleanup:
     free_regexes();
     return 0;
 }
