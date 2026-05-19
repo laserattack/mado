@@ -88,7 +88,7 @@ tamd -p '(tag = bug or tag = critical) and status = opened'
 tamd -p 'not (priority < 3 or status = closed)'
 tamd -p '(priority > 5 and tag = urgent) or status = reopened'
 
-# Use anyof(...) and allof(...) to match multiple values:
+# Syntactic sugar for matching multiple values:
 tamd -p 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
 tamd -p 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
 tamd -p 'tag = allof(bug, critical)' # Task has BOTH "bug" AND "critical" tags
