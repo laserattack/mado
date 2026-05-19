@@ -158,8 +158,7 @@ This will produce an executable file `./tamd`.
 
 ## Requirements
 
-- **Linux only** (uses GNU extensions: `get_current_dir_name`,
-  `fmemopen`)
+- **Unix system** (Linux, possibly macOS/BSD)
 - **Build dependencies**:
   - C compiler (gcc/clang)
   - `make`
