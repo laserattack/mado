@@ -87,24 +87,45 @@ static void free_regexes() {
 
 // ================ INTERPRETER
 
+static void task_print(Task *t, OutputFormat fmt) {
+    switch (fmt) {
+    case FMT_ONLY_PATH:
+        printf("%s/TASK.md\n", t->path);
+        break;
+    case FMT_UNIX:
+    default:
+        printf("%s/TASK.md:1:1: STATUS:[%s] NAME:[%s] PRIORITY:[%d] TAGS:[",
+               t->path, t->status, t->name, t->priority);
+        for (int j = 0; j < dalen(t->tags); j++) {
+            printf("%s", t->tags[j]);
+            if (j < dalen(t->tags) - 1)
+                printf(",");
+        }
+        printf("]\n");
+        break;
+    }
+}
+
 static void tasks_dir_init() {
-    char *cwd = get_current_dir_name();
+    char *cwd = get_cwd();
     char tasks_dir[PATH_MAX];
     snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd, g_main_dir_name);
 
     if (file_exists(tasks_dir)) {
         printf("Tasks directory already exists: %s\n", tasks_dir);
     } else {
-        if (mkdir(tasks_dir, 0755) == 0)
+        if (mkdir(tasks_dir, 0755) == 0) {
             printf("Created tasks directory: %s\n", tasks_dir);
-        else
+        } else {
+            free_regexes();
             die("Failed to create tasks directory: %s", tasks_dir);
+        }
     }
 
     free(cwd);
 }
 
-static void task_create_dir_and_md(const char *main_dir) {
+static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
 
@@ -114,17 +135,23 @@ static void task_create_dir_and_md(const char *main_dir) {
     char task_path[PATH_MAX - 10];
     snprintf(task_path, sizeof(task_path), "%s/%s", main_dir, dir_name);
 
-    if (file_exists(task_path))
+    if (file_exists(task_path)) {
+        free_regexes();
         die("Task directory already exists: %s", task_path);
-    if (mkdir(task_path, 0755) != 0)
+    }
+    if (mkdir(task_path, 0755) != 0) {
+        free_regexes();
         die("Failed to create task directory: %s", task_path);
+    }
 
     char readme_path[PATH_MAX];
     snprintf(readme_path, sizeof(readme_path), "%s/TASK.md", task_path);
 
     FILE *f = fopen(readme_path, "w");
-    if (!f)
+    if (!f) {
+        free_regexes();
         die("Failed to create TASK.md in: %s", task_path);
+    }
 
     fprintf(f, "- NAME:\n");
     fprintf(f, "- PRIORITY:\n");
@@ -132,7 +159,14 @@ static void task_create_dir_and_md(const char *main_dir) {
     fprintf(f, "- STATUS:\n");
     fclose(f);
 
-    printf("%s:1:1: STATUS:[] NAME:[] PRIORITY:[0] TAGS:[]\n", readme_path);
+    Task task = {
+        .path = task_path,
+        .name = "",
+        .status = "",
+        .time = dir_name,
+    };
+
+    task_print(&task, fmt);
 }
 
 static Task *task_parse(const char *task_dir, const char *task_time) {
@@ -453,26 +487,8 @@ static void task_op_print(Task **tasks, void *ctx) {
     if (!tasks)
         return;
 
-    for (int i = 0; i < dalen(tasks); i++) {
-        Task *t = tasks[i];
-
-        switch (fmt) {
-        case FMT_ONLY_PATH:
-            printf("%s/TASK.md\n", t->path);
-            break;
-        case FMT_UNIX: // fallthrough
-        default:
-            printf("%s/TASK.md:1:1: STATUS:[%s] NAME:[%s] PRIORITY:[%d] TAGS:[",
-                   t->path, t->status, t->name, t->priority);
-            for (int j = 0; j < dalen(t->tags); j++) {
-                printf("%s", t->tags[j]);
-                if (j < dalen(t->tags) - 1)
-                    printf(",");
-            }
-            printf("]\n");
-            break;
-        }
-    }
+    for (int i = 0; i < dalen(tasks); i++)
+        task_print(tasks[i], fmt);
 }
 
 static void task_op_delete(Task **tasks, void *ctx) {
@@ -492,13 +508,18 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
                                       void *ctx) {
     // compile filter
     ASTNode *filter = parse(query);
-    if (!filter)
+    if (!filter) {
+        free_regexes();
         die("Failed to parse query: '%s'", query);
+    }
 
     // find main dir
     char *main_dir = find_dir_up(g_main_dir_name);
-    if (!main_dir)
+    if (!main_dir) {
+        ast_free(filter);
+        free_regexes();
         die("Tasks directory not found");
+    }
 
     // find tasks
     Task **tasks = tasks_get_all(main_dir);
@@ -516,6 +537,7 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
 // ================ ENTRYPOINT
 
 static void usage(void) {
+    free_regexes();
     die("usage: %s [-h] [-i] [n] [-f format] [-p query] [-r query]\n"
         "  -h          show this help\n"
         "  -i          initialize main directory in current location\n"
@@ -550,32 +572,42 @@ int main(int argc, char **argv) {
     }
     case 'f': {
         char *fmt_str = ARGF();
-        if (!fmt_str)
+        if (!fmt_str) {
+            free_regexes();
             die("-f requires a format argument (unix or path)");
-        if (strcmp(fmt_str, "path") == 0)
+        }
+        if (strcmp(fmt_str, "path") == 0) {
             fmt = FMT_ONLY_PATH;
-        else if (strcmp(fmt_str, "unix") == 0)
+        } else if (strcmp(fmt_str, "unix") == 0) {
             fmt = FMT_UNIX;
-        else
+        } else {
+            free_regexes();
             die("Unknown format '%s'. Use 'unix' or 'path'", fmt_str);
+        }
         break;
     }
     case 'p': {
         query = ARGF();
-        if (!query)
+        if (!query) {
+            free_regexes();
             die("-p requires a query argument");
+        }
         do_print = 1;
         break;
     }
     case 'r': {
         query = ARGF();
-        if (!query)
+        if (!query) {
+            free_regexes();
             die("-r requires a query argument");
+        }
         do_remove = 1;
         break;
     }
-    default:
+    default: {
+        free_regexes();
         die("Unknown flag '%c'", ARGC());
+    }
     }
     ARGEND;
 
@@ -585,9 +617,11 @@ int main(int argc, char **argv) {
         tasks_dir_init();
     } else if (do_new) {
         char *main_dir = find_dir_up(g_main_dir_name);
-        if (!main_dir)
+        if (!main_dir) {
+            free_regexes();
             die("Tasks directory not found");
-        task_create_dir_and_md(main_dir);
+        }
+        task_create_dir_and_md(main_dir, fmt);
         free(main_dir);
     } else if (do_print) {
         tasks_process_with_filter(query, task_op_print, (void *)(intptr_t)fmt);

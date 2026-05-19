@@ -1,13 +1,14 @@
 #ifndef FS_H
 #define FS_H
 
-void rmrf(const char *path);
+int rmrf(const char *path);
 int file_exists(const char *path);
 char *find_dir_up(const char *dir_name);
 char *get_cwd();
 
 #ifdef FS_IMPL
 
+#include <errno.h>
 #include <ftw.h>
 #include <libgen.h>
 #include <limits.h>
@@ -19,15 +20,34 @@ char *get_cwd();
 
 #define UNUSED(x) (void)(x)
 
-static int unlink_cb(const char *fpath, const struct stat *sb, int typeflag,
-                     struct FTW *ftwbuf) {
-    UNUSED(sb);
-    UNUSED(typeflag);
-    UNUSED(ftwbuf);
-    return remove(fpath);
-}
+int rmrf(const char *path) {
+    struct stat st;
+    DIR *dir;
+    struct dirent *entry;
+    char fullpath[PATH_MAX];
 
-void rmrf(const char *path) { nftw(path, unlink_cb, 64, FTW_DEPTH | FTW_PHYS); }
+    if (lstat(path, &st) != 0)
+        return -1;
+
+    if (S_ISDIR(st.st_mode)) {
+        dir = opendir(path);
+        if (!dir)
+            return -1;
+
+        while ((entry = readdir(dir)) != NULL) {
+            if (strcmp(entry->d_name, ".") == 0 ||
+                strcmp(entry->d_name, "..") == 0)
+                continue;
+
+            snprintf(fullpath, sizeof(fullpath), "%s/%s", path, entry->d_name);
+            rmrf(fullpath);
+        }
+        closedir(dir);
+        return rmdir(path);
+    } else {
+        return unlink(path);
+    }
+}
 
 int file_exists(const char *path) {
     struct stat st;
@@ -35,12 +55,25 @@ int file_exists(const char *path) {
 }
 
 char *get_cwd(void) {
-    char *dir = get_current_dir_name();
-    if (!dir) {
-        fprintf(stderr, "Failed to get current directory\n");
-        exit(1);
+    char *buf = NULL;
+    size_t size = 128;
+
+    while (1) {
+        buf = malloc(size);
+
+        if (getcwd(buf, size) != NULL)
+            return buf;
+
+        free(buf);
+
+        if (errno != ERANGE) {
+            fprintf(stderr, "Failed to get current directory: %s\n",
+                    strerror(errno));
+            exit(1);
+        }
+
+        size *= 2;
     }
-    return dir;
 }
 
 char *find_dir_up(const char *dir_name) {
@@ -53,7 +86,7 @@ char *find_dir_up(const char *dir_name) {
         snprintf(test, sizeof(test), "%s/%s", path, dir_name);
 
         if (file_exists(test)) {
-            result = realpath(test, NULL);
+            result = strdup(test);
             goto cleanup;
         }
 

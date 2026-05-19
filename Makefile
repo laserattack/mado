@@ -1,5 +1,5 @@
 CC = cc
-CFLAGS = -Wall -Wextra -O2 -std=c99 -D_GNU_SOURCE
+CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
 FLEX = flex
 BISON = bison
 

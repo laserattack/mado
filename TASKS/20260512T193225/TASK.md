@@ -11,6 +11,6 @@ support macOS, BSD, and other Unix-like systems.
 
 ### GNU extensions to replace
 
-1. `get_current_dir_name()`
-2. `fmemopen()` (use `yy_scan_string()`)
-3. `nftw()` (posix ????)
+- [ ] `get_current_dir_name()`
+- [x] `fmemopen()` (use `yy_scan_string()`)
+- [ ] `nftw()` (posix ????)

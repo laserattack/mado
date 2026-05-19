@@ -4,23 +4,19 @@
 
 #include "ast.h"
 
-extern FILE *yyin;
-extern ASTNode *ast_root;
+extern struct yy_buffer_state *yy_scan_string(const char *);
+
 extern int yyparse(void);
 extern void yyrestart(FILE *);
 extern void yylex_destroy(void);
 
-ASTNode *parse(const char *query) {
-    yyin = fmemopen((void *)query, strlen(query), "r");
-    if (!yyin)
-        return NULL;
+extern ASTNode *ast_root;
 
+ASTNode *parse(const char *query) {
+    yy_scan_string(query);
     ast_root = NULL;
     yyparse();
-    fclose(yyin);
-    yyrestart(NULL);
     yylex_destroy();
-
     return ast_root;
 }
 
