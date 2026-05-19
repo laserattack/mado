@@ -5,6 +5,7 @@
 #include "ast.h"
 
 extern struct yy_buffer_state *yy_scan_string(const char *);
+extern void set_query_string(const char *query); // in lexer, for error print
 
 extern int yyparse(void);
 extern void yyrestart(FILE *);
@@ -13,6 +14,7 @@ extern void yylex_destroy(void);
 extern ASTNode *ast_root;
 
 ASTNode *parse(const char *query) {
+    set_query_string(query);
     yy_scan_string(query);
     ast_root = NULL;
     yyparse();

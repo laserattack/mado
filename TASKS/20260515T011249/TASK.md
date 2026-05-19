@@ -1,7 +1,7 @@
 - NAME: Improve error messages with position information
 - PRIORITY: 20
 - TAGS: errors, ux, parser, lexer
-- STATUS: opened
+- STATUS: closed
 
 ## Current Problem
 

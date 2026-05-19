@@ -1,7 +1,7 @@
 - NAME: Remove GNU extensions for POSIX compliance
 - PRIORITY: 10
 - TAGS: portability, posix, refactor
-- STATUS: opened
+- STATUS: closed
 
 ### Description
 

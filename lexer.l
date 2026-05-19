@@ -4,6 +4,13 @@
 
 #include "parser.tab.h"
 
+int yycolno = 1;
+static const char *g_current_query = NULL;
+
+void set_query_string(const char *query) {
+    g_current_query = query;
+}
+
 int yywrap(void) {
     return 1;
 }
@@ -11,10 +18,18 @@ int yywrap(void) {
 void yyerror(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
-    fprintf(stderr, "Error: ");
+    int col = yycolno - yyleng;
+    if (col < 1) col = 1;
+    fprintf(stderr, "Error at line %d, column %d: ", yylineno, col);
     vfprintf(stderr, fmt, args);
     va_end(args);
     fprintf(stderr, "\n");
+    if (g_current_query) {
+        fprintf(stderr, "%s\n", g_current_query);
+        for (int i = 1; i < col; i++)
+            fprintf(stderr, " ");
+        fprintf(stderr, "^\n");
+    }
     exit(1);
 }
 
@@ -43,63 +58,69 @@ NEWLINE            \n
 
 %%
 
-{WHITESPACE}+   { /* ignore */ }
-{NEWLINE}+      { /* ignore */ }
+{WHITESPACE}+   { yycolno += yyleng; }
+{NEWLINE}+      { yylineno++; yycolno = 1; }
 
-{PRIORITY}      { return TOKEN_PRIORITY; }
-{STATUS}        { return TOKEN_STATUS; }
-{TIME}          { return TOKEN_TIME; }
-{NAME}          { return TOKEN_NAME; }
-{TAG}           { return TOKEN_TAG; }
-{AND}           { return TOKEN_AND; }
-{OR}            { return TOKEN_OR; }
-{NOT}           { return TOKEN_NOT; }
-{ALL}           { return TOKEN_ALL; }
+{PRIORITY}      { yycolno += yyleng; return TOKEN_PRIORITY; }
+{STATUS}        { yycolno += yyleng; return TOKEN_STATUS; }
+{TIME}          { yycolno += yyleng; return TOKEN_TIME; }
+{NAME}          { yycolno += yyleng; return TOKEN_NAME; }
+{TAG}           { yycolno += yyleng; return TOKEN_TAG; }
+{AND}           { yycolno += yyleng; return TOKEN_AND; }
+{OR}            { yycolno += yyleng; return TOKEN_OR; }
+{NOT}           { yycolno += yyleng; return TOKEN_NOT; }
+{ALL}           { yycolno += yyleng; return TOKEN_ALL; }
 
-{ALLOF}         { return TOKEN_ALLOF; }
-{ANYOF}         { return TOKEN_ANYOF; }
+{ALLOF}         { yycolno += yyleng; return TOKEN_ALLOF; }
+{ANYOF}         { yycolno += yyleng; return TOKEN_ANYOF; }
 
-","             { return TOKEN_COMMA; }
-">"             { return TOKEN_GT; }
-"<"             { return TOKEN_LT; }
-">="            { return TOKEN_GE; }
-"<="            { return TOKEN_LE; }
-"="             { return TOKEN_EQ; }
-"!="            { return TOKEN_NE; }
-"~"             { return TOKEN_TILDE; }
-"!~"            { return TOKEN_NE_TILDE; }
-"("             { return TOKEN_LPAREN; }
-")"             { return TOKEN_RPAREN; }
+","             { yycolno += yyleng; return TOKEN_COMMA; }
+">"             { yycolno += yyleng; return TOKEN_GT; }
+"<"             { yycolno += yyleng; return TOKEN_LT; }
+">="            { yycolno += yyleng; return TOKEN_GE; }
+"<="            { yycolno += yyleng; return TOKEN_LE; }
+"="             { yycolno += yyleng; return TOKEN_EQ; }
+"!="            { yycolno += yyleng; return TOKEN_NE; }
+"~"             { yycolno += yyleng; return TOKEN_TILDE; }
+"!~"            { yycolno += yyleng; return TOKEN_NE_TILDE; }
+"("             { yycolno += yyleng; return TOKEN_LPAREN; }
+")"             { yycolno += yyleng; return TOKEN_RPAREN; }
 
 
 {NUMBER}              {
                           yylval.num = atoi(yytext);
+                          yycolno += yyleng;
                           return TOKEN_NUMBER;
                       }
 
 {TIMEFORMAT}          {
                           yylval.str = strdup(yytext);
+                          yycolno += yyleng;
                           return TOKEN_TIME_VALUE;
                       }
 
 {QUOTED_TIMEFORMAT}   {
                          yytext[strlen(yytext)-1] = '\0';
                          yylval.str = strdup(yytext+1);
+                         yycolno += yyleng;
                          return TOKEN_TIME_VALUE;
                       }
 
 {IDENT}               {
                           yylval.str = strdup(yytext);
+                          yycolno += yyleng;
                           return TOKEN_IDENT;
                       }
 
 {STRING}              {
                          yytext[strlen(yytext)-1] = '\0';
                          yylval.str = strdup(yytext+1);
+                         yycolno += yyleng;
                          return TOKEN_STRING;
                       }
 
 .                     {
+                          yycolno += yyleng;
                           yyerror("unexpected char: '%s'", yytext);
                       }
 
