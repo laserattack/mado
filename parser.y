@@ -141,16 +141,31 @@ static void append_number(NumList *list, int item) {
 %type <str> string
 %type <num> cmp_op string_field list_modifier
 
+%destructor { ast_free($$); } <node>
+%destructor { free($$); } <str>
+%destructor {
+    for (int i = 0; i < $$->count; i++) free($$->items[i]);
+    free($$->items);
+    free($$);
+} <str_list>
+%destructor { free($$->items); free($$); } <num_list>
+
 %left TOKEN_OR
 %left TOKEN_AND
 %right TOKEN_NOT
 
 %start input
 
+%define parse.error verbose
+
 %%
 
 input:
     expr { ast_root = $1; }
+    | error {
+        if (ast_root) { ast_free(ast_root); ast_root = NULL; }
+        YYABORT;
+      }
     ;
 
 expr:

@@ -4,8 +4,8 @@
 
 #include "parser.tab.h"
 
-int yycolno = 1;
 static const char *g_current_query = NULL;
+int yycolno = 1;
 
 void set_query_string(const char *query) {
     g_current_query = query;
@@ -15,14 +15,11 @@ int yywrap(void) {
     return 1;
 }
 
-void yyerror(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
+static void some_error(const char *prefix, const char *fmt, va_list args) {
     int col = yycolno - yyleng;
     if (col < 1) col = 1;
-    fprintf(stderr, "Error at line %d, column %d: ", yylineno, col);
+    fprintf(stderr, "%s at line %d, column %d: ", prefix, yylineno, col);
     vfprintf(stderr, fmt, args);
-    va_end(args);
     fprintf(stderr, "\n");
     if (g_current_query) {
         fprintf(stderr, "%s\n", g_current_query);
@@ -30,7 +27,20 @@ void yyerror(const char *fmt, ...) {
             fprintf(stderr, " ");
         fprintf(stderr, "^\n");
     }
-    exit(1);
+}
+
+void yyerror(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    some_error("Error", fmt, args);
+    va_end(args);
+}
+
+void lexerror(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    some_error("Warning", fmt, args);
+    va_end(args);
 }
 
 %}
@@ -121,7 +131,7 @@ NEWLINE            \n
 
 .                     {
                           yycolno += yyleng;
-                          yyerror("unexpected char: '%s'", yytext);
+                          lexerror("unexpected char: '%s'. Trying to skip...", yytext);
                       }
 
 %%
