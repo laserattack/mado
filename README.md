@@ -96,6 +96,31 @@ tamd -p 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
 tamd -p 'tag = allof(bug, critical)' # Task has BOTH "bug" AND "critical" tags
 ```
 
+## Output Formats
+
+The `-f` flag controls how tasks are displayed:
+
+``` bash
+# Default unix format: path:1:1: fields
+tamd -p 'all'
+# /home/user/project/TASKS/20260516T161611/TASK.md:1:1: STATUS:[opened] NAME:[Fix login bug] PRIORITY:[10] TAGS:[bug,critical]
+# Compatible with Emacs compile buffer and other tools that parse file:line:col
+
+# Paths only — useful for piping to other tools
+tamd -p 'all' -f path
+# /home/user/project/TASKS/20260516T161611/TASK.md
+# Search across task bodies with grep
+grep 'match' $(tamd -p 'all' -f path)
+# /home/user/project/TASKS/20260512T224126/TASK.md:Operator '=' remains for exact matches.
+
+# Newline-delimited JSON for scripts and jq
+tamd -p 'all' -f jsonl
+# {"time":"20260516T161611","name":"Fix login bug","priority":10,...}
+# Pipe JSON output to jq for advanced processing
+tamd -p 'priority > 5' -f jsonl | jq '.name'
+tamd -p 'all' -f jsonl | jq -s 'group_by(.status)'
+```
+
 ## Query Syntax
 
 The query language supports filtering tasks using operators and
@@ -127,7 +152,7 @@ keywords
 | Type | Description | Format | Examples |
 |------|-------------|--------|----------|
 | **number** | Integer value | 0-999 | `0`, `10`, `999` |
-| **string** | Text value | Can be unquoted or quoted with `"` or `'` | `bug`, `"fix login"`, `'critical'` |
+| **string** | Text value | Unquoted: `[a-zA-Z_][a-zA-Z0-9_-]*` or quoted: `"..."` or `'...'` | `bug`, `"fix login"`, `'проблема'` |
 | **timestamp** | Creation time of task | 4, 6 or 8 digits + optional (`T` + 0, 2, 4 or 6 digits) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
 
 ### Keywords
@@ -146,7 +171,7 @@ keywords
 > `anyof(...)` expands with `or`, `allof(...)` expands with `and`.
 > Examples:
 > - `status = anyof(opened, reopened)` is equivalent to `status = opened or status = reopened`
-> - `tag ~ allof(bug, crit)` is equivalent to `tag ~ bug and tag ~ crit`
+> - `tag ~ allof(bug, crit, fix)` is equivalent to `tag ~ bug and tag ~ crit and tag ~ fix`
 
 ## Installation
 
