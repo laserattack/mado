@@ -103,7 +103,7 @@ The `-f` flag controls how tasks are displayed:
 ``` bash
 # Default unix format: path:1:1: fields
 tamd -p 'all'
-# /home/user/project/TASKS/20260516T161611/TASK.md:1:1: STATUS:[opened] NAME:[Fix login bug] PRIORITY:[10] TAGS:[bug,critical]
+# /home/user/project/TASKS/20260516T161611/TASK.md:1:1: TIME:[20260516T123214] NAME:[cmp operators for strings] PRIORITY:[10] STATUS:[closed] TAGS:[feat,search]
 # Compatible with Emacs compile buffer and other tools that parse file:line:col
 
 # Paths only — useful for piping to other tools
@@ -115,7 +115,7 @@ grep 'match' $(tamd -p 'all' -f path)
 
 # Newline-delimited JSON for scripts and jq
 tamd -p 'all' -f jsonl
-# {"time":"20260516T161611","name":"Fix login bug","priority":10,...}
+# {"time":"20260516T161611","name":"Fix login bug","priority":10,"status":"opened","tags":["bug","critical"],"path":"/home/user/project/TASKS/20260516T161611/TASK.md"}
 # Pipe JSON output to jq for advanced processing
 tamd -p 'priority > 5' -f jsonl | jq '.name'
 tamd -p 'all' -f jsonl | jq -s 'group_by(.status)'

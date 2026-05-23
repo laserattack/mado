@@ -136,8 +136,9 @@ static void task_print(Task *t, OutputFormat fmt) {
         break;
     case FMT_UNIX:
     default:
-        printf("%s/TASK.md:1:1: STATUS:[%s] NAME:[%s] PRIORITY:[%d] TAGS:[",
-               t->path, t->status, t->name, t->priority);
+        printf("%s/TASK.md:1:1: TIME:[%s] NAME:[%s] PRIORITY:[%d] STATUS:[%s] "
+               "TAGS:[",
+               t->path, t->time, t->name, t->priority, t->status);
         for (int j = 0; j < dalen(t->tags); j++) {
             printf("%s", t->tags[j]);
             if (j < dalen(t->tags) - 1)
