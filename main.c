@@ -533,17 +533,18 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
 // ================ ENTRYPOINT
 
 static void usage(void) {
-    die("usage: %s [-h] [-i] [n] [-f format] [-p query] [-r query]\n"
+    die("usage: %s [-h] [-i] [n] [-D dir] [-f format] [-p query] [-r query]\n"
         "  -h          show this help\n"
         "  -i          initialize main directory in current location\n"
         "  -n          create new task\n"
+        "  -D dir      use custom main directory name instead of '%s'\n"
         "  -f format   output format for -p:\n"
-        "                unix - path:1:1: STATUS:[...] NAME:[...] ... "
+        "                unix: path:1:1: STATUS:[...] NAME:[...] ... "
         "(default)\n"
-        "                path - absolute paths only, one per line\n"
+        "                path: absolute paths only, one per line\n"
         "  -p query    print tasks using query (e.g. 'priority > 5')\n"
         "  -r query    remove tasks matching query",
-        argv0);
+        argv0, g_main_dir_name);
 }
 
 int main(int argc, char **argv) {
@@ -561,6 +562,14 @@ int main(int argc, char **argv) {
     }
     case 'i': {
         do_init = 1;
+        break;
+    }
+    case 'D': {
+        const char *dir_arg = ARGF();
+        if (!dir_arg) {
+            die("-D requires a directory name argument");
+        }
+        g_main_dir_name = dir_arg;
         break;
     }
     case 'n': {

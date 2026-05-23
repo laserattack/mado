@@ -132,7 +132,7 @@ keywords
 
 | Keyword | Type    | Operators                      | Example                           |
 |---------|---------|--------------------------------|-----------------------------------|
-| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=` | `priority > 5`, `priority != 10` |
+| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~` | `priority > 5`, `priority != 10` |
 | `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
