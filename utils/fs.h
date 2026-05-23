@@ -8,8 +8,8 @@ char *get_cwd();
 
 #ifdef FS_IMPL
 
+#include <dirent.h>
 #include <errno.h>
-#include <ftw.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdio.h>
