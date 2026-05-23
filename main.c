@@ -579,14 +579,14 @@ int main(int argc, char **argv) {
     case 'f': {
         char *fmt_str = ARGF();
         if (!fmt_str) {
-            die("-f requires a format argument (unix or path)");
+            die("-f requires a format argument");
         }
         if (strcmp(fmt_str, "path") == 0) {
             fmt = FMT_ONLY_PATH;
         } else if (strcmp(fmt_str, "unix") == 0) {
             fmt = FMT_UNIX;
         } else {
-            die("Unknown format '%s'. Use 'unix' or 'path'", fmt_str);
+            die("Unknown format '%s'", fmt_str);
         }
         break;
     }
