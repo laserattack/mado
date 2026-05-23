@@ -3,7 +3,7 @@
 A command-line task manager that stores tasks as markdown files and
 supports powerful filtering with a query language
 
-![](./static/image.jpg)
+![](./static/repo_image.jpg)
 
 ## Features
 
