@@ -29,6 +29,7 @@ char *argv0;
 typedef enum {
     FMT_UNIX,
     FMT_ONLY_PATH,
+    FMT_JSONL,
 } OutputFormat;
 
 typedef struct Task {
@@ -87,8 +88,49 @@ static void free_regexes() {
 
 // ================ INTERPRETER
 
+static void print_json_string(const char *str) {
+    putchar('"');
+    for (const char *p = str; *p; p++) {
+        switch (*p) {
+        case '"':
+            printf("\\\"");
+            break;
+        case '\\':
+            printf("\\\\");
+            break;
+        default:
+            putchar(*p);
+        }
+    }
+    putchar('"');
+}
+
 static void task_print(Task *t, OutputFormat fmt) {
     switch (fmt) {
+    case FMT_JSONL: {
+        printf("{");
+        printf("\"time\":");
+        print_json_string(t->time);
+        printf(",\"name\":");
+        print_json_string(t->name);
+        printf(",\"priority\":%d", t->priority);
+        printf(",\"status\":");
+        print_json_string(t->status);
+        printf(",\"tags\":[");
+        int first = 1;
+        for (int j = 0; j < dalen(t->tags); j++) {
+            if (strcmp(t->tags[j], "") == 0)
+                continue;
+            if (!first)
+                printf(",");
+            print_json_string(t->tags[j]);
+            first = 0;
+        }
+        printf("]");
+        printf(",\"path\":\"%s/TASK.md\"", t->path);
+        printf("}\n");
+        break;
+    }
     case FMT_ONLY_PATH:
         printf("%s/TASK.md\n", t->path);
         break;
@@ -542,6 +584,7 @@ static void usage(void) {
         "                unix: path:1:1: STATUS:[...] NAME:[...] ... "
         "(default)\n"
         "                path: absolute paths only, one per line\n"
+        "                jsonl: newline-delimited JSON\n"
         "  -p query    print tasks using query (e.g. 'priority > 5')\n"
         "  -r query    remove tasks matching query",
         argv0, g_main_dir_name);
@@ -585,6 +628,8 @@ int main(int argc, char **argv) {
             fmt = FMT_ONLY_PATH;
         } else if (strcmp(fmt_str, "unix") == 0) {
             fmt = FMT_UNIX;
+        } else if (strcmp(fmt_str, "jsonl") == 0) {
+            fmt = FMT_JSONL;
         } else {
             die("Unknown format '%s'", fmt_str);
         }
