@@ -1,4 +1,4 @@
-# tamd - tasks and markdown
+# tamd — tasks and markdown
 
 A command-line task manager that stores tasks as markdown files and
 supports powerful filtering with a query language
@@ -8,7 +8,7 @@ supports powerful filtering with a query language
 ## Features
 
 - **Per-project isolation**: Each project has its own `TASKS/`
-  directory, similar to `.git` - no global directories are used. This
+  directory, similar to `.git` — no global directories are used. This
   allows you to version‑control `TASKS/` alongside your code
 - **Task storage**: Tasks stored as `TASK.md` files in timestamped
   directories (`YYYYMMDDTHHMMSS/TASK.md`) in `TASKS/` directory.  The
@@ -78,7 +78,7 @@ tamd -p 'name = login'
 
 # Filter by task name (substring)
 tamd -p 'name ~ login'
-tamd -p 'name ~ "fix login"' # multiple words - quotes required
+tamd -p 'name ~ "fix login"' # multiple words — quotes required
 
 # Filter by creation time
 tamd -p 'time ~ 20260516' # Tasks created on 2026-05-16
@@ -113,12 +113,13 @@ tamd -p 'all' -f path
 grep 'match' $(tamd -p 'all' -f path)
 # /home/user/project/TASKS/20260512T224126/TASK.md:Operator '=' remains for exact matches.
 
-# Newline-delimited JSON for scripts and jq
+# Newline-delimited JSON for scripts
 tamd -p 'all' -f jsonl
 # {"time":"20260516T161611","name":"Fix login bug","priority":10,"status":"opened","tags":["bug","critical"],"path":"/home/user/project/TASKS/20260516T161611/TASK.md"}
 # Pipe JSON output to jq for advanced processing
 tamd -p 'priority > 5' -f jsonl | jq '.name'
 tamd -p 'all' -f jsonl | jq -s 'group_by(.status)'
+tamd -p 'all' -f jsonl | jq -s 'sort_by(.priority)'
 ```
 
 ## Query Syntax
@@ -197,4 +198,4 @@ This will produce an executable file `./tamd`
 Inspired by [Compiler for a Query
 Language](https://youtu.be/8NdRGmp70Go?si=hZ7cQ-PBZQXqD9mG) by
 Tsoding. In the video, he outlined the specification for such a system
-but didn't release the code - so this is my own implementation
+but didn't release the code — so this is my own implementation
