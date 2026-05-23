@@ -1,18 +1,20 @@
 # tamd - tasks and markdown
 
 A command-line task manager that stores tasks as markdown files and
-supports powerful filtering with a query language.
+supports powerful filtering with a query language
+
+![](./static/image.jpg)
 
 ## Features
 
 - **Per-project isolation**: Each project has its own `TASKS/`
   directory, similar to `.git` - no global directories are used. This
-  allows you to version‑control `TASKS/` alongside your code.
+  allows you to version‑control `TASKS/` alongside your code
 - **Task storage**: Tasks stored as `TASK.md` files in timestamped
   directories (`YYYYMMDDTHHMMSS/TASK.md`) in `TASKS/` directory.  The
   task directory can also contain any additional files related to the
   task — attachments, screenshots, logs, scripts, etc. Everything
-  stays organized in one place.
+  stays organized in one place
 
 ## Usage Example
 
@@ -31,7 +33,7 @@ tamd -i
 Once the `TASKS/` directory is initialized, you can work with tasks
 from any subdirectory within the project — just like Git, tamd
 automatically finds the nearest TASKS/ directory by walking up the
-file tree.
+file tree
 
 ``` bash
 # Create your first task
@@ -154,7 +156,7 @@ Clone the repository and build:
 make
 ```
 
-This will produce an executable file `./tamd`.
+This will produce an executable file `./tamd`
 
 ## Requirements
 
@@ -170,4 +172,4 @@ This will produce an executable file `./tamd`.
 Inspired by [Compiler for a Query
 Language](https://youtu.be/8NdRGmp70Go?si=hZ7cQ-PBZQXqD9mG) by
 Tsoding. In the video, he outlined the specification for such a system
-but didn't release the code - so this is my own implementation.
+but didn't release the code - so this is my own implementation
