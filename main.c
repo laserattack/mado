@@ -328,8 +328,10 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 return task_val >= cond_val;
             case CMP_LE:
                 return task_val <= cond_val;
+            case CMP_TILDE: // fallthrough
             case CMP_EQ:
                 return task_val == cond_val;
+            case CMP_NTILDE: // fallthrough
             case CMP_NE:
                 return task_val != cond_val;
             default:
@@ -346,10 +348,10 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 } else if (node->comparison.cmp == CMP_NE) {
                     if (strcmp(task->tags[i], cond_tag) == 0)
                         return 0;
-                } else if (node->comparison.cmp == CMP_SUBSTR) {
+                } else if (node->comparison.cmp == CMP_TILDE) {
                     if (strstr(task->tags[i], cond_tag) != NULL)
                         return 1;
-                } else if (node->comparison.cmp == CMP_NSUBSTR) {
+                } else if (node->comparison.cmp == CMP_NTILDE) {
                     if (strstr(task->tags[i], cond_tag) != NULL)
                         return 0;
                 } else if (node->comparison.cmp == CMP_GT) {
@@ -367,7 +369,7 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 }
             }
             return (node->comparison.cmp == CMP_NE ||
-                    node->comparison.cmp == CMP_NSUBSTR);
+                    node->comparison.cmp == CMP_NTILDE);
         } // case CMP_TAG
 
         case CMP_STATUS: {
@@ -379,9 +381,9 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 return strcmp(task->status, cond_status) == 0;
             case CMP_NE:
                 return strcmp(task->status, cond_status) != 0;
-            case CMP_SUBSTR:
+            case CMP_TILDE:
                 return strstr(task->status, cond_status) != NULL;
-            case CMP_NSUBSTR:
+            case CMP_NTILDE:
                 return strstr(task->status, cond_status) == NULL;
             case CMP_GT:
                 return strcmp(task->status, cond_status) > 0;
@@ -405,9 +407,9 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 return strcmp(task->time, cond_time) == 0;
             case CMP_NE:
                 return strcmp(task->time, cond_time) != 0;
-            case CMP_SUBSTR:
+            case CMP_TILDE:
                 return strstr(task->time, cond_time) != NULL;
-            case CMP_NSUBSTR:
+            case CMP_NTILDE:
                 return strstr(task->time, cond_time) == NULL;
             case CMP_GT:
                 return strcmp(task->time, cond_time) > 0;
@@ -431,9 +433,9 @@ static int task_matches_condition(Task *task, ASTNode *node) {
                 return strcmp(task->name, cond_name) == 0;
             case CMP_NE:
                 return strcmp(task->name, cond_name) != 0;
-            case CMP_SUBSTR:
+            case CMP_TILDE:
                 return strstr(task->name, cond_name) != NULL;
-            case CMP_NSUBSTR:
+            case CMP_NTILDE:
                 return strstr(task->name, cond_name) == NULL;
             case CMP_GT:
                 return strcmp(task->name, cond_name) > 0;

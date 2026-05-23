@@ -1,7 +1,7 @@
 - NAME: Поддержка русских символов и тд
 - PRIORITY: 10
 - TAGS: unicode, feat, search
-- STATUS: opened
+- STATUS: not need
 
 Щас только если в ковычках строка
 

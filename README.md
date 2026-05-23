@@ -109,8 +109,8 @@ keywords
 | `<=` | Less than or equal |
 | `=` | Equal / exact match |
 | `!=` | Not equal |
-| `~` | Substring match (contains) |
-| `!~` | Not contains (substring absence) |
+| `~` | Contains |
+| `!~` | Not contains |
 
 ### Logical Operators
 

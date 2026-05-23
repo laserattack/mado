@@ -1,0 +1,4 @@
+- NAME: The ability to specify the name of the main directory (TASKS by default)
+- PRIORITY: 10
+- TAGS: feat, flag
+- STATUS: opened

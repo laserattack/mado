@@ -62,8 +62,8 @@ ANYOF              anyof
 
 TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8})(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
-IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
 STRING             \"[^\"]*\"|\'[^\']*\'
+IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
 NEWLINE            \n
 
 %%
@@ -92,7 +92,7 @@ NEWLINE            \n
 "="             { yycolno += yyleng; return TOKEN_EQ; }
 "!="            { yycolno += yyleng; return TOKEN_NE; }
 "~"             { yycolno += yyleng; return TOKEN_TILDE; }
-"!~"            { yycolno += yyleng; return TOKEN_NE_TILDE; }
+"!~"            { yycolno += yyleng; return TOKEN_NTILDE; }
 "("             { yycolno += yyleng; return TOKEN_LPAREN; }
 ")"             { yycolno += yyleng; return TOKEN_RPAREN; }
 
@@ -106,20 +106,20 @@ NEWLINE            \n
 {TIMEFORMAT}          {
                           yylval.str = strdup(yytext);
                           yycolno += yyleng;
-                          return TOKEN_TIME_VALUE;
+                          return TOKEN_TIMESTAMP;
                       }
 
 {QUOTED_TIMEFORMAT}   {
                          yytext[strlen(yytext)-1] = '\0';
                          yylval.str = strdup(yytext+1);
                          yycolno += yyleng;
-                         return TOKEN_TIME_VALUE;
+                         return TOKEN_TIMESTAMP;
                       }
 
 {IDENT}               {
                           yylval.str = strdup(yytext);
                           yycolno += yyleng;
-                          return TOKEN_IDENT;
+                          return TOKEN_STRING;
                       }
 
 {STRING}              {

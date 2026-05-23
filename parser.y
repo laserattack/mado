@@ -130,15 +130,14 @@ static void append_number(NumList *list, int item) {
 %token TOKEN_ALL
 %token TOKEN_ALLOF TOKEN_ANYOF
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
-%token TOKEN_NE TOKEN_TILDE TOKEN_NE_TILDE
+%token TOKEN_NE TOKEN_TILDE TOKEN_NTILDE
 %token TOKEN_LPAREN TOKEN_RPAREN TOKEN_COMMA
 
 %token <num> TOKEN_NUMBER
-%token <str> TOKEN_IDENT TOKEN_STRING TOKEN_TIME_VALUE
+%token <str> TOKEN_STRING TOKEN_TIMESTAMP
 %type <node> expr condition condition_priority condition_string condition_time
 %type <str_list> string_list time_list
 %type <num_list> number_list
-%type <str> string
 %type <num> cmp_op string_field list_modifier
 
 %destructor { ast_free($$); } <node>
@@ -193,7 +192,7 @@ condition_priority:
     ;
 
 condition_time:
-    TOKEN_TIME cmp_op TOKEN_TIME_VALUE {
+    TOKEN_TIME cmp_op TOKEN_TIMESTAMP {
         $$ = create_comparison(CMP_TIME, $2, 0, $3);
     }
     | TOKEN_TIME cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
@@ -202,7 +201,7 @@ condition_time:
     ;
 
 condition_string:
-    string_field cmp_op string {
+    string_field cmp_op TOKEN_STRING {
         $$ = create_comparison($1, $2, 0, $3);
     }
     | string_field cmp_op list_modifier TOKEN_LPAREN string_list TOKEN_RPAREN {
@@ -211,8 +210,8 @@ condition_string:
     ;
 
 string_list:
-    string { $$ = create_string_list($1); }
-    | string_list TOKEN_COMMA string {
+    TOKEN_STRING { $$ = create_string_list($1); }
+    | string_list TOKEN_COMMA TOKEN_STRING {
         append_string($1, $3);
         $$ = $1;
     }
@@ -227,8 +226,8 @@ number_list:
     ;
 
 time_list:
-    TOKEN_TIME_VALUE { $$ = create_string_list($1); }
-    | time_list TOKEN_COMMA TOKEN_TIME_VALUE {
+    TOKEN_TIMESTAMP { $$ = create_string_list($1); }
+    | time_list TOKEN_COMMA TOKEN_TIMESTAMP {
         append_string($1, $3);
         $$ = $1;
     }
@@ -237,8 +236,8 @@ time_list:
 cmp_op:
     TOKEN_EQ         { $$ = CMP_EQ; }
     | TOKEN_NE       { $$ = CMP_NE; }
-    | TOKEN_TILDE    { $$ = CMP_SUBSTR; }
-    | TOKEN_NE_TILDE { $$ = CMP_NSUBSTR; }
+    | TOKEN_TILDE    { $$ = CMP_TILDE; }
+    | TOKEN_NTILDE   { $$ = CMP_NTILDE; }
     | TOKEN_GT       { $$ = CMP_GT; }
     | TOKEN_LT       { $$ = CMP_LT; }
     | TOKEN_GE       { $$ = CMP_GE; }
@@ -254,11 +253,6 @@ string_field:
     TOKEN_TAG      { $$ = CMP_TAG; }
     | TOKEN_STATUS { $$ = CMP_STATUS; }
     | TOKEN_NAME   { $$ = CMP_NAME; }
-    ;
-
-string:
-    TOKEN_STRING
-    | TOKEN_IDENT
     ;
 
 %%

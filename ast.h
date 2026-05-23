@@ -23,10 +23,10 @@ typedef enum {
     CMP_LT,
     CMP_EQ,
     CMP_NE,
-    CMP_SUBSTR,
-    CMP_NSUBSTR,
     CMP_GE,
-    CMP_LE
+    CMP_LE,
+    CMP_TILDE,
+    CMP_NTILDE
 } ComparisonOperator;
 
 typedef struct ASTNode {
