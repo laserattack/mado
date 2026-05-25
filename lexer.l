@@ -80,7 +80,6 @@ NEWLINE            \n
 {OR}            { yycolno += yyleng; return TOKEN_OR; }
 {NOT}           { yycolno += yyleng; return TOKEN_NOT; }
 {ALL}           { yycolno += yyleng; return TOKEN_ALL; }
-
 {ALLOF}         { yycolno += yyleng; return TOKEN_ALLOF; }
 {ANYOF}         { yycolno += yyleng; return TOKEN_ANYOF; }
 
@@ -110,23 +109,59 @@ NEWLINE            \n
                       }
 
 {QUOTED_TIMEFORMAT}   {
-                         yytext[strlen(yytext)-1] = '\0';
-                         yylval.str = strdup(yytext+1);
-                         yycolno += yyleng;
-                         return TOKEN_TIMESTAMP;
+                          yytext[strlen(yytext)-1] = '\0';
+                          yylval.str = strdup(yytext+1);
+                          yycolno += yyleng;
+                          return TOKEN_TIMESTAMP;
                       }
 
 {IDENT}               {
+                          // trying to guess the token
+                          static const struct {
+                              const char *word;
+                              int token;
+                          } keywords[] = {
+                              {"priority", TOKEN_PRIORITY},
+                              {"status",   TOKEN_STATUS},
+                              {"time",     TOKEN_TIME},
+                              {"name",     TOKEN_NAME},
+                              {"tag",      TOKEN_TAG},
+                              {"and",      TOKEN_AND},
+                              {"or",       TOKEN_OR},
+                              {"not",      TOKEN_NOT},
+                              {"all",      TOKEN_ALL},
+                              {"allof",    TOKEN_ALLOF},
+                              {"anyof",    TOKEN_ANYOF},
+                          };
+                          static const int n_keywords =
+                              sizeof(keywords) / sizeof(keywords[0]);
+
+                          int matches_count = 0, matched_token = 0;
+
+                          for (int i = 0; i < n_keywords; i++) {
+                              if (yyleng <= (int)strlen(keywords[i].word) &&
+                                  strncmp(yytext, keywords[i].word, yyleng) == 0) {
+                                  matches_count++;
+                                  matched_token = keywords[i].token;
+                              }
+                          }
+
+                          if (matches_count == 1) {
+                              yycolno += yyleng;
+                              return matched_token;
+                          }
+
+                          // couldn't guess the token => default string
                           yylval.str = strdup(yytext);
                           yycolno += yyleng;
                           return TOKEN_STRING;
                       }
 
 {STRING}              {
-                         yytext[strlen(yytext)-1] = '\0';
-                         yylval.str = strdup(yytext+1);
-                         yycolno += yyleng;
-                         return TOKEN_STRING;
+                          yytext[strlen(yytext)-1] = '\0';
+                          yylval.str = strdup(yytext+1);
+                          yycolno += yyleng;
+                          return TOKEN_STRING;
                       }
 
 .                     {

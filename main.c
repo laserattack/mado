@@ -43,8 +43,14 @@ typedef struct Task {
 
 // ================ GLOBAL
 
-static const char *g_main_dir_name = "TASKS";
-static const int g_max_header_lines = 30;
+// config
+static struct {
+    const char *main_dir_name;
+    int max_header_lines;
+} g_config = {
+    .main_dir_name = "TASKS",
+    .max_header_lines = 30,
+};
 
 // precompiled regexp for file parsing
 static regex_t g_task_dir_regex;
@@ -152,7 +158,8 @@ static void task_print(Task *t, OutputFormat fmt) {
 static void tasks_dir_init() {
     char *cwd = get_cwd();
     char tasks_dir[PATH_MAX];
-    snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd, g_main_dir_name);
+    snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd,
+             g_config.main_dir_name);
 
     if (file_exists(tasks_dir)) {
         printf("Tasks directory already exists: %s\n", tasks_dir);
@@ -229,7 +236,7 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
 
     int lines_processed = 0;
 
-    while (lines_processed < g_max_header_lines &&
+    while (lines_processed < g_config.max_header_lines &&
            (read = getline(&line, &line_len, f)) != -1) {
         if (read > 0 && line[read - 1] == '\n')
             line[read - 1] = '\0';
@@ -554,7 +561,7 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
     }
 
     // find main dir
-    char *main_dir = find_dir_up(g_main_dir_name);
+    char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
         ast_free(filter);
         die("Tasks directory not found");
@@ -588,7 +595,7 @@ static void usage(void) {
         "                jsonl: newline-delimited JSON\n"
         "  -p query    print tasks using query (e.g. 'priority > 5')\n"
         "  -r query    remove tasks matching query",
-        argv0, g_main_dir_name);
+        argv0, g_config.main_dir_name);
 }
 
 int main(int argc, char **argv) {
@@ -609,11 +616,11 @@ int main(int argc, char **argv) {
         break;
     }
     case 'D': {
-        const char *dir_arg = ARGF();
-        if (!dir_arg) {
+        const char *dir_str = ARGF();
+        if (!dir_str) {
             die("-D requires a directory name argument");
         }
-        g_main_dir_name = dir_arg;
+        g_config.main_dir_name = dir_str;
         break;
     }
     case 'n': {
@@ -621,7 +628,7 @@ int main(int argc, char **argv) {
         break;
     }
     case 'f': {
-        char *fmt_str = ARGF();
+        const char *fmt_str = ARGF();
         if (!fmt_str) {
             die("-f requires a format argument");
         }
@@ -663,7 +670,7 @@ int main(int argc, char **argv) {
     } else if (do_init) {
         tasks_dir_init();
     } else if (do_new) {
-        char *main_dir = find_dir_up(g_main_dir_name);
+        char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
             die("Tasks directory not found");
         }

@@ -32,7 +32,7 @@ tamd -i
 
 Once the `TASKS/` directory is initialized, you can work with tasks
 from any subdirectory within the project — just like Git, tamd
-automatically finds the nearest TASKS/ directory by walking up the
+automatically finds the nearest `TASKS/` directory by walking up the
 file tree
 
 ``` bash
