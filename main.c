@@ -167,6 +167,7 @@ static void tasks_dir_init() {
         if (mkdir(tasks_dir, 0755) == 0) {
             printf("Created tasks directory: %s\n", tasks_dir);
         } else {
+            free(cwd);
             die("Failed to create tasks directory: %s", tasks_dir);
         }
     }
@@ -174,7 +175,7 @@ static void tasks_dir_init() {
     free(cwd);
 }
 
-static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
+static int task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
 
@@ -185,10 +186,12 @@ static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     snprintf(task_path, sizeof(task_path), "%s/%s", main_dir, dir_name);
 
     if (file_exists(task_path)) {
-        die("Task directory already exists: %s", task_path);
+        fprintf(stderr, "Error: Task directory already exists\n");
+        return -1;
     }
     if (mkdir(task_path, 0755) != 0) {
-        die("Failed to create task directory: %s", task_path);
+        fprintf(stderr, "Error: Failed to create task directory\n");
+        return -1;
     }
 
     char readme_path[PATH_MAX];
@@ -196,7 +199,8 @@ static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
 
     FILE *f = fopen(readme_path, "w");
     if (!f) {
-        die("Failed to create TASK.md in: %s", task_path);
+        fprintf(stderr, "Error: Failed to create TASK.md\n");
+        return -1;
     }
 
     fprintf(f, "- NAME:\n");
@@ -213,6 +217,7 @@ static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     };
 
     task_print(&task, fmt);
+    return 0;
 }
 
 static Task *task_parse(const char *task_dir, const char *task_time) {
@@ -674,7 +679,10 @@ int main(int argc, char **argv) {
         if (!main_dir) {
             die("Tasks directory not found");
         }
-        task_create_dir_and_md(main_dir, fmt);
+        if (task_create_dir_and_md(main_dir, fmt)) {
+            free(main_dir);
+            return -1;
+        }
         free(main_dir);
     } else if (do_print) {
         tasks_process_with_filter(query, task_op_print, (void *)(intptr_t)fmt);
