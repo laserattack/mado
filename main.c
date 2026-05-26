@@ -41,15 +41,31 @@ typedef struct Task {
     char *time;
 } Task;
 
+typedef enum {
+    FIELD_NONE = 0,
+    FIELD_NAME = 1 << 0,
+    FIELD_TIME = 1 << 1,
+    FIELD_PRIORITY = 1 << 2,
+    FIELD_STATUS = 1 << 3,
+    FIELD_TAGS = 1 << 4,
+    FIELD_PATH = 1 << 5,
+    FIELD_ALL = FIELD_NAME | FIELD_TIME | FIELD_PRIORITY | FIELD_STATUS |
+                FIELD_TAGS | FIELD_PATH
+} TaskField;
+
 // ================ GLOBAL
 
 // config
 static struct {
     const char *main_dir_name;
     int max_header_lines;
+    TaskField show_fields;
+    TaskField hide_fields;
 } g_config = {
     .main_dir_name = "TASKS",
     .max_header_lines = 30,
+    .show_fields = FIELD_ALL,
+    .hide_fields = FIELD_NONE,
 };
 
 // precompiled regexp for file parsing
@@ -112,47 +128,119 @@ static void print_json_string(const char *str) {
 }
 
 static void task_print(Task *t, OutputFormat fmt) {
-    switch (fmt) {
-    case FMT_JSONL: {
+    TaskField fields = g_config.show_fields & ~g_config.hide_fields;
+
+    // FMT_ONLY_PATH
+    if (fmt == FMT_ONLY_PATH) {
+        if (fields & FIELD_PATH)
+            printf("%s/TASK.md\n", t->path);
+        return;
+    }
+
+    // FMT_JSONL
+    if (fmt == FMT_JSONL) {
         printf("{");
-        printf("\"time\":");
-        print_json_string(t->time);
-        printf(",\"name\":");
-        print_json_string(t->name);
-        printf(",\"priority\":%d", t->priority);
-        printf(",\"status\":");
-        print_json_string(t->status);
-        printf(",\"tags\":[");
         int first = 1;
+
+        if (fields & FIELD_TIME) {
+            if (!first)
+                printf(",");
+            printf("\"time\":");
+            print_json_string(t->time);
+            first = 0;
+        }
+        if (fields & FIELD_NAME) {
+            if (!first)
+                printf(",");
+            printf("\"name\":");
+            print_json_string(t->name);
+            first = 0;
+        }
+        if (fields & FIELD_PRIORITY) {
+            if (!first)
+                printf(",");
+            printf("\"priority\":%d", t->priority);
+            first = 0;
+        }
+        if (fields & FIELD_STATUS) {
+            if (!first)
+                printf(",");
+            printf("\"status\":");
+            print_json_string(t->status);
+            first = 0;
+        }
+        if (fields & FIELD_TAGS) {
+            if (!first)
+                printf(",");
+            printf("\"tags\":[");
+            int tag_first = 1;
+            for (int j = 0; j < dalen(t->tags); j++) {
+                if (strcmp(t->tags[j], "") == 0)
+                    continue;
+                if (!tag_first)
+                    printf(",");
+                print_json_string(t->tags[j]);
+                tag_first = 0;
+            }
+            printf("]");
+            first = 0;
+        }
+        if (fields & FIELD_PATH) {
+            if (!first)
+                printf(",");
+            printf("\"path\":\"%s/TASK.md\"", t->path);
+            first = 0;
+        }
+        printf("}\n");
+        return;
+    }
+
+    // FMT_UNIX (default)
+    int has_any = 0;
+
+    if (fields & FIELD_PATH) {
+        printf("%s/TASK.md:1:1:", t->path);
+        has_any = 1;
+    }
+
+    if (fields & FIELD_TIME) {
+        if (has_any)
+            printf(" ");
+        printf("TIME:[%s]", t->time);
+        has_any = 1;
+    }
+    if (fields & FIELD_NAME) {
+        if (has_any)
+            printf(" ");
+        printf("NAME:[%s]", t->name);
+        has_any = 1;
+    }
+    if (fields & FIELD_PRIORITY) {
+        if (has_any)
+            printf(" ");
+        printf("PRIORITY:[%d]", t->priority);
+        has_any = 1;
+    }
+    if (fields & FIELD_STATUS) {
+        if (has_any)
+            printf(" ");
+        printf("STATUS:[%s]", t->status);
+        has_any = 1;
+    }
+    if (fields & FIELD_TAGS) {
+        if (has_any)
+            printf(" ");
+        printf("TAGS:[");
         for (int j = 0; j < dalen(t->tags); j++) {
             if (strcmp(t->tags[j], "") == 0)
                 continue;
-            if (!first)
+            printf("%s", t->tags[j]);
+            if (j < dalen(t->tags) - 1 && strcmp(t->tags[j + 1], "") != 0)
                 printf(",");
-            print_json_string(t->tags[j]);
-            first = 0;
         }
         printf("]");
-        printf(",\"path\":\"%s/TASK.md\"", t->path);
-        printf("}\n");
-        break;
     }
-    case FMT_ONLY_PATH:
-        printf("%s/TASK.md\n", t->path);
-        break;
-    case FMT_UNIX:
-    default:
-        printf("%s/TASK.md:1:1: TIME:[%s] NAME:[%s] PRIORITY:[%d] STATUS:[%s] "
-               "TAGS:[",
-               t->path, t->time, t->name, t->priority, t->status);
-        for (int j = 0; j < dalen(t->tags); j++) {
-            printf("%s", t->tags[j]);
-            if (j < dalen(t->tags) - 1)
-                printf(",");
-        }
-        printf("]\n");
-        break;
-    }
+    printf("\n");
 }
 
 static void tasks_dir_init() {
@@ -583,28 +671,42 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
 // ================ ENTRYPOINT
 
 static void usage(void) {
-    die("usage: %s [-h] [-i] [n] [-D dir] [-f format] [-p query] [-r query]\n"
+    die("usage: %s [-h] [-i] [-n] [-D dir] [-f format] [-p query] [-r query] "
+        "[-uvwxyz] [-UVWXYZ]\n"
         "  -h          show this help\n"
         "  -i          initialize main directory in current location\n"
         "  -n          create new task\n"
         "  -D dir      use custom main directory name instead of '%s'\n"
+        "  -p query    print tasks using query (e.g. 'priority > 5')\n"
+        "  -r query    remove tasks matching query\n"
         "  -f format   output format for -p:\n"
         "                unix: path:1:1: STATUS:[...] NAME:[...] ... "
         "(default)\n"
         "                path: absolute paths only, one per line\n"
         "                jsonl: newline-delimited JSON\n"
-        "  -p query    print tasks using query (e.g. 'priority > 5')\n"
-        "  -r query    remove tasks matching query",
+        "  -u          show name\n"
+        "  -v          show time\n"
+        "  -w          show priority\n"
+        "  -x          show status\n"
+        "  -y          show tags\n"
+        "  -z          show path\n"
+        "  -U          hide name\n"
+        "  -V          hide time\n"
+        "  -W          hide priority\n"
+        "  -X          hide status\n"
+        "  -Y          hide tags\n"
+        "  -Z          hide path",
         argv0, g_config.main_dir_name);
 }
 
 int main(int argc, char **argv) {
     init_regexes();
-    atexit(free_regexes); // free_regexes on exit, return
+    atexit(free_regexes);
 
     OutputFormat fmt = FMT_UNIX;
     char *query = NULL;
     int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0;
+    TaskField show_fields = 0;
 
     ARGBEGIN {
     case 'h': {
@@ -659,11 +761,51 @@ int main(int argc, char **argv) {
         do_remove = 1;
         break;
     }
+    // show field
+    case 'u':
+        show_fields |= FIELD_NAME;
+        break;
+    case 'v':
+        show_fields |= FIELD_TIME;
+        break;
+    case 'w':
+        show_fields |= FIELD_PRIORITY;
+        break;
+    case 'x':
+        show_fields |= FIELD_STATUS;
+        break;
+    case 'y':
+        show_fields |= FIELD_TAGS;
+        break;
+    case 'z':
+        show_fields |= FIELD_PATH;
+        break;
+    // hide field
+    case 'U':
+        g_config.hide_fields |= FIELD_NAME;
+        break;
+    case 'V':
+        g_config.hide_fields |= FIELD_TIME;
+        break;
+    case 'W':
+        g_config.hide_fields |= FIELD_PRIORITY;
+        break;
+    case 'X':
+        g_config.hide_fields |= FIELD_STATUS;
+        break;
+    case 'Y':
+        g_config.hide_fields |= FIELD_TAGS;
+        break;
+    case 'Z':
+        g_config.hide_fields |= FIELD_PATH;
+        break;
     default: {
-        die("Unknown flag '%c'", ARGC());
+        die("Unknown flag '-%c'", ARGC());
     }
     }
     ARGEND;
+
+    g_config.show_fields = show_fields ? show_fields : FIELD_ALL;
 
     if (do_help) {
         usage();
