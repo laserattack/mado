@@ -58,13 +58,13 @@ typedef enum {
 // config
 static struct {
     const char *main_dir_name;
+    const char *template_name;
     int max_header_lines;
-    TaskField show_fields;
     TaskField hide_fields;
 } g_config = {
     .main_dir_name = "TASKS",
+    .template_name = "default",
     .max_header_lines = 30,
-    .show_fields = FIELD_ALL,
     .hide_fields = FIELD_NONE,
 };
 
@@ -128,11 +128,12 @@ static void print_json_string(const char *str) {
 }
 
 static void task_print(Task *t, OutputFormat fmt) {
-    TaskField fields = g_config.show_fields & ~g_config.hide_fields;
+    TaskField hidden = g_config.hide_fields;
+    TaskField shown = FIELD_ALL & ~hidden;
 
     // FMT_ONLY_PATH
     if (fmt == FMT_ONLY_PATH) {
-        if (fields & FIELD_PATH)
+        if (shown & FIELD_PATH)
             printf("%s/TASK.md\n", t->path);
         return;
     }
@@ -140,107 +141,153 @@ static void task_print(Task *t, OutputFormat fmt) {
     // FMT_JSONL
     if (fmt == FMT_JSONL) {
         printf("{");
-        int first = 1;
+        int has_any = 0;
 
-        if (fields & FIELD_TIME) {
-            if (!first)
+        if (shown & FIELD_TIME) {
+            if (has_any)
                 printf(",");
             printf("\"time\":");
             print_json_string(t->time);
-            first = 0;
+            has_any = 1;
         }
-        if (fields & FIELD_NAME) {
-            if (!first)
+        if (shown & FIELD_NAME) {
+            if (has_any)
                 printf(",");
             printf("\"name\":");
             print_json_string(t->name);
-            first = 0;
+            has_any = 1;
         }
-        if (fields & FIELD_PRIORITY) {
-            if (!first)
+        if (shown & FIELD_PRIORITY) {
+            if (has_any)
                 printf(",");
             printf("\"priority\":%d", t->priority);
-            first = 0;
+            has_any = 1;
         }
-        if (fields & FIELD_STATUS) {
-            if (!first)
+        if (shown & FIELD_STATUS) {
+            if (has_any)
                 printf(",");
             printf("\"status\":");
             print_json_string(t->status);
-            first = 0;
+            has_any = 1;
         }
-        if (fields & FIELD_TAGS) {
-            if (!first)
+        if (shown & FIELD_TAGS) {
+            if (has_any)
                 printf(",");
             printf("\"tags\":[");
-            int tag_first = 1;
+            int first_tag = 1;
             for (int j = 0; j < dalen(t->tags); j++) {
                 if (strcmp(t->tags[j], "") == 0)
                     continue;
-                if (!tag_first)
+                if (!first_tag)
                     printf(",");
                 print_json_string(t->tags[j]);
-                tag_first = 0;
+                first_tag = 0;
             }
             printf("]");
-            first = 0;
+            has_any = 1;
         }
-        if (fields & FIELD_PATH) {
-            if (!first)
+        if (shown & FIELD_PATH) {
+            if (has_any)
                 printf(",");
             printf("\"path\":\"%s/TASK.md\"", t->path);
-            first = 0;
+            has_any = 1;
         }
         printf("}\n");
         return;
     }
 
-    // FMT_UNIX (default)
-    int has_any = 0;
+    // FMT_UNIX
+    if (fmt == FMT_UNIX) {
+        int has_any = 0;
 
-    if (fields & FIELD_PATH) {
-        printf("%s/TASK.md:1:1:", t->path);
-        has_any = 1;
-    }
-
-    if (fields & FIELD_TIME) {
-        if (has_any)
-            printf(" ");
-        printf("TIME:[%s]", t->time);
-        has_any = 1;
-    }
-    if (fields & FIELD_NAME) {
-        if (has_any)
-            printf(" ");
-        printf("NAME:[%s]", t->name);
-        has_any = 1;
-    }
-    if (fields & FIELD_PRIORITY) {
-        if (has_any)
-            printf(" ");
-        printf("PRIORITY:[%d]", t->priority);
-        has_any = 1;
-    }
-    if (fields & FIELD_STATUS) {
-        if (has_any)
-            printf(" ");
-        printf("STATUS:[%s]", t->status);
-        has_any = 1;
-    }
-    if (fields & FIELD_TAGS) {
-        if (has_any)
-            printf(" ");
-        printf("TAGS:[");
-        for (int j = 0; j < dalen(t->tags); j++) {
-            if (strcmp(t->tags[j], "") == 0)
-                continue;
-            printf("%s", t->tags[j]);
-            if (j < dalen(t->tags) - 1 && strcmp(t->tags[j + 1], "") != 0)
-                printf(",");
+        if (shown & FIELD_PATH) {
+            printf("%s/TASK.md:1:1:", t->path);
+            has_any = 1;
         }
-        printf("]");
+
+        if (shown & FIELD_TIME) {
+            if (has_any)
+                printf(" ");
+            printf("TIME:[%s]", t->time);
+            has_any = 1;
+        }
+        if (shown & FIELD_NAME) {
+            if (has_any)
+                printf(" ");
+            printf("NAME:[%s]", t->name);
+            has_any = 1;
+        }
+        if (shown & FIELD_PRIORITY) {
+            if (has_any)
+                printf(" ");
+            printf("PRIORITY:[%d]", t->priority);
+            has_any = 1;
+        }
+        if (shown & FIELD_STATUS) {
+            if (has_any)
+                printf(" ");
+            printf("STATUS:[%s]", t->status);
+            has_any = 1;
+        }
+        if (shown & FIELD_TAGS) {
+            if (has_any)
+                printf(" ");
+            printf("TAGS:[");
+            for (int j = 0; j < dalen(t->tags); j++) {
+                if (strcmp(t->tags[j], "") == 0)
+                    continue;
+                printf("%s", t->tags[j]);
+                if (j < dalen(t->tags) - 1 && strcmp(t->tags[j + 1], "") != 0)
+                    printf(",");
+            }
+            printf("]");
+        }
+        if (has_any)
+            printf("\n");
     }
-    printf("\n");
+}
+
+static void templates_dir_init() {
+    char *main_dir = find_dir_up(g_config.main_dir_name);
+    if (!main_dir) {
+        die("Tasks directory not found");
+    }
+
+    char templates_dir[PATH_MAX - 15];
+    snprintf(templates_dir, sizeof(templates_dir), "%s/templates", main_dir);
+
+    if (!file_exists(templates_dir)) {
+        if (mkdir(templates_dir, 0755) != 0) {
+            free(main_dir);
+            die("Failed to create templates directory: %s", templates_dir);
+        }
+        printf("Created templates directory: %s\n", templates_dir);
+
+    } else {
+        printf("Templates directory already exists: %s\n", templates_dir);
+    }
+
+    char default_template[PATH_MAX];
+    snprintf(default_template, sizeof(default_template), "%s/default.md",
+             templates_dir);
+
+    if (!file_exists(default_template)) {
+        FILE *f = fopen(default_template, "w");
+        if (f) {
+            fprintf(f, "- NAME:\n");
+            fprintf(f, "- PRIORITY:\n");
+            fprintf(f, "- TAGS:\n");
+            fprintf(f, "- STATUS:\n");
+            fclose(f);
+            printf("Created default template: %s\n", default_template);
+        } else {
+            die("Failed to create default template: %s", default_template);
+        }
+    } else {
+        printf("Default template already exists: %s\n", default_template);
+    }
+
+    free(main_dir);
 }
 
 static void tasks_dir_init() {
@@ -262,6 +309,52 @@ static void tasks_dir_init() {
     free(cwd);
 }
 
+static void task_create(const char *task_path, const char *template_name) {
+    char task_md[PATH_MAX];
+    snprintf(task_md, sizeof(task_md), "%s/TASK.md", task_path);
+
+    if (template_name) {
+        char template_file[PATH_MAX];
+        char *main_dir = find_dir_up(g_config.main_dir_name);
+        if (!main_dir) {
+            die("Tasks directory not found");
+        }
+
+        snprintf(template_file, sizeof(template_file), "%s/templates/%s.md",
+                 main_dir, template_name);
+        free(main_dir);
+
+        if (file_exists(template_file)) {
+            FILE *src = fopen(template_file, "r");
+            if (!src)
+                die("Failed to open template: %s", template_file);
+
+            FILE *dst = fopen(task_md, "w");
+            if (!dst) {
+                fclose(src);
+                die("Failed to create TASK.md: %s", task_md);
+            }
+
+            char buffer[4096];
+            size_t n;
+            while ((n = fread(buffer, 1, sizeof(buffer), src)) > 0)
+                fwrite(buffer, 1, n, dst);
+
+            fclose(src);
+            fclose(dst);
+            return;
+        } else {
+            die("Template '%s' was not found", template_name);
+        }
+    }
+
+    FILE *f = fopen(task_md, "w");
+    if (!f) {
+        die("Failed to create TASK.md in: %s", task_path);
+    }
+    fclose(f);
+}
+
 static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
@@ -279,19 +372,7 @@ static void task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
         die("Failed to create task directory: %s", task_path);
     }
 
-    char readme_path[PATH_MAX];
-    snprintf(readme_path, sizeof(readme_path), "%s/TASK.md", task_path);
-
-    FILE *f = fopen(readme_path, "w");
-    if (!f) {
-        die("Failed to create TASK.md in: %s", task_path);
-    }
-
-    fprintf(f, "- NAME:\n");
-    fprintf(f, "- PRIORITY:\n");
-    fprintf(f, "- TAGS:\n");
-    fprintf(f, "- STATUS:\n");
-    fclose(f);
+    task_create(task_path, g_config.template_name);
 
     Task task = {
         .path = task_path,
@@ -670,32 +751,27 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
 
 // ================ ENTRYPOINT
 
-static void usage(void) {
+static void usage() {
     die("usage: %s [-h] [-i] [-n] [-D dir] [-f format] [-p query] [-r query] "
-        "[-uvwxyz] [-UVWXYZ]\n"
-        "  -h          show this help\n"
-        "  -i          initialize main directory in current location\n"
-        "  -n          create new task\n"
-        "  -D dir      use custom main directory name instead of '%s'\n"
-        "  -p query    print tasks using query (e.g. 'priority > 5')\n"
-        "  -r query    remove tasks matching query\n"
-        "  -f format   output format for -p:\n"
-        "                unix: path:1:1: STATUS:[...] NAME:[...] ... "
+        "[-NTPSAH]\n"
+        "  -h           show this help\n"
+        "  -i           initialize main directory in current location\n"
+        "  -t template  use template file from TASKS/templates/<template>.md\n"
+        "  -n           create new task\n"
+        "  -D dir       use custom main directory name instead of '%s'\n"
+        "  -p query     print tasks using query (e.g. 'priority > 5')\n"
+        "  -r query     remove tasks matching query\n"
+        "  -f format    output format for -p:\n"
+        "               unix: path:1:1: STATUS:[...] NAME:[...] ... "
         "(default)\n"
-        "                path: absolute paths only, one per line\n"
-        "                jsonl: newline-delimited JSON\n"
-        "  -u          show name\n"
-        "  -v          show time\n"
-        "  -w          show priority\n"
-        "  -x          show status\n"
-        "  -y          show tags\n"
-        "  -z          show path\n"
-        "  -U          hide name\n"
-        "  -V          hide time\n"
-        "  -W          hide priority\n"
-        "  -X          hide status\n"
-        "  -Y          hide tags\n"
-        "  -Z          hide path",
+        "               path: absolute paths only, one per line\n"
+        "               jsonl: newline-delimited JSON\n"
+        "  -N           hide name field in output\n"
+        "  -T           hide time field in output\n"
+        "  -P           hide priority field in output\n"
+        "  -S           hide status field in output\n"
+        "  -A           hide tags field in output\n"
+        "  -H           hide path field in output",
         argv0, g_config.main_dir_name);
 }
 
@@ -706,7 +782,6 @@ int main(int argc, char **argv) {
     OutputFormat fmt = FMT_UNIX;
     char *query = NULL;
     int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0;
-    TaskField show_fields = 0;
 
     ARGBEGIN {
     case 'h': {
@@ -727,6 +802,14 @@ int main(int argc, char **argv) {
     }
     case 'n': {
         do_new = 1;
+        break;
+    }
+    case 't': {
+        const char *template_name = ARGF();
+        if (!template_name) {
+            die("-t requires a template name argument");
+        }
+        g_config.template_name = template_name;
         break;
     }
     case 'f': {
@@ -761,42 +844,23 @@ int main(int argc, char **argv) {
         do_remove = 1;
         break;
     }
-    // show field
-    case 'u':
-        show_fields |= FIELD_NAME;
-        break;
-    case 'v':
-        show_fields |= FIELD_TIME;
-        break;
-    case 'w':
-        show_fields |= FIELD_PRIORITY;
-        break;
-    case 'x':
-        show_fields |= FIELD_STATUS;
-        break;
-    case 'y':
-        show_fields |= FIELD_TAGS;
-        break;
-    case 'z':
-        show_fields |= FIELD_PATH;
-        break;
     // hide field
-    case 'U':
+    case 'N':
         g_config.hide_fields |= FIELD_NAME;
         break;
-    case 'V':
+    case 'T':
         g_config.hide_fields |= FIELD_TIME;
         break;
-    case 'W':
+    case 'P':
         g_config.hide_fields |= FIELD_PRIORITY;
         break;
-    case 'X':
+    case 'S':
         g_config.hide_fields |= FIELD_STATUS;
         break;
-    case 'Y':
+    case 'A':
         g_config.hide_fields |= FIELD_TAGS;
         break;
-    case 'Z':
+    case 'H':
         g_config.hide_fields |= FIELD_PATH;
         break;
     default: {
@@ -805,18 +869,17 @@ int main(int argc, char **argv) {
     }
     ARGEND;
 
-    g_config.show_fields = show_fields ? show_fields : FIELD_ALL;
-
     if (do_help) {
         usage();
     } else if (do_init) {
         tasks_dir_init();
+        templates_dir_init();
     } else if (do_new) {
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
             die("Tasks directory not found");
         }
-        task_create_dir_and_md(main_dir, fmt);
+        task_create_dir_and_md(main_dir, fmt); // todo: memory leak here
         free(main_dir);
     } else if (do_print) {
         tasks_process_with_filter(query, task_op_print, (void *)(intptr_t)fmt);
