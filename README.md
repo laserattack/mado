@@ -66,7 +66,7 @@ The login page returns 500 error when using special characters.
 
 > No fields are required — you can omit any field entirely or leave its value empty. For example, when writing a note, you probably won't need the priority and status fields.
 > When a field is omitted or left empty:
-> - NAME, STATUS, TIME default to empty string ""
+> - NAME, STATUS default to empty string ""
 > - PRIORITY defaults to 0
 > - TAGS defaults to a list with one empty element [""]
 
