@@ -806,7 +806,7 @@ static void usage() {
         "query] [-r query] [-NTPSAH]\n"
         "  -h           show this help\n"
         "  -i           initialize main directory in current location\n"
-        "  -t template  use template file from TASKS/.templates/<template>.md\n"
+        "  -t template  use template file from %s/.templates/<template>.md\n"
         "  -n           create new task\n"
         "  -D dir       use custom main directory name instead of '%s'\n"
         "  -p query     print tasks using query (e.g. 'priority > 5')\n"
@@ -822,7 +822,7 @@ static void usage() {
         "  -S           hide status field in output\n"
         "  -A           hide tags field in output\n"
         "  -H           hide path field in output\n",
-        argv0, g_config.main_dir_name);
+        argv0, g_config.main_dir_name, g_config.main_dir_name);
 }
 
 int main(int argc, char **argv) {

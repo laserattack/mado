@@ -27,7 +27,10 @@ cd myproject
 
 # Initialize TASKS directory (like git init)
 tamd -i
-# Output: Created tasks directory: /home/user/myproject/TASKS
+# Output:
+# Created tasks directory: /home/user/myproject/TASKS
+# Created templates directory: /home/user/myproject/TASKS/.templates
+# Created default template: /home/user/myproject/TASKS/.templates/default.md
 ```
 
 Once the `TASKS/` directory is initialized, you can work with tasks
@@ -94,6 +97,40 @@ tamd -p '(priority > 5 and tag = urgent) or status = reopened'
 tamd -p 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
 tamd -p 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
 tamd -p 'tag = allof(bug, critical)' # Task has BOTH "bug" AND "critical" tags
+```
+
+## Customizing Templates
+
+Templates are stored in `TASKS/.templates/` as markdown files:
+
+``` bash
+# Create a bug report template
+cat > TASKS/.templates/bug.md << 'EOF'
+- NAME:
+- PRIORITY: 10
+- TAGS: bug
+- STATUS: opened
+
+## Steps to Reproduce
+1.
+
+## Expected Behavior
+
+## Actual Behavior
+EOF
+
+# Create a note template
+cat > TASKS/.templates/note.md << 'EOF'
+- NAME:
+- TAGS: note
+EOF
+```
+
+You can create tasks with custom templates:
+
+``` bash
+tamd -n -t bug
+# The template must exist at: TASKS/.templates/bug.md
 ```
 
 ## Output Formats
