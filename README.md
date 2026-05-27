@@ -119,17 +119,10 @@ cat > TASKS/.templates/bug.md << 'EOF'
 ## Actual Behavior
 EOF
 
-# Create a feature request template
-cat > TASKS/.templates/feature.md << 'EOF'
+# Create a note template
+cat > TASKS/.templates/note.md << 'EOF'
 - NAME:
-- PRIORITY: 5
-- TAGS: feature
-- STATUS: opened
-
-## Description
-
-## Acceptance Criteria
-- [ ]
+- TAGS: note
 EOF
 ```
 
