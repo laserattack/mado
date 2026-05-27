@@ -26,6 +26,8 @@ char *argv0;
 
 // ================ TYPES
 
+typedef enum { ERR_SUCCESS = 0, ERR_FAILURE } Error;
+
 typedef enum {
     FMT_UNIX,
     FMT_ONLY_PATH,
@@ -61,24 +63,37 @@ static regex_t g_status_regex;
 
 static int g_regex_initialized = 0;
 
-static void init_regexes() {
+static Error init_regexes(void) {
     if (g_regex_initialized)
-        return;
+        return ERR_SUCCESS;
 
-    if (regcomp(&g_task_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0)
-        die("Failed to compile task_dir regex");
-    if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
-        die("Failed to compile name regex");
+    if (regcomp(&g_task_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0) {
+        fprintf(stderr, "Error: Failed to compile task_dir regex\n");
+        return ERR_FAILURE;
+    }
+    if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) !=
+        0) {
+        fprintf(stderr, "Error: Failed to compile name regex\n");
+        return ERR_FAILURE;
+    }
     if (regcomp(&g_priority_regex, "^- PRIORITY:[[:space:]]*([0-9]{1,3})$",
-                REG_EXTENDED) != 0)
-        die("Failed to compile priority regex");
-    if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
-        die("Failed to compile tags regex");
+                REG_EXTENDED) != 0) {
+        fprintf(stderr, "Error: Failed to compile priority regex\n");
+        return ERR_FAILURE;
+    }
+    if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) !=
+        0) {
+        fprintf(stderr, "Error: Failed to compile tags regex\n");
+        return ERR_FAILURE;
+    }
     if (regcomp(&g_status_regex, "^- STATUS:[[:space:]]*(.*)$", REG_EXTENDED) !=
-        0)
-        die("Failed to compile status regex");
+        0) {
+        fprintf(stderr, "Error: Failed to compile status regex\n");
+        return ERR_FAILURE;
+    }
 
     g_regex_initialized = 1;
+    return ERR_SUCCESS;
 }
 
 static void free_regexes() {
@@ -155,7 +170,7 @@ static void task_print(Task *t, OutputFormat fmt) {
     }
 }
 
-static void tasks_dir_init() {
+static Error tasks_dir_init() {
     char *cwd = get_cwd();
     char tasks_dir[PATH_MAX];
     snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd,
@@ -168,14 +183,17 @@ static void tasks_dir_init() {
             printf("Created tasks directory: %s\n", tasks_dir);
         } else {
             free(cwd);
-            die("Failed to create tasks directory: %s", tasks_dir);
+            fprintf(stderr, "Error: Failed to create tasks directory: %s\n",
+                    tasks_dir);
+            return ERR_FAILURE;
         }
     }
 
     free(cwd);
+    return ERR_SUCCESS;
 }
 
-static int task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
+static Error task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
 
@@ -187,11 +205,11 @@ static int task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
 
     if (file_exists(task_path)) {
         fprintf(stderr, "Error: Task directory already exists\n");
-        return -1;
+        return ERR_FAILURE;
     }
     if (mkdir(task_path, 0755) != 0) {
         fprintf(stderr, "Error: Failed to create task directory\n");
-        return -1;
+        return ERR_FAILURE;
     }
 
     char readme_path[PATH_MAX];
@@ -200,7 +218,7 @@ static int task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     FILE *f = fopen(readme_path, "w");
     if (!f) {
         fprintf(stderr, "Error: Failed to create TASK.md\n");
-        return -1;
+        return ERR_FAILURE;
     }
 
     fprintf(f, "- NAME:\n");
@@ -217,7 +235,7 @@ static int task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     };
 
     task_print(&task, fmt);
-    return 0;
+    return ERR_SUCCESS;
 }
 
 static Task *task_parse(const char *task_dir, const char *task_time) {
@@ -557,19 +575,22 @@ static void task_op_delete(Task **tasks, void *ctx) {
     }
 }
 
-static void tasks_process_with_filter(const char *query, task_operation_fn op,
-                                      void *ctx) {
+static Error tasks_process_with_filter(const char *query, task_operation_fn op,
+                                       void *ctx) {
     // compile filter
     ASTNode *filter = parse(query);
     if (!filter) {
-        die("Failed to parse query");
+        fprintf(stderr, "Error: Failed to parse query: %s\n", query);
+        return ERR_FAILURE;
     }
 
     // find main dir
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
         ast_free(filter);
-        die("Tasks directory not found");
+        fprintf(stderr, "Error: Tasks directory '%s' not found\n",
+                g_config.main_dir_name);
+        return ERR_FAILURE;
     }
 
     // find tasks
@@ -583,12 +604,16 @@ static void tasks_process_with_filter(const char *query, task_operation_fn op,
     tasks_free(tasks);
     free(main_dir);
     ast_free(filter);
+
+    return ERR_SUCCESS;
 }
 
 // ================ ENTRYPOINT
 
 static void usage(void) {
-    die("usage: %s [-h] [-i] [n] [-D dir] [-f format] [-p query] [-r query]\n"
+    fprintf(
+        stdout,
+        "usage: %s [-h] [-i] [n] [-D dir] [-f format] [-p query] [-r query]\n"
         "  -h          show this help\n"
         "  -i          initialize main directory in current location\n"
         "  -n          create new task\n"
@@ -599,13 +624,15 @@ static void usage(void) {
         "                path: absolute paths only, one per line\n"
         "                jsonl: newline-delimited JSON\n"
         "  -p query    print tasks using query (e.g. 'priority > 5')\n"
-        "  -r query    remove tasks matching query",
+        "  -r query    remove tasks matching query\n",
         argv0, g_config.main_dir_name);
 }
 
 int main(int argc, char **argv) {
-    init_regexes();
-    atexit(free_regexes); // free_regexes on exit, return
+    if (init_regexes() != ERR_SUCCESS) {
+        return ERR_FAILURE;
+    }
+    atexit(free_regexes);
 
     OutputFormat fmt = FMT_UNIX;
     char *query = NULL;
@@ -623,7 +650,8 @@ int main(int argc, char **argv) {
     case 'D': {
         const char *dir_str = ARGF();
         if (!dir_str) {
-            die("-D requires a directory name argument");
+            fprintf(stderr, "Error: -D requires a directory name argument\n");
+            return ERR_FAILURE;
         }
         g_config.main_dir_name = dir_str;
         break;
@@ -635,7 +663,8 @@ int main(int argc, char **argv) {
     case 'f': {
         const char *fmt_str = ARGF();
         if (!fmt_str) {
-            die("-f requires a format argument");
+            fprintf(stderr, "Error: -f requires a format argument\n");
+            return ERR_FAILURE;
         }
         if (strcmp(fmt_str, "path") == 0) {
             fmt = FMT_ONLY_PATH;
@@ -644,14 +673,16 @@ int main(int argc, char **argv) {
         } else if (strcmp(fmt_str, "jsonl") == 0) {
             fmt = FMT_JSONL;
         } else {
-            die("Unknown format '%s'", fmt_str);
+            fprintf(stderr, "Error: Unknown format '%s'\n", fmt_str);
+            return ERR_FAILURE;
         }
         break;
     }
     case 'p': {
         query = ARGF();
         if (!query) {
-            die("-p requires a query argument");
+            fprintf(stderr, "Error: -p requires a query argument\n");
+            return ERR_FAILURE;
         }
         do_print = 1;
         break;
@@ -659,38 +690,40 @@ int main(int argc, char **argv) {
     case 'r': {
         query = ARGF();
         if (!query) {
-            die("-r requires a query argument");
+            fprintf(stderr, "Error: -r requires a query argument\n");
+            return ERR_FAILURE;
         }
         do_remove = 1;
         break;
     }
     default: {
-        die("Unknown flag '%c'", ARGC());
+        fprintf(stderr, "Error: Unknown flag '%c'\n", ARGC());
+        return ERR_FAILURE;
     }
     }
     ARGEND;
 
     if (do_help) {
         usage();
+        return ERR_SUCCESS;
     } else if (do_init) {
-        tasks_dir_init();
+        return tasks_dir_init();
     } else if (do_new) {
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            die("Tasks directory not found");
+            fprintf(stderr, "Error: Tasks directory not found\n");
+            return ERR_FAILURE;
         }
-        if (task_create_dir_and_md(main_dir, fmt)) {
-            free(main_dir);
-            return -1;
-        }
+        Error ret = task_create_dir_and_md(main_dir, fmt);
         free(main_dir);
+        return ret;
     } else if (do_print) {
-        tasks_process_with_filter(query, task_op_print, (void *)(intptr_t)fmt);
+        return tasks_process_with_filter(query, task_op_print,
+                                         (void *)(intptr_t)fmt);
     } else if (do_remove) {
-        tasks_process_with_filter(query, task_op_delete, NULL);
-    } else {
-        usage();
+        return tasks_process_with_filter(query, task_op_delete, NULL);
     }
 
-    return 0;
+    usage();
+    return ERR_SUCCESS;
 }
