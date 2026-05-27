@@ -60,12 +60,16 @@ typedef enum {
 // config
 static struct {
     const char *main_dir_name;
+    const char *templates_dir_name;
+    const char *entry_file_name;
     const char *template_name;
     int max_header_lines;
     EntryField hide_fields;
 } g_config = {
     .main_dir_name = "MADO",
-    .template_name = "default",
+    .templates_dir_name = ".templates",
+    .entry_file_name = "MAIN.md",
+    .template_name = "default", // default template
     .max_header_lines = 30,
     .hide_fields = FIELD_NONE,
 };
@@ -149,7 +153,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
     // FMT_ONLY_PATH
     if (fmt == FMT_ONLY_PATH) {
         if (shown & FIELD_PATH)
-            printf("%s/MAIN.md\n", e->path);
+            printf("%s/%s\n", e->path, g_config.entry_file_name);
         return;
     }
 
@@ -204,7 +208,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
         if (shown & FIELD_PATH) {
             if (has_any)
                 printf(",");
-            printf("\"path\":\"%s/MAIN.md\"", e->path);
+            printf("\"path\":\"%s/%s\"", e->path, g_config.entry_file_name);
             has_any = 1;
         }
         printf("}\n");
@@ -216,7 +220,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
         int has_any = 0;
 
         if (shown & FIELD_PATH) {
-            printf("%s/MAIN.md:1:1:", e->path);
+            printf("%s/%s:1:1:", e->path, g_config.entry_file_name);
             has_any = 1;
         }
 
@@ -270,7 +274,8 @@ static Error templates_dir_init() {
     }
 
     char templates_dir[PATH_MAX - 15];
-    snprintf(templates_dir, sizeof(templates_dir), "%s/.templates", main_dir);
+    snprintf(templates_dir, sizeof(templates_dir), "%s/%s", main_dir,
+             g_config.templates_dir_name);
 
     if (!file_exists(templates_dir)) {
         if (mkdir(templates_dir, 0755) != 0) {
@@ -336,7 +341,8 @@ static Error entries_dir_init() {
 
 static Error entry_create(const char *entry_path, const char *template_name) {
     char entry_md[PATH_MAX];
-    snprintf(entry_md, sizeof(entry_md), "%s/MAIN.md", entry_path);
+    snprintf(entry_md, sizeof(entry_md), "%s/%s", entry_path,
+             g_config.entry_file_name);
 
     if (template_name) {
         char template_file[PATH_MAX];
@@ -346,8 +352,8 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             return ERR_FAILURE;
         }
 
-        snprintf(template_file, sizeof(template_file), "%s/.templates/%s.md",
-                 main_dir, template_name);
+        snprintf(template_file, sizeof(template_file), "%s/%s/%s.md", main_dir,
+                 g_config.templates_dir_name, template_name);
         free(main_dir);
 
         if (file_exists(template_file)) {
@@ -361,8 +367,8 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             FILE *dst = fopen(entry_md, "w");
             if (!dst) {
                 fclose(src);
-                fprintf(stderr, "Error: Failed to create MAIN.md: %s\n",
-                        entry_md);
+                fprintf(stderr, "Error: Failed to create %s: %s\n",
+                        g_config.entry_file_name, entry_md);
                 return ERR_FAILURE;
             }
 
@@ -387,7 +393,8 @@ static Error entry_create(const char *entry_path, const char *template_name) {
 
     FILE *f = fopen(entry_md, "w");
     if (!f) {
-        fprintf(stderr, "Error: Failed to create MAIN.md in: %s\n", entry_path);
+        fprintf(stderr, "Error: Failed to create %s in: %s\n",
+                g_config.entry_file_name, entry_path);
         return ERR_FAILURE;
     }
     fclose(f);
@@ -430,7 +437,8 @@ static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
 
 static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     char entry_file[PATH_MAX];
-    snprintf(entry_file, sizeof(entry_file), "%s/MAIN.md", entry_dir);
+    snprintf(entry_file, sizeof(entry_file), "%s/%s", entry_dir,
+             g_config.entry_file_name);
 
     FILE *f = fopen(entry_file, "r");
     if (!f)
@@ -515,7 +523,8 @@ static Entry **entries_get_all(const char *main_dir) {
                  dirent->d_name);
 
         char entry_file[PATH_MAX];
-        snprintf(entry_file, sizeof(entry_file), "%s/MAIN.md", entry_dir);
+        snprintf(entry_file, sizeof(entry_file), "%s/%s", entry_dir,
+                 g_config.entry_file_name);
 
         if (!file_exists(entry_file))
             continue;
@@ -801,29 +810,29 @@ static Error entries_process_with_filter(const char *query,
 // ================ ENTRYPOINT
 
 static void usage() {
-    fprintf(
-        stdout,
-        "usage: %s [-h] [-i] [-n] [-t template] [-D dir] [-f format] [-p "
-        "query] [-r query] [-NTPSAH]\n"
-        "  -h           show this help\n"
-        "  -i           initialize main directory in current location\n"
-        "  -t template  use template file from %s/.templates/<template>.md\n"
-        "  -n           create new entry\n"
-        "  -D dir       use custom main directory name instead of '%s'\n"
-        "  -p query     print entries using query (e.g. 'priority > 5')\n"
-        "  -r query     remove entries matching query\n"
-        "  -f format    output format for -p:\n"
-        "                 unix: path:1:1: STATUS:[...] NAME:[...] ... "
-        "(default)\n"
-        "                 path: absolute paths only, one per line\n"
-        "                 jsonl: newline-delimited JSON\n"
-        "  -N           hide name field in output\n"
-        "  -T           hide time field in output\n"
-        "  -P           hide priority field in output\n"
-        "  -S           hide status field in output\n"
-        "  -A           hide tags field in output\n"
-        "  -H           hide path field in output\n",
-        argv0, g_config.main_dir_name, g_config.main_dir_name);
+    fprintf(stdout,
+            "usage: %s [-h] [-i] [-n] [-t template] [-D dir] [-f format] [-p "
+            "query] [-r query] [-NTPSAH]\n"
+            "  -h           show this help\n"
+            "  -i           initialize main directory in current location\n"
+            "  -t template  use template file from %s/%s/<template>.md\n"
+            "  -n           create new entry\n"
+            "  -D dir       use custom main directory name instead of '%s'\n"
+            "  -p query     print entries using query (e.g. 'priority > 5')\n"
+            "  -r query     remove entries matching query\n"
+            "  -f format    output format for -p:\n"
+            "                 unix: path:1:1: STATUS:[...] NAME:[...] ... "
+            "(default)\n"
+            "                 path: absolute paths only, one per line\n"
+            "                 jsonl: newline-delimited JSON\n"
+            "  -N           hide name field in output\n"
+            "  -T           hide time field in output\n"
+            "  -P           hide priority field in output\n"
+            "  -S           hide status field in output\n"
+            "  -A           hide tags field in output\n"
+            "  -H           hide path field in output\n",
+            argv0, g_config.main_dir_name, g_config.templates_dir_name,
+            g_config.main_dir_name);
 }
 
 int main(int argc, char **argv) {
