@@ -34,14 +34,14 @@ typedef enum {
     FMT_JSONL,
 } OutputFormat;
 
-typedef struct Task {
-    char *path; // absolute path to task dir
+typedef struct Entry {
+    char *path; // absolute path to entry dir
     char *name;
     uint16_t priority;
     char **tags; // dynarr
     char *status;
     char *time;
-} Task;
+} Entry;
 
 typedef enum {
     FIELD_NONE = 0,
@@ -53,7 +53,7 @@ typedef enum {
     FIELD_PATH = 1 << 5,
     FIELD_ALL = FIELD_NAME | FIELD_TIME | FIELD_PRIORITY | FIELD_STATUS |
                 FIELD_TAGS | FIELD_PATH
-} TaskField;
+} EntryField;
 
 // ================ GLOBAL
 
@@ -62,16 +62,16 @@ static struct {
     const char *main_dir_name;
     const char *template_name;
     int max_header_lines;
-    TaskField hide_fields;
+    EntryField hide_fields;
 } g_config = {
-    .main_dir_name = "TASKS",
+    .main_dir_name = "MADO",
     .template_name = "default",
     .max_header_lines = 30,
     .hide_fields = FIELD_NONE,
 };
 
 // precompiled regexp for file parsing
-static regex_t g_task_dir_regex;
+static regex_t g_entry_dir_regex;
 static regex_t g_name_regex;
 static regex_t g_priority_regex;
 static regex_t g_tags_regex;
@@ -83,8 +83,8 @@ static Error init_regexes(void) {
     if (g_regex_initialized)
         return ERR_SUCCESS;
 
-    if (regcomp(&g_task_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0) {
-        fprintf(stderr, "Error: Failed to compile task_dir regex\n");
+    if (regcomp(&g_entry_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0) {
+        fprintf(stderr, "Error: Failed to compile entry_dir regex\n");
         return ERR_FAILURE;
     }
     if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) !=
@@ -116,7 +116,7 @@ static void free_regexes() {
     if (!g_regex_initialized)
         return;
 
-    regfree(&g_task_dir_regex);
+    regfree(&g_entry_dir_regex);
     regfree(&g_name_regex);
     regfree(&g_priority_regex);
     regfree(&g_tags_regex);
@@ -142,14 +142,14 @@ static void print_json_string(const char *str) {
     putchar('"');
 }
 
-static void task_print(Task *t, OutputFormat fmt) {
-    TaskField hidden = g_config.hide_fields;
-    TaskField shown = FIELD_ALL & ~hidden;
+static void entry_print(Entry *e, OutputFormat fmt) {
+    EntryField hidden = g_config.hide_fields;
+    EntryField shown = FIELD_ALL & ~hidden;
 
     // FMT_ONLY_PATH
     if (fmt == FMT_ONLY_PATH) {
         if (shown & FIELD_PATH)
-            printf("%s/TASK.md\n", t->path);
+            printf("%s/MAIN.md\n", e->path);
         return;
     }
 
@@ -162,27 +162,27 @@ static void task_print(Task *t, OutputFormat fmt) {
             if (has_any)
                 printf(",");
             printf("\"time\":");
-            print_json_string(t->time);
+            print_json_string(e->time);
             has_any = 1;
         }
         if (shown & FIELD_NAME) {
             if (has_any)
                 printf(",");
             printf("\"name\":");
-            print_json_string(t->name);
+            print_json_string(e->name);
             has_any = 1;
         }
         if (shown & FIELD_PRIORITY) {
             if (has_any)
                 printf(",");
-            printf("\"priority\":%d", t->priority);
+            printf("\"priority\":%d", e->priority);
             has_any = 1;
         }
         if (shown & FIELD_STATUS) {
             if (has_any)
                 printf(",");
             printf("\"status\":");
-            print_json_string(t->status);
+            print_json_string(e->status);
             has_any = 1;
         }
         if (shown & FIELD_TAGS) {
@@ -190,12 +190,12 @@ static void task_print(Task *t, OutputFormat fmt) {
                 printf(",");
             printf("\"tags\":[");
             int first_tag = 1;
-            for (int j = 0; j < dalen(t->tags); j++) {
-                if (strcmp(t->tags[j], "") == 0)
+            for (int j = 0; j < dalen(e->tags); j++) {
+                if (strcmp(e->tags[j], "") == 0)
                     continue;
                 if (!first_tag)
                     printf(",");
-                print_json_string(t->tags[j]);
+                print_json_string(e->tags[j]);
                 first_tag = 0;
             }
             printf("]");
@@ -204,7 +204,7 @@ static void task_print(Task *t, OutputFormat fmt) {
         if (shown & FIELD_PATH) {
             if (has_any)
                 printf(",");
-            printf("\"path\":\"%s/TASK.md\"", t->path);
+            printf("\"path\":\"%s/MAIN.md\"", e->path);
             has_any = 1;
         }
         printf("}\n");
@@ -216,43 +216,43 @@ static void task_print(Task *t, OutputFormat fmt) {
         int has_any = 0;
 
         if (shown & FIELD_PATH) {
-            printf("%s/TASK.md:1:1:", t->path);
+            printf("%s/MAIN.md:1:1:", e->path);
             has_any = 1;
         }
 
         if (shown & FIELD_TIME) {
             if (has_any)
                 printf(" ");
-            printf("TIME:[%s]", t->time);
+            printf("TIME:[%s]", e->time);
             has_any = 1;
         }
         if (shown & FIELD_NAME) {
             if (has_any)
                 printf(" ");
-            printf("NAME:[%s]", t->name);
+            printf("NAME:[%s]", e->name);
             has_any = 1;
         }
         if (shown & FIELD_PRIORITY) {
             if (has_any)
                 printf(" ");
-            printf("PRIORITY:[%d]", t->priority);
+            printf("PRIORITY:[%d]", e->priority);
             has_any = 1;
         }
         if (shown & FIELD_STATUS) {
             if (has_any)
                 printf(" ");
-            printf("STATUS:[%s]", t->status);
+            printf("STATUS:[%s]", e->status);
             has_any = 1;
         }
         if (shown & FIELD_TAGS) {
             if (has_any)
                 printf(" ");
             printf("TAGS:[");
-            for (int j = 0; j < dalen(t->tags); j++) {
-                if (strcmp(t->tags[j], "") == 0)
+            for (int j = 0; j < dalen(e->tags); j++) {
+                if (strcmp(e->tags[j], "") == 0)
                     continue;
-                printf("%s", t->tags[j]);
-                if (j < dalen(t->tags) - 1 && strcmp(t->tags[j + 1], "") != 0)
+                printf("%s", e->tags[j]);
+                if (j < dalen(e->tags) - 1 && strcmp(e->tags[j + 1], "") != 0)
                     printf(",");
             }
             printf("]");
@@ -265,7 +265,7 @@ static void task_print(Task *t, OutputFormat fmt) {
 static Error templates_dir_init() {
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
-        fprintf(stderr, "Error: Tasks directory not found\n");
+        fprintf(stderr, "Error: Entries directory not found\n");
         return ERR_FAILURE;
     }
 
@@ -311,21 +311,21 @@ static Error templates_dir_init() {
     return ERR_SUCCESS;
 }
 
-static Error tasks_dir_init() {
+static Error entries_dir_init() {
     char *cwd = get_cwd();
-    char tasks_dir[PATH_MAX];
-    snprintf(tasks_dir, sizeof(tasks_dir), "%s/%s", cwd,
+    char entries_dir[PATH_MAX];
+    snprintf(entries_dir, sizeof(entries_dir), "%s/%s", cwd,
              g_config.main_dir_name);
 
-    if (file_exists(tasks_dir)) {
-        printf("Tasks directory already exists: %s\n", tasks_dir);
+    if (file_exists(entries_dir)) {
+        printf("Entries directory already exists: %s\n", entries_dir);
     } else {
-        if (mkdir(tasks_dir, 0755) == 0) {
-            printf("Created tasks directory: %s\n", tasks_dir);
+        if (mkdir(entries_dir, 0755) == 0) {
+            printf("Created entries directory: %s\n", entries_dir);
         } else {
             free(cwd);
-            fprintf(stderr, "Error: Failed to create tasks directory: %s\n",
-                    tasks_dir);
+            fprintf(stderr, "Error: Failed to create entries directory: %s\n",
+                    entries_dir);
             return ERR_FAILURE;
         }
     }
@@ -334,15 +334,15 @@ static Error tasks_dir_init() {
     return ERR_SUCCESS;
 }
 
-static Error task_create(const char *task_path, const char *template_name) {
-    char task_md[PATH_MAX];
-    snprintf(task_md, sizeof(task_md), "%s/TASK.md", task_path);
+static Error entry_create(const char *entry_path, const char *template_name) {
+    char entry_md[PATH_MAX];
+    snprintf(entry_md, sizeof(entry_md), "%s/MAIN.md", entry_path);
 
     if (template_name) {
         char template_file[PATH_MAX];
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: Tasks directory not found\n");
+            fprintf(stderr, "Error: Entries directory not found\n");
             return ERR_FAILURE;
         }
 
@@ -358,11 +358,11 @@ static Error task_create(const char *task_path, const char *template_name) {
                 return ERR_FAILURE;
             }
 
-            FILE *dst = fopen(task_md, "w");
+            FILE *dst = fopen(entry_md, "w");
             if (!dst) {
                 fclose(src);
-                fprintf(stderr, "Error: Failed to create TASK.md: %s\n",
-                        task_md);
+                fprintf(stderr, "Error: Failed to create MAIN.md: %s\n",
+                        entry_md);
                 return ERR_FAILURE;
             }
 
@@ -385,63 +385,63 @@ static Error task_create(const char *task_path, const char *template_name) {
         }
     }
 
-    FILE *f = fopen(task_md, "w");
+    FILE *f = fopen(entry_md, "w");
     if (!f) {
-        fprintf(stderr, "Error: Failed to create TASK.md in: %s\n", task_path);
+        fprintf(stderr, "Error: Failed to create MAIN.md in: %s\n", entry_path);
         return ERR_FAILURE;
     }
     fclose(f);
     return ERR_SUCCESS;
 }
 
-static Error task_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
+static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
 
     char dir_name[16];
     strftime(dir_name, sizeof(dir_name), "%Y%m%dT%H%M%S", tm);
 
-    char task_path[PATH_MAX - 10];
-    snprintf(task_path, sizeof(task_path), "%s/%s", main_dir, dir_name);
+    char entry_path[PATH_MAX - 10];
+    snprintf(entry_path, sizeof(entry_path), "%s/%s", main_dir, dir_name);
 
-    if (file_exists(task_path)) {
-        fprintf(stderr, "Error: Task directory already exists\n");
+    if (file_exists(entry_path)) {
+        fprintf(stderr, "Error: Entry directory already exists\n");
         return ERR_FAILURE;
     }
-    if (mkdir(task_path, 0755) != 0) {
-        fprintf(stderr, "Error: Failed to create task directory\n");
-        return ERR_FAILURE;
-    }
-
-    if (task_create(task_path, g_config.template_name) != ERR_SUCCESS) {
+    if (mkdir(entry_path, 0755) != 0) {
+        fprintf(stderr, "Error: Failed to create entry directory\n");
         return ERR_FAILURE;
     }
 
-    Task task = {
-        .path = task_path,
+    if (entry_create(entry_path, g_config.template_name) != ERR_SUCCESS) {
+        return ERR_FAILURE;
+    }
+
+    Entry entry = {
+        .path = entry_path,
         .name = "",
         .status = "",
         .time = dir_name,
     };
 
-    task_print(&task, fmt);
+    entry_print(&entry, fmt);
     return ERR_SUCCESS;
 }
 
-static Task *task_parse(const char *task_dir, const char *task_time) {
-    char task_file[PATH_MAX];
-    snprintf(task_file, sizeof(task_file), "%s/TASK.md", task_dir);
+static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
+    char entry_file[PATH_MAX];
+    snprintf(entry_file, sizeof(entry_file), "%s/MAIN.md", entry_dir);
 
-    FILE *f = fopen(task_file, "r");
+    FILE *f = fopen(entry_file, "r");
     if (!f)
         return NULL;
 
-    Task *task = calloc(1, sizeof(Task));
-    task->priority = 0;
-    task->path = strdup(task_dir);
-    task->status = strdup("");
-    task->name = strdup("");
-    task->time = strdup(task_time);
+    Entry *entry = calloc(1, sizeof(Entry));
+    entry->priority = 0;
+    entry->path = strdup(entry_dir);
+    entry->status = strdup("");
+    entry->name = strdup("");
+    entry->time = strdup(entry_time);
 
     char *line = NULL;
     size_t line_len = 0;
@@ -457,12 +457,12 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
         char *value;
 
         if ((value = regex_extract_first_group(line, &g_name_regex)) != NULL) {
-            free(task->name);
-            task->name = strdup(trim(value));
+            free(entry->name);
+            entry->name = strdup(trim(value));
             free(value);
         } else if ((value = regex_extract_first_group(
                         line, &g_priority_regex)) != NULL) {
-            task->priority = atoi(value);
+            entry->priority = atoi(value);
             free(value);
         } else if ((value = regex_extract_first_group(line, &g_tags_regex)) !=
                    NULL) {
@@ -473,15 +473,15 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
                 while (token) {
                     char *clean = trim(token);
                     if (*clean)
-                        dapush(task->tags, strdup(clean));
+                        dapush(entry->tags, strdup(clean));
                     token = strtok_r(NULL, ",", &saveptr);
                 }
             }
             free(value);
         } else if ((value = regex_extract_first_group(line, &g_status_regex)) !=
                    NULL) {
-            free(task->status);
-            task->status = strdup(trim(value));
+            free(entry->status);
+            entry->status = strdup(trim(value));
             free(value);
         }
     }
@@ -489,69 +489,70 @@ static Task *task_parse(const char *task_dir, const char *task_time) {
     free(line);
     fclose(f);
 
-    if (dalen(task->tags) == 0)
-        dapush(task->tags, strdup(""));
+    if (dalen(entry->tags) == 0)
+        dapush(entry->tags, strdup(""));
 
-    return task;
+    return entry;
 }
 
-static Task **tasks_get_all(const char *main_dir) {
+static Entry **entries_get_all(const char *main_dir) {
     DIR *dir = opendir(main_dir);
     if (!dir)
         return NULL;
 
-    Task **tasks = NULL;
-    struct dirent *entry;
+    Entry **entries = NULL;
+    struct dirent *dirent;
 
-    while ((entry = readdir(dir)) != NULL) {
-        if (strcmp(entry->d_name, ".") == 0 ||
-            strcmp(entry->d_name, "..") == 0 ||
-            !regex_match(entry->d_name, &g_task_dir_regex)) {
+    while ((dirent = readdir(dir)) != NULL) {
+        if (strcmp(dirent->d_name, ".") == 0 ||
+            strcmp(dirent->d_name, "..") == 0 ||
+            !regex_match(dirent->d_name, &g_entry_dir_regex)) {
             continue;
         }
 
-        char task_dir[PATH_MAX - 10];
-        snprintf(task_dir, sizeof(task_dir), "%s/%s", main_dir, entry->d_name);
+        char entry_dir[PATH_MAX - 10];
+        snprintf(entry_dir, sizeof(entry_dir), "%s/%s", main_dir,
+                 dirent->d_name);
 
-        char task_file[PATH_MAX];
-        snprintf(task_file, sizeof(task_file), "%s/TASK.md", task_dir);
+        char entry_file[PATH_MAX];
+        snprintf(entry_file, sizeof(entry_file), "%s/MAIN.md", entry_dir);
 
-        if (!file_exists(task_file))
+        if (!file_exists(entry_file))
             continue;
 
-        Task *task = task_parse(task_dir, entry->d_name);
-        if (task)
-            dapush(tasks, task);
+        Entry *entry = entry_parse(entry_dir, dirent->d_name);
+        if (entry)
+            dapush(entries, entry);
     }
 
     closedir(dir);
-    return tasks;
+    return entries;
 }
 
-static void task_free(Task *task) {
-    if (!task)
+static void entry_free(Entry *entry) {
+    if (!entry)
         return;
 
-    free(task->path);
-    free(task->name);
-    free(task->status);
-    free(task->time);
-    for (int j = 0; j < dalen(task->tags); j++)
-        free(task->tags[j]);
-    dafree(task->tags);
-    free(task);
+    free(entry->path);
+    free(entry->name);
+    free(entry->status);
+    free(entry->time);
+    for (int j = 0; j < dalen(entry->tags); j++)
+        free(entry->tags[j]);
+    dafree(entry->tags);
+    free(entry);
 }
 
-static void tasks_free(Task **tasks) {
-    if (!tasks)
+static void entries_free(Entry **entries) {
+    if (!entries)
         return;
 
-    for (int i = 0; i < dalen(tasks); i++)
-        task_free(tasks[i]);
-    dafree(tasks);
+    for (int i = 0; i < dalen(entries); i++)
+        entry_free(entries[i]);
+    dafree(entries);
 }
 
-static int task_matches_condition(Task *task, ASTNode *node) {
+static int entry_matches_condition(Entry *entry, ASTNode *node) {
     if (!node)
         return 1;
 
@@ -562,40 +563,40 @@ static int task_matches_condition(Task *task, ASTNode *node) {
     case NODE_BINARY_OP:
         switch (node->binary.op) {
         case OP_AND:
-            return task_matches_condition(task, node->binary.left) &&
-                   task_matches_condition(task, node->binary.right);
+            return entry_matches_condition(entry, node->binary.left) &&
+                   entry_matches_condition(entry, node->binary.right);
         case OP_OR:
-            return task_matches_condition(task, node->binary.left) ||
-                   task_matches_condition(task, node->binary.right);
+            return entry_matches_condition(entry, node->binary.left) ||
+                   entry_matches_condition(entry, node->binary.right);
         default:
             return 0;
         }
 
     case NODE_UNARY_OP:
         if (node->unary.op == OP_NOT)
-            return !task_matches_condition(task, node->unary.expr);
+            return !entry_matches_condition(entry, node->unary.expr);
         return 0;
 
     case NODE_COMPARISON: {
         switch (node->comparison.field) {
         case CMP_PRIORITY: {
-            int task_val = task->priority;
+            int entry_val = entry->priority;
             int cond_val = node->comparison.value.int_value;
             switch (node->comparison.cmp) {
             case CMP_GT:
-                return task_val > cond_val;
+                return entry_val > cond_val;
             case CMP_LT:
-                return task_val < cond_val;
+                return entry_val < cond_val;
             case CMP_GE:
-                return task_val >= cond_val;
+                return entry_val >= cond_val;
             case CMP_LE:
-                return task_val <= cond_val;
+                return entry_val <= cond_val;
             case CMP_TILDE: // fallthrough
             case CMP_EQ:
-                return task_val == cond_val;
+                return entry_val == cond_val;
             case CMP_NTILDE: // fallthrough
             case CMP_NE:
-                return task_val != cond_val;
+                return entry_val != cond_val;
             default:
                 return 0;
             }
@@ -603,30 +604,30 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
         case CMP_TAG: {
             char *cond_tag = node->comparison.value.str_value;
-            for (int i = 0; i < dalen(task->tags); i++) {
+            for (int i = 0; i < dalen(entry->tags); i++) {
                 if (node->comparison.cmp == CMP_EQ) {
-                    if (strcmp(task->tags[i], cond_tag) == 0)
+                    if (strcmp(entry->tags[i], cond_tag) == 0)
                         return 1;
                 } else if (node->comparison.cmp == CMP_NE) {
-                    if (strcmp(task->tags[i], cond_tag) == 0)
+                    if (strcmp(entry->tags[i], cond_tag) == 0)
                         return 0;
                 } else if (node->comparison.cmp == CMP_TILDE) {
-                    if (strstr(task->tags[i], cond_tag) != NULL)
+                    if (strstr(entry->tags[i], cond_tag) != NULL)
                         return 1;
                 } else if (node->comparison.cmp == CMP_NTILDE) {
-                    if (strstr(task->tags[i], cond_tag) != NULL)
+                    if (strstr(entry->tags[i], cond_tag) != NULL)
                         return 0;
                 } else if (node->comparison.cmp == CMP_GT) {
-                    if (strcmp(task->tags[i], cond_tag) > 0)
+                    if (strcmp(entry->tags[i], cond_tag) > 0)
                         return 1;
                 } else if (node->comparison.cmp == CMP_LT) {
-                    if (strcmp(task->tags[i], cond_tag) < 0)
+                    if (strcmp(entry->tags[i], cond_tag) < 0)
                         return 1;
                 } else if (node->comparison.cmp == CMP_GE) {
-                    if (strcmp(task->tags[i], cond_tag) >= 0)
+                    if (strcmp(entry->tags[i], cond_tag) >= 0)
                         return 1;
                 } else if (node->comparison.cmp == CMP_LE) {
-                    if (strcmp(task->tags[i], cond_tag) <= 0)
+                    if (strcmp(entry->tags[i], cond_tag) <= 0)
                         return 1;
                 }
             }
@@ -636,25 +637,25 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
         case CMP_STATUS: {
             char *cond_status = node->comparison.value.str_value;
-            if (!task->status)
+            if (!entry->status)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(task->status, cond_status) == 0;
+                return strcmp(entry->status, cond_status) == 0;
             case CMP_NE:
-                return strcmp(task->status, cond_status) != 0;
+                return strcmp(entry->status, cond_status) != 0;
             case CMP_TILDE:
-                return strstr(task->status, cond_status) != NULL;
+                return strstr(entry->status, cond_status) != NULL;
             case CMP_NTILDE:
-                return strstr(task->status, cond_status) == NULL;
+                return strstr(entry->status, cond_status) == NULL;
             case CMP_GT:
-                return strcmp(task->status, cond_status) > 0;
+                return strcmp(entry->status, cond_status) > 0;
             case CMP_LT:
-                return strcmp(task->status, cond_status) < 0;
+                return strcmp(entry->status, cond_status) < 0;
             case CMP_GE:
-                return strcmp(task->status, cond_status) >= 0;
+                return strcmp(entry->status, cond_status) >= 0;
             case CMP_LE:
-                return strcmp(task->status, cond_status) <= 0;
+                return strcmp(entry->status, cond_status) <= 0;
             default:
                 return 0;
             }
@@ -662,25 +663,25 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
         case CMP_TIME: {
             char *cond_time = node->comparison.value.str_value;
-            if (!task->time)
+            if (!entry->time)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(task->time, cond_time) == 0;
+                return strcmp(entry->time, cond_time) == 0;
             case CMP_NE:
-                return strcmp(task->time, cond_time) != 0;
+                return strcmp(entry->time, cond_time) != 0;
             case CMP_TILDE:
-                return strstr(task->time, cond_time) != NULL;
+                return strstr(entry->time, cond_time) != NULL;
             case CMP_NTILDE:
-                return strstr(task->time, cond_time) == NULL;
+                return strstr(entry->time, cond_time) == NULL;
             case CMP_GT:
-                return strcmp(task->time, cond_time) > 0;
+                return strcmp(entry->time, cond_time) > 0;
             case CMP_LT:
-                return strcmp(task->time, cond_time) < 0;
+                return strcmp(entry->time, cond_time) < 0;
             case CMP_GE:
-                return strcmp(task->time, cond_time) >= 0;
+                return strcmp(entry->time, cond_time) >= 0;
             case CMP_LE:
-                return strcmp(task->time, cond_time) <= 0;
+                return strcmp(entry->time, cond_time) <= 0;
             default:
                 return 0;
             }
@@ -688,25 +689,25 @@ static int task_matches_condition(Task *task, ASTNode *node) {
 
         case CMP_NAME: {
             char *cond_name = node->comparison.value.str_value;
-            if (!task->name)
+            if (!entry->name)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(task->name, cond_name) == 0;
+                return strcmp(entry->name, cond_name) == 0;
             case CMP_NE:
-                return strcmp(task->name, cond_name) != 0;
+                return strcmp(entry->name, cond_name) != 0;
             case CMP_TILDE:
-                return strstr(task->name, cond_name) != NULL;
+                return strstr(entry->name, cond_name) != NULL;
             case CMP_NTILDE:
-                return strstr(task->name, cond_name) == NULL;
+                return strstr(entry->name, cond_name) == NULL;
             case CMP_GT:
-                return strcmp(task->name, cond_name) > 0;
+                return strcmp(entry->name, cond_name) > 0;
             case CMP_LT:
-                return strcmp(task->name, cond_name) < 0;
+                return strcmp(entry->name, cond_name) < 0;
             case CMP_GE:
-                return strcmp(task->name, cond_name) >= 0;
+                return strcmp(entry->name, cond_name) >= 0;
             case CMP_LE:
-                return strcmp(task->name, cond_name) <= 0;
+                return strcmp(entry->name, cond_name) <= 0;
             default:
                 return 0;
             }
@@ -722,50 +723,50 @@ static int task_matches_condition(Task *task, ASTNode *node) {
     }
 }
 
-static Task **tasks_filter(Task **tasks, ASTNode *filter) {
-    if (!tasks || dalen(tasks) == 0 || !filter) {
-        return tasks;
+static Entry **entries_filter(Entry **entries, ASTNode *filter) {
+    if (!entries || dalen(entries) == 0 || !filter) {
+        return entries;
     }
 
-    Task **filtered = NULL;
-    for (int i = 0; i < dalen(tasks); i++) {
-        Task *t = tasks[i];
-        if (task_matches_condition(t, filter))
-            dapush(filtered, t);
+    Entry **filtered = NULL;
+    for (int i = 0; i < dalen(entries); i++) {
+        Entry *e = entries[i];
+        if (entry_matches_condition(e, filter))
+            dapush(filtered, e);
         else
-            task_free(t);
+            entry_free(e);
     }
 
-    dafree(tasks);
+    dafree(entries);
     return filtered;
 }
 
-typedef void (*task_operation_fn)(Task **tasks, void *ctx);
+typedef void (*entry_operation_fn)(Entry **entries, void *ctx);
 
-static void task_op_print(Task **tasks, void *ctx) {
+static void entry_op_print(Entry **entries, void *ctx) {
     OutputFormat fmt = (OutputFormat)(intptr_t)ctx;
-    if (!tasks)
+    if (!entries)
         return;
 
-    for (int i = 0; i < dalen(tasks); i++)
-        task_print(tasks[i], fmt);
+    for (int i = 0; i < dalen(entries); i++)
+        entry_print(entries[i], fmt);
 }
 
-static void task_op_delete(Task **tasks, void *ctx) {
+static void entry_op_delete(Entry **entries, void *ctx) {
     UNUSED(ctx);
 
-    if (!tasks)
+    if (!entries)
         return;
 
-    for (int i = 0; i < dalen(tasks); i++) {
-        Task *t = tasks[i];
-        rmrf(t->path);
-        printf("Removed: %s\n", t->path);
+    for (int i = 0; i < dalen(entries); i++) {
+        Entry *e = entries[i];
+        rmrf(e->path);
+        printf("Removed: %s\n", e->path);
     }
 }
 
-static Error tasks_process_with_filter(const char *query, task_operation_fn op,
-                                       void *ctx) {
+static Error entries_process_with_filter(const char *query,
+                                         entry_operation_fn op, void *ctx) {
     // compile filter
     ASTNode *filter = parse(query);
     if (!filter) {
@@ -777,20 +778,20 @@ static Error tasks_process_with_filter(const char *query, task_operation_fn op,
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
         ast_free(filter);
-        fprintf(stderr, "Error: Tasks directory '%s' not found\n",
+        fprintf(stderr, "Error: Entries directory '%s' not found\n",
                 g_config.main_dir_name);
         return ERR_FAILURE;
     }
 
-    // find tasks
-    Task **tasks = tasks_get_all(main_dir);
-    tasks = tasks_filter(tasks, filter);
+    // find entries
+    Entry **entries = entries_get_all(main_dir);
+    entries = entries_filter(entries, filter);
 
     // execute operation
-    op(tasks, ctx);
+    op(entries, ctx);
 
     // cleanup
-    tasks_free(tasks);
+    entries_free(entries);
     free(main_dir);
     ast_free(filter);
 
@@ -807,10 +808,10 @@ static void usage() {
         "  -h           show this help\n"
         "  -i           initialize main directory in current location\n"
         "  -t template  use template file from %s/.templates/<template>.md\n"
-        "  -n           create new task\n"
+        "  -n           create new entry\n"
         "  -D dir       use custom main directory name instead of '%s'\n"
-        "  -p query     print tasks using query (e.g. 'priority > 5')\n"
-        "  -r query     remove tasks matching query\n"
+        "  -p query     print entries using query (e.g. 'priority > 5')\n"
+        "  -r query     remove entries matching query\n"
         "  -f format    output format for -p:\n"
         "                 unix: path:1:1: STATUS:[...] NAME:[...] ... "
         "(default)\n"
@@ -932,7 +933,7 @@ int main(int argc, char **argv) {
         usage();
         return ERR_SUCCESS;
     } else if (do_init) {
-        Error err = tasks_dir_init();
+        Error err = entries_dir_init();
         if (err != ERR_SUCCESS)
             return err;
         err = templates_dir_init();
@@ -942,17 +943,17 @@ int main(int argc, char **argv) {
     } else if (do_new) {
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: Tasks directory not found\n");
+            fprintf(stderr, "Error: Entries directory not found\n");
             return ERR_FAILURE;
         }
-        Error ret = task_create_dir_and_md(main_dir, fmt);
+        Error ret = entry_create_dir_and_md(main_dir, fmt);
         free(main_dir);
         return ret;
     } else if (do_print) {
-        return tasks_process_with_filter(query, task_op_print,
-                                         (void *)(intptr_t)fmt);
+        return entries_process_with_filter(query, entry_op_print,
+                                           (void *)(intptr_t)fmt);
     } else if (do_remove) {
-        return tasks_process_with_filter(query, task_op_delete, NULL);
+        return entries_process_with_filter(query, entry_op_delete, NULL);
     }
 
     usage();

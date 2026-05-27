@@ -3,7 +3,7 @@ CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
 FLEX = flex
 BISON = bison
 
-TARGET = tamd
+TARGET = mado
 TARGET_SRC = main.c
 
 LEXER = lexer.l
