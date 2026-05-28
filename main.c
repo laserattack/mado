@@ -64,6 +64,7 @@ static struct {
     const char *entry_file_name;
     const char *template_name;
     int max_header_lines;
+    int max_header_line_len;
     EntryField hide_fields;
 } g_config = {
     .main_dir_name = "MADO",
@@ -71,6 +72,8 @@ static struct {
     .entry_file_name = "MAIN.md",
     .template_name = "default", // default template
     .max_header_lines = 30,
+    // .max_header_line_len = 1024, // 1kb
+    .max_header_line_len = 1024, // 1kb
     .hide_fields = FIELD_NONE,
 };
 
@@ -451,16 +454,23 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     entry->name = strdup("");
     entry->time = strdup(entry_time);
 
-    char *line = NULL;
-    size_t line_len = 0;
-    ssize_t read;
+    char *line = malloc(g_config.max_header_line_len);
     int lines_processed = 0;
 
     while (lines_processed < g_config.max_header_lines &&
-           (read = getline(&line, &line_len, f)) != -1) {
-        if (read > 0 && line[read - 1] == '\n')
-            line[read - 1] = '\0';
-        lines_processed++;
+           fgets(line, g_config.max_header_line_len, f)) {
+
+        size_t len = strlen(line);
+
+        // skipping the part of the line that does not fit in the buffer
+        if (len > 0 && line[len - 1] != '\n' && !feof(f)) {
+            int c;
+            while ((c = fgetc(f)) != '\n' && c != EOF)
+                ;
+        }
+
+        if (len > 0 && line[len - 1] == '\n')
+            line[len - 1] = '\0';
 
         char *value;
 

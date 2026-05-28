@@ -1,6 +1,6 @@
 - NAME: there are too many allocations???
 - PRIORITY: 100
-- TAGS: critical, refactor, optomization, malloc, regex
+- TAGS: critical, refactor, optimization, malloc, regex
 - STATUS: closed
 
 # Problem
