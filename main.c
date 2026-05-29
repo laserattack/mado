@@ -69,10 +69,9 @@ static struct {
 } g_config = {
     .main_dir_name = "MADO",
     .templates_dir_name = ".templates",
-    .entry_file_name = "MAIN.md",
+    .entry_file_name = "MAIN",
     .template_name = "default", // default template
     .max_header_lines = 30,
-    // .max_header_line_len = 1024, // 1kb
     .max_header_line_len = 1024, // 1kb
     .hide_fields = FIELD_NONE,
 };
@@ -156,7 +155,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
     // FMT_ONLY_PATH
     if (fmt == FMT_ONLY_PATH) {
         if (shown & FIELD_PATH)
-            printf("%s/%s\n", e->path, g_config.entry_file_name);
+            printf("%s/%s.md\n", e->path, g_config.entry_file_name);
         return;
     }
 
@@ -211,7 +210,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
         if (shown & FIELD_PATH) {
             if (has_any)
                 printf(",");
-            printf("\"path\":\"%s/%s\"", e->path, g_config.entry_file_name);
+            printf("\"path\":\"%s/%s.md\"", e->path, g_config.entry_file_name);
             has_any = 1;
         }
         printf("}\n");
@@ -223,7 +222,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
         int has_any = 0;
 
         if (shown & FIELD_PATH) {
-            printf("%s/%s:1:1:", e->path, g_config.entry_file_name);
+            printf("%s/%s.md:1:1:", e->path, g_config.entry_file_name);
             has_any = 1;
         }
 
@@ -344,7 +343,7 @@ static Error entries_dir_init() {
 
 static Error entry_create(const char *entry_path, const char *template_name) {
     char entry_md[PATH_MAX];
-    snprintf(entry_md, sizeof(entry_md), "%s/%s", entry_path,
+    snprintf(entry_md, sizeof(entry_md), "%s/%s.md", entry_path,
              g_config.entry_file_name);
 
     if (template_name) {
@@ -370,7 +369,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             FILE *dst = fopen(entry_md, "w");
             if (!dst) {
                 fclose(src);
-                fprintf(stderr, "Error: Failed to create %s: %s\n",
+                fprintf(stderr, "Error: Failed to create %s.md: %s\n",
                         g_config.entry_file_name, entry_md);
                 return ERR_FAILURE;
             }
@@ -396,7 +395,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
 
     FILE *f = fopen(entry_md, "w");
     if (!f) {
-        fprintf(stderr, "Error: Failed to create %s in: %s\n",
+        fprintf(stderr, "Error: Failed to create %s.md in: %s\n",
                 g_config.entry_file_name, entry_path);
         return ERR_FAILURE;
     }
@@ -440,7 +439,7 @@ static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
 
 static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     char entry_file[PATH_MAX];
-    snprintf(entry_file, sizeof(entry_file), "%s/%s", entry_dir,
+    snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir,
              g_config.entry_file_name);
 
     FILE *f = fopen(entry_file, "r");
@@ -533,7 +532,7 @@ static Entry **entries_get_all(const char *main_dir) {
                  dirent->d_name);
 
         char entry_file[PATH_MAX];
-        snprintf(entry_file, sizeof(entry_file), "%s/%s", entry_dir,
+        snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir,
                  g_config.entry_file_name);
 
         if (!file_exists(entry_file))
@@ -821,13 +820,15 @@ static Error entries_process_with_filter(const char *query,
 
 static void usage() {
     fprintf(stdout,
-            "usage: %s [-h] [-i] [-n] [-t template] [-D dir] [-f format] [-p "
+            "usage: %s [-h] [-i] [-n] [-t template] [-D dir] [-E entry] [-f "
+            "format] [-p "
             "query] [-r query] [-NTPSAH]\n"
             "  -h           show this help\n"
             "  -i           initialize main directory in current location\n"
             "  -t template  use template file from %s/%s/<template>.md\n"
             "  -n           create new entry\n"
             "  -D dir       use custom main directory name instead of '%s'\n"
+            "  -E entry     use custom entry file name instead of '%s'\n"
             "  -p query     print entries using query (e.g. 'priority > 5')\n"
             "  -r query     remove entries matching query\n"
             "  -f format    output format for -p:\n"
@@ -842,7 +843,7 @@ static void usage() {
             "  -A           hide tags field in output\n"
             "  -H           hide path field in output\n",
             argv0, g_config.main_dir_name, g_config.templates_dir_name,
-            g_config.main_dir_name);
+            g_config.main_dir_name, g_config.entry_file_name);
 }
 
 int main(int argc, char **argv) {
@@ -871,6 +872,15 @@ int main(int argc, char **argv) {
             return ERR_FAILURE;
         }
         g_config.main_dir_name = dir_str;
+        break;
+    }
+    case 'E': {
+        const char *entry_name = ARGF();
+        if (!entry_name) {
+            fprintf(stderr, "Error: -E requires a entry file name argument\n");
+            return ERR_FAILURE;
+        }
+        g_config.entry_file_name = entry_name;
         break;
     }
     case 'n': {
