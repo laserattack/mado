@@ -318,14 +318,32 @@ static Error templates_dir_init() {
     return ERR_SUCCESS;
 }
 
-static Error entries_dir_init() {
+static Error entries_dir_init(int force) {
     char *cwd = get_cwd();
     char entries_dir[PATH_MAX];
     snprintf(entries_dir, sizeof(entries_dir), "%s/%s", cwd,
              g_config.main_dir_name);
 
+    if (!force) {
+        char *entries_dir_existing = find_dir_up(g_config.main_dir_name);
+        if (entries_dir_existing) {
+            printf("Entries directory already exists: %s\n",
+                   entries_dir_existing);
+            if (strcmp(entries_dir_existing, entries_dir))
+                printf("Hint: Use -F to force initialization in current "
+                       "directory\n");
+            free(entries_dir_existing);
+            free(cwd);
+            return ERR_SUCCESS;
+        }
+    }
+
     if (file_exists(entries_dir)) {
         printf("Entries directory already exists: %s\n", entries_dir);
+        if (force)
+            printf("Hint: -F has no effect because '%s' already exists in this "
+                   "location\n",
+                   g_config.main_dir_name);
     } else {
         if (mkdir(entries_dir, 0755) == 0) {
             printf("Created entries directory: %s\n", entries_dir);
@@ -386,8 +404,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             fprintf(stderr, "Error: Template '%s' was not found\n",
                     template_name);
             if (strcmp(template_name, "default") == 0) {
-                fprintf(stderr, "Hint: Create default template with '%s -i'\n",
-                        argv0);
+                printf("Hint: Create default template with '%s -i'\n", argv0);
             }
             return ERR_FAILURE;
         }
@@ -820,15 +837,14 @@ static Error entries_process_with_filter(const char *query,
 
 static void usage() {
     fprintf(stdout,
-            "usage: %s [-h] [-i] [-n] [-t template] [-D dir] [-E entry] [-f "
-            "format] [-p "
-            "query] [-r query] [-NTPSAH]\n"
+            "usage: %s [OPTION]...\n"
             "  -h           show this help\n"
             "  -i           initialize main directory in current location\n"
             "  -t template  use template file from %s/%s/<template>.md\n"
             "  -n           create new entry\n"
             "  -D dir       use custom main directory name instead of '%s'\n"
             "  -E entry     use custom entry file name instead of '%s'\n"
+            "  -F           force init main dir in cwd even if exists above\n"
             "  -p query     print entries using query (e.g. 'priority > 5')\n"
             "  -r query     remove entries matching query\n"
             "  -f format    output format for -p:\n"
@@ -854,7 +870,8 @@ int main(int argc, char **argv) {
 
     OutputFormat fmt = FMT_UNIX;
     char *query = NULL;
-    int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0;
+    int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0,
+        force = 0;
 
     ARGBEGIN {
     case 'h': {
@@ -863,6 +880,10 @@ int main(int argc, char **argv) {
     }
     case 'i': {
         do_init = 1;
+        break;
+    }
+    case 'F': {
+        force = 1;
         break;
     }
     case 'D': {
@@ -962,7 +983,7 @@ int main(int argc, char **argv) {
         usage();
         return ERR_SUCCESS;
     } else if (do_init) {
-        Error err = entries_dir_init();
+        Error err = entries_dir_init(force);
         if (err != ERR_SUCCESS)
             return err;
         err = templates_dir_init();
