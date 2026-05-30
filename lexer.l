@@ -166,7 +166,7 @@ NEWLINE            \n
 
 .                     {
                           yycolno += yyleng;
-                          lexerror("unexpected char: '%s'. Trying to skip...", yytext);
+                          lexerror("unexpected char: '%s', trying to skip...", yytext);
                       }
 
 %%
