@@ -90,27 +90,27 @@ static Error init_regexes(void) {
         return ERR_SUCCESS;
 
     if (regcomp(&g_entry_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0) {
-        fprintf(stderr, "Error: Failed to compile entry_dir regex\n");
+        fprintf(stderr, "Error: failed to compile entry_dir regex\n");
         return ERR_FAILURE;
     }
     if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) !=
         0) {
-        fprintf(stderr, "Error: Failed to compile name regex\n");
+        fprintf(stderr, "Error: failed to compile name regex\n");
         return ERR_FAILURE;
     }
     if (regcomp(&g_priority_regex, "^- PRIORITY:[[:space:]]*([0-9]{1,3})$",
                 REG_EXTENDED) != 0) {
-        fprintf(stderr, "Error: Failed to compile priority regex\n");
+        fprintf(stderr, "Error: failed to compile priority regex\n");
         return ERR_FAILURE;
     }
     if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) !=
         0) {
-        fprintf(stderr, "Error: Failed to compile tags regex\n");
+        fprintf(stderr, "Error: failed to compile tags regex\n");
         return ERR_FAILURE;
     }
     if (regcomp(&g_status_regex, "^- STATUS:[[:space:]]*(.*)$", REG_EXTENDED) !=
         0) {
-        fprintf(stderr, "Error: Failed to compile status regex\n");
+        fprintf(stderr, "Error: failed to compile status regex\n");
         return ERR_FAILURE;
     }
 
@@ -271,7 +271,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
 static Error templates_dir_init() {
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
-        fprintf(stderr, "Error: Entries directory not found\n");
+        fprintf(stderr, "Error: entries directory not found\n");
         return ERR_FAILURE;
     }
 
@@ -282,7 +282,7 @@ static Error templates_dir_init() {
     if (!file_exists(templates_dir)) {
         if (mkdir(templates_dir, 0755) != 0) {
             free(main_dir);
-            fprintf(stderr, "Error: Failed to create templates directory: %s\n",
+            fprintf(stderr, "Error: failed to create templates directory: %s\n",
                     templates_dir);
             return ERR_FAILURE;
         }
@@ -306,7 +306,7 @@ static Error templates_dir_init() {
             printf("Created default template: %s\n", default_template);
         } else {
             free(main_dir);
-            fprintf(stderr, "Error: Failed to create default template: %s\n",
+            fprintf(stderr, "Error: failed to create default template: %s\n",
                     default_template);
             return ERR_FAILURE;
         }
@@ -330,7 +330,7 @@ static Error entries_dir_init(int force) {
             printf("Entries directory already exists: %s\n",
                    entries_dir_existing);
             if (strcmp(entries_dir_existing, entries_dir))
-                printf("Hint: Use -F to force initialization in current "
+                printf("Hint: use -F to force initialization in current "
                        "directory\n");
             free(entries_dir_existing);
             free(cwd);
@@ -349,7 +349,7 @@ static Error entries_dir_init(int force) {
             printf("Created entries directory: %s\n", entries_dir);
         } else {
             free(cwd);
-            fprintf(stderr, "Error: Failed to create entries directory: %s\n",
+            fprintf(stderr, "Error: failed to create entries directory: %s\n",
                     entries_dir);
             return ERR_FAILURE;
         }
@@ -368,7 +368,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
         char template_file[PATH_MAX];
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: Entries directory not found\n");
+            fprintf(stderr, "Error: entries directory not found\n");
             return ERR_FAILURE;
         }
 
@@ -379,7 +379,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
         if (file_exists(template_file)) {
             FILE *src = fopen(template_file, "r");
             if (!src) {
-                fprintf(stderr, "Error: Failed to open template: %s\n",
+                fprintf(stderr, "Error: failed to open template: %s\n",
                         template_file);
                 return ERR_FAILURE;
             }
@@ -387,7 +387,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             FILE *dst = fopen(entry_md, "w");
             if (!dst) {
                 fclose(src);
-                fprintf(stderr, "Error: Failed to create %s.md: %s\n",
+                fprintf(stderr, "Error: failed to create %s.md: %s\n",
                         g_config.entry_file_name, entry_md);
                 return ERR_FAILURE;
             }
@@ -401,10 +401,10 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             fclose(dst);
             return ERR_SUCCESS;
         } else {
-            fprintf(stderr, "Error: Template '%s' was not found\n",
+            fprintf(stderr, "Error: template '%s' was not found\n",
                     template_name);
             if (strcmp(template_name, "default") == 0) {
-                printf("Hint: Create default template with '%s -i'\n", argv0);
+                printf("Hint: create default template with '%s -i'\n", argv0);
             }
             return ERR_FAILURE;
         }
@@ -412,7 +412,7 @@ static Error entry_create(const char *entry_path, const char *template_name) {
 
     FILE *f = fopen(entry_md, "w");
     if (!f) {
-        fprintf(stderr, "Error: Failed to create %s.md in: %s\n",
+        fprintf(stderr, "Error: failed to create %s.md in: %s\n",
                 g_config.entry_file_name, entry_path);
         return ERR_FAILURE;
     }
@@ -431,11 +431,11 @@ static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
     snprintf(entry_path, sizeof(entry_path), "%s/%s", main_dir, dir_name);
 
     if (file_exists(entry_path)) {
-        fprintf(stderr, "Error: Entry directory already exists\n");
+        fprintf(stderr, "Error: entry directory already exists\n");
         return ERR_FAILURE;
     }
     if (mkdir(entry_path, 0755) != 0) {
-        fprintf(stderr, "Error: Failed to create entry directory\n");
+        fprintf(stderr, "Error: failed to create entry directory\n");
         return ERR_FAILURE;
     }
 
@@ -805,7 +805,7 @@ static Error entries_process_with_filter(const char *query,
     // compile filter
     ASTNode *filter = parse(query);
     if (!filter) {
-        fprintf(stderr, "Error: Failed to parse query\n");
+        fprintf(stderr, "Error: failed to parse query\n");
         return ERR_FAILURE;
     }
 
@@ -813,7 +813,7 @@ static Error entries_process_with_filter(const char *query,
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
         ast_free(filter);
-        fprintf(stderr, "Error: Entries directory '%s' not found\n",
+        fprintf(stderr, "Error: entries directory '%s' not found\n",
                 g_config.main_dir_name);
         return ERR_FAILURE;
     }
@@ -930,7 +930,7 @@ int main(int argc, char **argv) {
         } else if (strcmp(fmt_str, "jsonl") == 0) {
             fmt = FMT_JSONL;
         } else {
-            fprintf(stderr, "Error: Unknown format '%s'\n", fmt_str);
+            fprintf(stderr, "Error: unknown format '%s'\n", fmt_str);
             return ERR_FAILURE;
         }
         break;
@@ -973,7 +973,7 @@ int main(int argc, char **argv) {
         g_config.hide_fields |= FIELD_PATH;
         break;
     default: {
-        fprintf(stderr, "Error: Unknown flag '%c'\n", ARGC());
+        fprintf(stderr, "Error: unknown flag '%c'\n", ARGC());
         return ERR_FAILURE;
     }
     }
@@ -993,7 +993,7 @@ int main(int argc, char **argv) {
     } else if (do_new) {
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: Entries directory not found\n");
+            fprintf(stderr, "Error: entries directory not found\n");
             return ERR_FAILURE;
         }
         Error ret = entry_create_dir_and_md(main_dir, fmt);
