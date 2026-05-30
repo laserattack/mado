@@ -805,7 +805,7 @@ static Error entries_process_with_filter(const char *query,
     // compile filter
     ASTNode *filter = parse(query);
     if (!filter) {
-        fprintf(stderr, "Error: Failed to parse query: %s\n", query);
+        fprintf(stderr, "Error: Failed to parse query\n");
         return ERR_FAILURE;
     }
 
