@@ -487,6 +487,8 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     while (lines_processed < g_config.max_header_lines &&
            fgets(line, g_config.max_header_line_len, f)) {
 
+        lines_processed++;
+
         size_t len = strlen(line);
 
         // skipping the part of the line that does not fit in the buffer
