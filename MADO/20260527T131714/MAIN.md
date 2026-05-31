@@ -1,4 +1,4 @@
 - NAME: flag for changing the number of the first rows in which fields are searched
 - PRIORITY:
 - TAGS: feat, flag
-- STATUS: opened
+- STATUS: closed
