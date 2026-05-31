@@ -24,6 +24,9 @@ char *argv0;
 
 #define UNUSED(x) (void)(x)
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+
 // ================ TYPES
 
 typedef enum { ERR_SUCCESS = 0, ERR_FAILURE } Error;
@@ -58,6 +61,14 @@ typedef enum {
 // ================ GLOBAL
 
 // config
+
+#define MAIN_DIR_NAME_DEFAULT "MADO"
+#define TEMPLATES_DIR_NAME_DEFAULT ".templates"
+#define ENTRY_FILE_NAME_DEFAULT "MAIN"
+#define TEMPLATE_NAME_DEFAULT "default"
+#define MAX_HEADER_LINES_DEFAULT 30
+#define MAX_HEADER_LINE_LEN_DEFAULT 1024 // 1kb
+
 static struct {
     const char *main_dir_name;
     const char *templates_dir_name;
@@ -67,12 +78,12 @@ static struct {
     int max_header_line_len;
     EntryField hide_fields;
 } g_config = {
-    .main_dir_name = "MADO",
-    .templates_dir_name = ".templates",
-    .entry_file_name = "MAIN",
-    .template_name = "default", // default template
-    .max_header_lines = 30,
-    .max_header_line_len = 1024, // 1kb
+    .main_dir_name = MAIN_DIR_NAME_DEFAULT,
+    .templates_dir_name = TEMPLATES_DIR_NAME_DEFAULT,
+    .entry_file_name = ENTRY_FILE_NAME_DEFAULT,
+    .template_name = TEMPLATE_NAME_DEFAULT,
+    .max_header_lines = MAX_HEADER_LINES_DEFAULT,
+    .max_header_line_len = MAX_HEADER_LINE_LEN_DEFAULT,
     .hide_fields = FIELD_NONE,
 };
 
@@ -840,26 +851,35 @@ static void usage() {
             "usage: %s [OPTION]...\n"
             "  -h           show this help\n"
             "  -i           initialize main directory in current location\n"
-            "  -t template  use template file from %s/%s/<template>.md\n"
+            "  -t template  use template file from '%s/%s/<template>.md'\n"
             "  -n           create new entry\n"
-            "  -D dir       use custom main directory name instead of '%s'\n"
-            "  -E entry     use custom entry file name instead of '%s'\n"
+            "  -D dir       use custom main directory name instead of "
+            "'" MAIN_DIR_NAME_DEFAULT "'\n"
+            "  -E entry     use custom entry file name instead of "
+            "'" ENTRY_FILE_NAME_DEFAULT "'\n"
             "  -F           force init main dir in cwd even if exists above\n"
             "  -p query     print entries using query (e.g. 'priority > 5')\n"
             "  -r query     remove entries matching query\n"
             "  -f format    output format for -p:\n"
-            "                 unix: path:1:1: STATUS:[...] NAME:[...] ... "
-            "(default)\n"
+            "                 unix: path:1:1: STATUS:[...] NAME:[...] ...\n"
             "                 path: absolute paths only, one per line\n"
             "                 jsonl: newline-delimited JSON\n"
-            "  -N           hide name field in output\n"
-            "  -T           hide time field in output\n"
-            "  -P           hide priority field in output\n"
-            "  -S           hide status field in output\n"
-            "  -A           hide tags field in output\n"
-            "  -H           hide path field in output\n",
-            argv0, g_config.main_dir_name, g_config.templates_dir_name,
-            g_config.main_dir_name, g_config.entry_file_name);
+            "  -L lines     max header lines to scan for fields "
+            "(default: " TOSTRING(
+                MAX_HEADER_LINES_DEFAULT) ")\n"
+                                          "  -N           hide name field in "
+                                          "output\n"
+                                          "  -T           hide time field in "
+                                          "output\n"
+                                          "  -P           hide priority field "
+                                          "in output\n"
+                                          "  -S           hide status field in "
+                                          "output\n"
+                                          "  -A           hide tags field in "
+                                          "output\n"
+                                          "  -H           hide path field in "
+                                          "output\n",
+            argv0, g_config.main_dir_name, g_config.templates_dir_name);
 }
 
 int main(int argc, char **argv) {
@@ -902,6 +922,20 @@ int main(int argc, char **argv) {
             return ERR_FAILURE;
         }
         g_config.entry_file_name = entry_name;
+        break;
+    }
+    case 'L': {
+        const char *lines_str = ARGF();
+        if (!lines_str) {
+            fprintf(stderr, "Error: -L requires a number argument\n");
+            return ERR_FAILURE;
+        }
+        int lines = atoi(lines_str);
+        if (lines <= 0) {
+            fprintf(stderr, "Error: -L must be a positive number\n");
+            return ERR_FAILURE;
+        }
+        g_config.max_header_lines = lines;
         break;
     }
     case 'n': {
