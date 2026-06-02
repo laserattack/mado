@@ -527,7 +527,7 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     entry->status = strdup("");
     entry->name = strdup("");
     entry->time = strdup(entry_time);
-    entry->deadline = strdup("");
+    entry->deadline = strdup("99990000T000000");
 
     char *line = malloc(g_config.max_header_line_len);
     int lines_processed = 0;

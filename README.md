@@ -64,8 +64,9 @@ The login page returns 500 error when using special characters.
 
 > No fields are required — you can omit any field entirely or leave its value empty. For example, when writing a note, you probably won't need the priority, status and deadline fields.
 > When a field is omitted or left empty:
-> - NAME, STATUS, DEADLINE default to empty string ""
+> - NAME, STATUS default to empty string ""
 > - PRIORITY defaults to 0
+> - DEADLINE defaults to 99990000T000000
 > - TAGS defaults to a list with one empty element [""]
 > - TIME is a system field, always present and set to the entry's directory name (creation timestamp in YYYYMMDDTHHMMSS format). It cannot be changed or removed — it reflects when the entry was created
 
@@ -94,7 +95,7 @@ mado -p 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
 mado -p 'time >= 2023 and time <= 2025' # Entries created between 2023 and 2025 (inclusive)
 
 # Find entries with complex conditions
-mado -p '(tag = bug or tag = critical) and status = opened'
+mado -p '(tag = bug or tag = critical) and status = opened and deadline < 20260602'
 mado -p 'not (priority < 3 or status = closed)'
 mado -p '(priority > 5 and tag = urgent) or status = reopened'
 
