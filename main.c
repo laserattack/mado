@@ -67,7 +67,7 @@ typedef enum {
 #define MAIN_DIR_NAME_DEFAULT "MADO"
 #define TEMPLATES_DIR_NAME_DEFAULT ".templates"
 #define ENTRY_FILE_NAME_DEFAULT "MAIN"
-#define TEMPLATE_NAME_DEFAULT "default"
+#define TEMPLATE_NAME_DEFAULT "task"
 #define MAX_HEADER_LINES_DEFAULT 30
 #define MAX_HEADER_LINE_LEN_DEFAULT 1024 // 1kb
 
@@ -324,12 +324,11 @@ static Error templates_dir_init() {
         printf("Templates directory already exists: %s\n", templates_dir);
     }
 
-    char default_template[PATH_MAX];
-    snprintf(default_template, sizeof(default_template), "%s/default.md",
-             templates_dir);
+    char task_template[PATH_MAX];
+    snprintf(task_template, sizeof(task_template), "%s/task.md", templates_dir);
 
-    if (!file_exists(default_template)) {
-        FILE *f = fopen(default_template, "w");
+    if (!file_exists(task_template)) {
+        FILE *f = fopen(task_template, "w");
         if (f) {
             fprintf(f, "- NAME:\n");
             fprintf(f, "- PRIORITY:\n");
@@ -337,15 +336,35 @@ static Error templates_dir_init() {
             fprintf(f, "- STATUS:\n");
             fprintf(f, "- DEADLINE:\n");
             fclose(f);
-            printf("Created default template: %s\n", default_template);
+            printf("Created task template: %s\n", task_template);
         } else {
             free(main_dir);
-            fprintf(stderr, "Error: failed to create default template: %s\n",
-                    default_template);
+            fprintf(stderr, "Error: failed to create task template: %s\n",
+                    task_template);
             return ERR_FAILURE;
         }
     } else {
-        printf("Default template already exists: %s\n", default_template);
+        printf("Task template already exists: %s\n", task_template);
+    }
+
+    char note_template[PATH_MAX];
+    snprintf(note_template, sizeof(note_template), "%s/note.md", templates_dir);
+
+    if (!file_exists(note_template)) {
+        FILE *f = fopen(note_template, "w");
+        if (f) {
+            fprintf(f, "- NAME:\n");
+            fprintf(f, "- TAGS:\n");
+            fclose(f);
+            printf("Created note template: %s\n", note_template);
+        } else {
+            free(main_dir);
+            fprintf(stderr, "Error: failed to create note template: %s\n",
+                    note_template);
+            return ERR_FAILURE;
+        }
+    } else {
+        printf("Note template already exists: %s\n", note_template);
     }
 
     free(main_dir);
@@ -437,8 +456,9 @@ static Error entry_create(const char *entry_path, const char *template_name) {
         } else {
             fprintf(stderr, "Error: template '%s' was not found\n",
                     template_name);
-            if (strcmp(template_name, "default") == 0) {
-                printf("Hint: create default template with '%s -i'\n", argv0);
+            if (strcmp(template_name, "task") == 0 ||
+                strcmp(template_name, "note") == 0) {
+                printf("Hint: create default templates with '%s -i'\n", argv0);
             }
             return ERR_FAILURE;
         }
