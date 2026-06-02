@@ -933,6 +933,7 @@ static void usage() {
         stdout,
         "usage: %s [OPTION]...\n"
         "  -h           show this help\n"
+        "  -C dir       change working directory before any operations\n"
         "  -i           initialize main directory in current location\n"
         "  -t template  use template file from '%s/%s/<template>.md'\n"
         "  -n           create new entry\n"
@@ -987,6 +988,19 @@ int main(int argc, char **argv) {
     ARGBEGIN {
     case 'h': {
         do_help = 1;
+        break;
+    }
+    case 'C': {
+        const char *dir = ARGF();
+        if (!dir) {
+            fprintf(stderr, "Error: -C requires a directory argument\n");
+            return ERR_FAILURE;
+        }
+        if (chdir(dir) != 0) {
+            fprintf(stderr, "Error: failed to change directory to '%s': %s\n",
+                    dir, strerror(errno));
+            return ERR_FAILURE;
+        }
         break;
     }
     case 'i': {
