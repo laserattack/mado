@@ -947,6 +947,7 @@ static void usage() {
         "  -L lines     max header lines to scan for fields "
         "(default: " TOSTRING(
             MAX_HEADER_LINES_DEFAULT) ")\n"
+                                      "\n"
                                       "  -N           hide name field in "
                                       "output\n"
                                       "  -T           hide time field in "
@@ -960,7 +961,12 @@ static void usage() {
                                       "  -A           hide tags field in "
                                       "output\n"
                                       "  -H           hide path field in "
-                                      "output\n",
+                                      "output\n"
+                                      "  -o           only mode: hide all "
+                                      "fields, then -N/-T/-I/-P/-S/-A/-H\n"
+                                      "               show specific fields "
+                                      "(e.g. -oNA for name and "
+                                      "tags)\n",
         argv0, g_config.main_dir_name, g_config.templates_dir_name);
 }
 
@@ -973,7 +979,7 @@ int main(int argc, char **argv) {
     OutputFormat fmt = FMT_UNIX;
     char *query = NULL;
     int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0,
-        force = 0;
+        force = 0, only = 0;
 
     ARGBEGIN {
     case 'h': {
@@ -1051,6 +1057,11 @@ int main(int argc, char **argv) {
         }
         break;
     }
+    case 'o': {
+        only = 1;
+        g_config.hide_fields = FIELD_ALL;
+        break;
+    }
     case 'p': {
         query = ARGF();
         if (!query) {
@@ -1071,25 +1082,46 @@ int main(int argc, char **argv) {
     }
     // hide field
     case 'N':
-        g_config.hide_fields |= FIELD_NAME;
+        if (only)
+            g_config.hide_fields &= ~FIELD_NAME;
+        else
+            g_config.hide_fields |= FIELD_NAME;
         break;
     case 'T':
-        g_config.hide_fields |= FIELD_TIME;
+        if (only)
+            g_config.hide_fields &= ~FIELD_TIME;
+        else
+            g_config.hide_fields |= FIELD_TIME;
         break;
     case 'I':
-        g_config.hide_fields |= FIELD_DEADLINE;
+        if (only)
+            g_config.hide_fields &= ~FIELD_DEADLINE;
+        else
+            g_config.hide_fields |= FIELD_DEADLINE;
         break;
     case 'P':
-        g_config.hide_fields |= FIELD_PRIORITY;
+        if (only)
+            g_config.hide_fields &= ~FIELD_PRIORITY;
+        else
+            g_config.hide_fields |= FIELD_PRIORITY;
         break;
     case 'S':
-        g_config.hide_fields |= FIELD_STATUS;
+        if (only)
+            g_config.hide_fields &= ~FIELD_STATUS;
+        else
+            g_config.hide_fields |= FIELD_STATUS;
         break;
     case 'A':
-        g_config.hide_fields |= FIELD_TAGS;
+        if (only)
+            g_config.hide_fields &= ~FIELD_TAGS;
+        else
+            g_config.hide_fields |= FIELD_TAGS;
         break;
     case 'H':
-        g_config.hide_fields |= FIELD_PATH;
+        if (only)
+            g_config.hide_fields &= ~FIELD_PATH;
+        else
+            g_config.hide_fields |= FIELD_PATH;
         break;
     default: {
         fprintf(stderr, "Error: unknown flag '%c'\n", ARGC());
