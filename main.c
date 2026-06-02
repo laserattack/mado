@@ -249,46 +249,31 @@ static void entry_print(Entry *e, OutputFormat fmt) {
 
     // FMT_UNIX
     if (fmt == FMT_UNIX) {
-        int has_any = 0;
-
-        if (shown & FIELD_PATH) {
-            printf("%s/%s.md:1:1:", e->path, g_config.entry_file_name);
-            has_any = 1;
-        }
+        // the path is always output, it is a mandatory part of the unix format
+        printf("%s/%s.md:1:1:", e->path, g_config.entry_file_name);
 
         if (shown & FIELD_TIME) {
-            if (has_any)
-                printf(" ");
+            printf(" ");
             printf("TIME:[%s]", e->time);
-            has_any = 1;
         }
         if (shown & FIELD_NAME) {
-            if (has_any)
-                printf(" ");
+            printf(" ");
             printf("NAME:[%s]", e->name);
-            has_any = 1;
         }
         if (shown & FIELD_PRIORITY) {
-            if (has_any)
-                printf(" ");
+            printf(" ");
             printf("PRIORITY:[%d]", e->priority);
-            has_any = 1;
         }
         if (shown & FIELD_DEADLINE) {
-            if (has_any)
-                printf(" ");
+            printf(" ");
             printf("DEADLINE:[%s]", e->deadline);
-            has_any = 1;
         }
         if (shown & FIELD_STATUS) {
-            if (has_any)
-                printf(" ");
+            printf(" ");
             printf("STATUS:[%s]", e->status);
-            has_any = 1;
         }
         if (shown & FIELD_TAGS) {
-            if (has_any)
-                printf(" ");
+            printf(" ");
             printf("TAGS:[");
             for (int j = 0; j < dalen(e->tags); j++) {
                 if (strcmp(e->tags[j], "") == 0)
@@ -299,8 +284,7 @@ static void entry_print(Entry *e, OutputFormat fmt) {
             }
             printf("]");
         }
-        if (has_any)
-            printf("\n");
+        printf("\n");
     }
 }
 
