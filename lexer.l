@@ -62,7 +62,7 @@ ALL                all|ALL
 ALLOF              allof
 ANYOF              anyof
 
-TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8})(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?
+TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 STRING             \"[^\"]*\"|\'[^\']*\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*

@@ -190,7 +190,7 @@ keywords
 |------|-------------|--------|----------|
 | **number** | Integer value | 0-999 | `0`, `10`, `999` |
 | **string** | Text value | Unquoted: `[a-zA-Z_][a-zA-Z0-9_-]*` or quoted: `"..."` or `'...'` | `bug`, `"fix login"`, `'проблема'` |
-| **timestamp** | Creation time of entry | 4, 6 or 8 digits + optional (`T` + 0, 2, 4 or 6 digits) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
+| **timestamp** | Creation time of entry | 4 digits, 6 digits or (8 digits + optional (`T` + 0, 2, 4 or 6 digits)) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
 
 ### Keywords
 
@@ -229,10 +229,3 @@ This will produce an executable file `./mado`
   - `make`
   - `flex`
   - `bison`
-
-## Acknowledgments
-
-Inspired by [Compiler for a Query
-Language](https://youtu.be/8NdRGmp70Go?si=hZ7cQ-PBZQXqD9mG) by
-Tsoding. In the video, he outlined the specification for such a system
-but didn't release the code — so this is my own implementation

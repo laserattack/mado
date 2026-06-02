@@ -127,7 +127,10 @@ static Error init_regexes(void) {
         fprintf(stderr, "Error: failed to compile status regex\n");
         return ERR_FAILURE;
     }
-    if (regcomp(&g_deadline_regex, "^- DEADLINE:[[:space:]]*(.*)$",
+    if (regcomp(&g_deadline_regex,
+                "^- "
+                "DEADLINE:[[:space:]]*([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|["
+                "0-9]{4}|[0-9]{6})?)?)[[:space:]]*$",
                 REG_EXTENDED) != 0) {
         fprintf(stderr, "Error: failed to compile deadline regex\n");
         return ERR_FAILURE;
