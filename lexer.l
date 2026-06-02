@@ -47,6 +47,7 @@ void lexerror(const char *fmt, ...) {
 
 NUMBER             [0-9]{1,3}
 WHITESPACE         [ \t\r]
+DEADLINE           deadline|DEADLINE
 PRIORITY           priority|PRIORITY
 STATUS             status|STATUS
 TIME               time|TIME
@@ -71,6 +72,7 @@ NEWLINE            \n
 {WHITESPACE}+   { yycolno += yyleng; }
 {NEWLINE}+      { yylineno++; yycolno = 1; }
 
+{DEADLINE}      { yycolno += yyleng; return TOKEN_DEADLINE; }
 {PRIORITY}      { yycolno += yyleng; return TOKEN_PRIORITY; }
 {STATUS}        { yycolno += yyleng; return TOKEN_STATUS; }
 {TIME}          { yycolno += yyleng; return TOKEN_TIME; }
@@ -121,6 +123,8 @@ NEWLINE            \n
                               const char *word;
                               int token;
                           } keywords[] = {
+                              // TODO(20260602T132808): register independent guess
+                              {"deadline", TOKEN_DEADLINE},
                               {"priority", TOKEN_PRIORITY},
                               {"status",   TOKEN_STATUS},
                               {"time",     TOKEN_TIME},

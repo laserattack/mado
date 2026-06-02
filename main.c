@@ -44,18 +44,20 @@ typedef struct Entry {
     char **tags; // dynarr
     char *status;
     char *time;
+    char *deadline;
 } Entry;
 
 typedef enum {
     FIELD_NONE = 0,
     FIELD_NAME = 1 << 0,
     FIELD_TIME = 1 << 1,
-    FIELD_PRIORITY = 1 << 2,
-    FIELD_STATUS = 1 << 3,
-    FIELD_TAGS = 1 << 4,
-    FIELD_PATH = 1 << 5,
-    FIELD_ALL = FIELD_NAME | FIELD_TIME | FIELD_PRIORITY | FIELD_STATUS |
-                FIELD_TAGS | FIELD_PATH
+    FIELD_DEADLINE = 1 << 2,
+    FIELD_PRIORITY = 1 << 3,
+    FIELD_STATUS = 1 << 4,
+    FIELD_TAGS = 1 << 5,
+    FIELD_PATH = 1 << 6,
+    FIELD_ALL = FIELD_NAME | FIELD_TIME | FIELD_DEADLINE | FIELD_PRIORITY |
+                FIELD_STATUS | FIELD_TAGS | FIELD_PATH
 } EntryField;
 
 // ================ GLOBAL
@@ -93,6 +95,7 @@ static regex_t g_name_regex;
 static regex_t g_priority_regex;
 static regex_t g_tags_regex;
 static regex_t g_status_regex;
+static regex_t g_deadline_regex;
 
 static int g_regex_initialized = 0;
 
@@ -124,6 +127,11 @@ static Error init_regexes(void) {
         fprintf(stderr, "Error: failed to compile status regex\n");
         return ERR_FAILURE;
     }
+    if (regcomp(&g_deadline_regex, "^- DEADLINE:[[:space:]]*(.*)$",
+                REG_EXTENDED) != 0) {
+        fprintf(stderr, "Error: failed to compile deadline regex\n");
+        return ERR_FAILURE;
+    }
 
     g_regex_initialized = 1;
     return ERR_SUCCESS;
@@ -138,6 +146,7 @@ static void free_regexes() {
     regfree(&g_priority_regex);
     regfree(&g_tags_regex);
     regfree(&g_status_regex);
+    regfree(&g_deadline_regex);
 }
 
 // ================ INTERPRETER
@@ -193,6 +202,13 @@ static void entry_print(Entry *e, OutputFormat fmt) {
             if (has_any)
                 printf(",");
             printf("\"priority\":%d", e->priority);
+            has_any = 1;
+        }
+        if (shown & FIELD_DEADLINE) {
+            if (has_any)
+                printf(",");
+            printf("\"deadline\":");
+            print_json_string(e->deadline);
             has_any = 1;
         }
         if (shown & FIELD_STATUS) {
@@ -255,6 +271,12 @@ static void entry_print(Entry *e, OutputFormat fmt) {
             printf("PRIORITY:[%d]", e->priority);
             has_any = 1;
         }
+        if (shown & FIELD_DEADLINE) {
+            if (has_any)
+                printf(" ");
+            printf("DEADLINE:[%s]", e->deadline);
+            has_any = 1;
+        }
         if (shown & FIELD_STATUS) {
             if (has_any)
                 printf(" ");
@@ -313,6 +335,7 @@ static Error templates_dir_init() {
             fprintf(f, "- PRIORITY:\n");
             fprintf(f, "- TAGS:\n");
             fprintf(f, "- STATUS:\n");
+            fprintf(f, "- DEADLINE:\n");
             fclose(f);
             printf("Created default template: %s\n", default_template);
         } else {
@@ -459,6 +482,7 @@ static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
         .name = "",
         .status = "",
         .time = dir_name,
+        .deadline = "",
     };
 
     entry_print(&entry, fmt);
@@ -480,6 +504,7 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     entry->status = strdup("");
     entry->name = strdup("");
     entry->time = strdup(entry_time);
+    entry->deadline = strdup("");
 
     char *line = malloc(g_config.max_header_line_len);
     int lines_processed = 0;
@@ -529,6 +554,11 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
                    NULL) {
             free(entry->status);
             entry->status = strdup(trim(value));
+            free(value);
+        } else if ((value = regex_extract_first_group(
+                        line, &g_deadline_regex)) != NULL) {
+            free(entry->deadline);
+            entry->deadline = strdup(trim(value));
             free(value);
         }
     }
@@ -585,6 +615,7 @@ static void entry_free(Entry *entry) {
     free(entry->name);
     free(entry->status);
     free(entry->time);
+    free(entry->deadline);
     for (int j = 0; j < dalen(entry->tags); j++)
         free(entry->tags[j]);
     dafree(entry->tags);
@@ -708,6 +739,32 @@ static int entry_matches_condition(Entry *entry, ASTNode *node) {
                 return 0;
             }
         } // case CMP_STATUS
+
+        case CMP_DEADLINE: {
+            char *cond_deadline = node->comparison.value.str_value;
+            if (!entry->deadline)
+                return 0;
+            switch (node->comparison.cmp) {
+            case CMP_EQ:
+                return strcmp(entry->deadline, cond_deadline) == 0;
+            case CMP_NE:
+                return strcmp(entry->deadline, cond_deadline) != 0;
+            case CMP_TILDE:
+                return strstr(entry->deadline, cond_deadline) != NULL;
+            case CMP_NTILDE:
+                return strstr(entry->deadline, cond_deadline) == NULL;
+            case CMP_GT:
+                return strcmp(entry->deadline, cond_deadline) > 0;
+            case CMP_LT:
+                return strcmp(entry->deadline, cond_deadline) < 0;
+            case CMP_GE:
+                return strcmp(entry->deadline, cond_deadline) >= 0;
+            case CMP_LE:
+                return strcmp(entry->deadline, cond_deadline) <= 0;
+            default:
+                return 0;
+            }
+        } // case CMP_DEADLINE
 
         case CMP_TIME: {
             char *cond_time = node->comparison.value.str_value;
@@ -849,39 +906,42 @@ static Error entries_process_with_filter(const char *query,
 // ================ ENTRYPOINT
 
 static void usage() {
-    fprintf(stdout,
-            "usage: %s [OPTION]...\n"
-            "  -h           show this help\n"
-            "  -i           initialize main directory in current location\n"
-            "  -t template  use template file from '%s/%s/<template>.md'\n"
-            "  -n           create new entry\n"
-            "  -D dir       use custom main directory name instead of "
-            "'" MAIN_DIR_NAME_DEFAULT "'\n"
-            "  -E entry     use custom entry file name instead of "
-            "'" ENTRY_FILE_NAME_DEFAULT "'\n"
-            "  -F           force init main dir in cwd even if exists above\n"
-            "  -p query     print entries using query (e.g. 'priority > 5')\n"
-            "  -r query     remove entries matching query\n"
-            "  -f format    output format for -p:\n"
-            "                 unix: path:1:1: STATUS:[...] NAME:[...] ...\n"
-            "                 path: absolute paths only, one per line\n"
-            "                 jsonl: newline-delimited JSON\n"
-            "  -L lines     max header lines to scan for fields "
-            "(default: " TOSTRING(
-                MAX_HEADER_LINES_DEFAULT) ")\n"
-                                          "  -N           hide name field in "
-                                          "output\n"
-                                          "  -T           hide time field in "
-                                          "output\n"
-                                          "  -P           hide priority field "
-                                          "in output\n"
-                                          "  -S           hide status field in "
-                                          "output\n"
-                                          "  -A           hide tags field in "
-                                          "output\n"
-                                          "  -H           hide path field in "
-                                          "output\n",
-            argv0, g_config.main_dir_name, g_config.templates_dir_name);
+    fprintf(
+        stdout,
+        "usage: %s [OPTION]...\n"
+        "  -h           show this help\n"
+        "  -i           initialize main directory in current location\n"
+        "  -t template  use template file from '%s/%s/<template>.md'\n"
+        "  -n           create new entry\n"
+        "  -D dir       use custom main directory name instead of "
+        "'" MAIN_DIR_NAME_DEFAULT "'\n"
+        "  -E entry     use custom entry file name instead of "
+        "'" ENTRY_FILE_NAME_DEFAULT "'\n"
+        "  -F           force init main dir in cwd even if exists above\n"
+        "  -p query     print entries using query (e.g. 'priority > 5')\n"
+        "  -r query     remove entries matching query\n"
+        "  -f format    output format for -p:\n"
+        "                 unix: path:1:1: STATUS:[...] NAME:[...] ...\n"
+        "                 path: absolute paths only, one per line\n"
+        "                 jsonl: newline-delimited JSON\n"
+        "  -L lines     max header lines to scan for fields "
+        "(default: " TOSTRING(
+            MAX_HEADER_LINES_DEFAULT) ")\n"
+                                      "  -N           hide name field in "
+                                      "output\n"
+                                      "  -T           hide time field in "
+                                      "output\n"
+                                      "  -I           hide deadline field in "
+                                      "output\n"
+                                      "  -P           hide priority field "
+                                      "in output\n"
+                                      "  -S           hide status field in "
+                                      "output\n"
+                                      "  -A           hide tags field in "
+                                      "output\n"
+                                      "  -H           hide path field in "
+                                      "output\n",
+        argv0, g_config.main_dir_name, g_config.templates_dir_name);
 }
 
 int main(int argc, char **argv) {
@@ -995,6 +1055,9 @@ int main(int argc, char **argv) {
         break;
     case 'T':
         g_config.hide_fields |= FIELD_TIME;
+        break;
+    case 'I':
+        g_config.hide_fields |= FIELD_DEADLINE;
         break;
     case 'P':
         g_config.hide_fields |= FIELD_PRIORITY;

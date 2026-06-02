@@ -126,7 +126,8 @@ static void append_number(NumList *list, int item) {
 }
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
-%token TOKEN_PRIORITY TOKEN_TAG TOKEN_STATUS TOKEN_NAME TOKEN_TIME
+%token TOKEN_DEADLINE TOKEN_PRIORITY TOKEN_TAG
+%token TOKEN_STATUS TOKEN_NAME TOKEN_TIME
 %token TOKEN_ALL
 %token TOKEN_ALLOF TOKEN_ANYOF
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
@@ -138,7 +139,7 @@ static void append_number(NumList *list, int item) {
 %type <node> expr condition condition_priority condition_string condition_time
 %type <str_list> string_list time_list
 %type <num_list> number_list
-%type <num> cmp_op string_field list_modifier
+%type <num> cmp_op string_field time_field list_modifier
 
 %destructor { ast_free($$); } <node>
 %destructor { free($$); } <str>
@@ -192,11 +193,11 @@ condition_priority:
     ;
 
 condition_time:
-    TOKEN_TIME cmp_op TOKEN_TIMESTAMP {
-        $$ = create_comparison(CMP_TIME, $2, 0, $3);
+    time_field cmp_op TOKEN_TIMESTAMP {
+        $$ = create_comparison($1, $2, 0, $3);
     }
-    | TOKEN_TIME cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
-        $$ = expand_list(CMP_TIME, $2, $5, NULL, $3);
+    | time_field cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
+        $$ = expand_list($1, $2, $5, NULL, $3);
     }
     ;
 
@@ -253,6 +254,11 @@ string_field:
     TOKEN_TAG      { $$ = CMP_TAG; }
     | TOKEN_STATUS { $$ = CMP_STATUS; }
     | TOKEN_NAME   { $$ = CMP_NAME; }
+    ;
+
+time_field:
+    TOKEN_TIME       { $$ = CMP_TIME; }
+    | TOKEN_DEADLINE { $$ = CMP_DEADLINE; }
     ;
 
 %%
