@@ -48,19 +48,6 @@ void lexerror(const char *fmt, ...) {
 
 NUMBER             [0-9]{1,3}
 WHITESPACE         [ \t\r]
-DEADLINE           deadline|DEADLINE
-PRIORITY           priority|PRIORITY
-STATUS             status|STATUS
-TIME               time|TIME
-NAME               name|NAME
-TAG                tag|TAG
-AND                and|AND
-OR                 or|OR
-NOT                not|NOT
-ALL                all|ALL
-
-ALLOF              allof
-ANYOF              anyof
 
 TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
@@ -72,19 +59,6 @@ NEWLINE            \n
 
 {WHITESPACE}+   { yycolno += yyleng; }
 {NEWLINE}+      { yylineno++; yycolno = 1; }
-
-{DEADLINE}      { yycolno += yyleng; return TOKEN_DEADLINE; }
-{PRIORITY}      { yycolno += yyleng; return TOKEN_PRIORITY; }
-{STATUS}        { yycolno += yyleng; return TOKEN_STATUS; }
-{TIME}          { yycolno += yyleng; return TOKEN_TIME; }
-{NAME}          { yycolno += yyleng; return TOKEN_NAME; }
-{TAG}           { yycolno += yyleng; return TOKEN_TAG; }
-{AND}           { yycolno += yyleng; return TOKEN_AND; }
-{OR}            { yycolno += yyleng; return TOKEN_OR; }
-{NOT}           { yycolno += yyleng; return TOKEN_NOT; }
-{ALL}           { yycolno += yyleng; return TOKEN_ALL; }
-{ALLOF}         { yycolno += yyleng; return TOKEN_ALLOF; }
-{ANYOF}         { yycolno += yyleng; return TOKEN_ANYOF; }
 
 ","             { yycolno += yyleng; return TOKEN_COMMA; }
 ">"             { yycolno += yyleng; return TOKEN_GT; }
