@@ -140,7 +140,7 @@ The `-f` flag controls how entries are displayed:
 ``` bash
 # Default unix format: path:1:1: fields
 mado -p 'all'
-# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1:1: TIME:[20260521T204844] NAME:[The ability to specify the name of the main directory (TASKS by default)] PRIORITY:[10] DEADLINE:[] STATUS:[closed] TAGS:[feat,flag]
+# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1:1: TIME:[20260521T204844] NAME:[The ability to specify the name of the main directory (TASKS by default)] PRIORITY:[10] DEADLINE:[99990000T000000] STATUS:[closed] TAGS:[feat,flag]
 # Compatible with Emacs compile buffer and other tools that parse file:line:col
 
 # Paths only — useful for piping to other tools
@@ -152,7 +152,7 @@ grep 'match' $(mado -p 'all' -f path)
 
 # Newline-delimited JSON for scripts
 mado -p 'all' -f jsonl
-# {"time":"20260521T204844","name":"The ability to specify the name of the main directory (TASKS by default)","priority":10,"deadline":"","status":"closed","tags":["feat","flag"],"path":"/home/user/project/MADO/20260521T204844/MAIN.md"}
+# {"time":"20260521T204844","name":"The ability to specify the name of the main directory (TASKS by default)","priority":10,"deadline":"99990000T000000","status":"closed","tags":["feat","flag"],"path":"/home/user/project/MADO/20260521T204844/MAIN.md"}
 # Pipe JSON output to jq for advanced processing
 mado -p 'priority > 5' -f jsonl | jq '.name'
 mado -p 'all' -f jsonl | jq -s 'group_by(.status)'
