@@ -27,10 +27,6 @@ cd myproject
 
 # Initialize MADO directory (like git init)
 mado -i
-# Output:
-# Created entries directory: /home/user/myproject/MADO
-# Created templates directory: /home/user/myproject/MADO/.templates
-# Created default template: /home/user/myproject/MADO/.templates/default.md
 ```
 
 Once the `MADO/` directory is initialized, you can work with entries
@@ -50,6 +46,7 @@ The entry will be created with the following content:
 - PRIORITY:
 - TAGS:
 - STATUS:
+- DEADLINE:
 ```
 
 You can fill it out as needed, for example:
@@ -59,16 +56,18 @@ You can fill it out as needed, for example:
 - PRIORITY: 10
 - TAGS: bug, critical, auth
 - STATUS: opened
+- DEADLINE: 20260615
 
 The login page returns 500 error when using special characters.
 ...
 ```
 
-> No fields are required — you can omit any field entirely or leave its value empty. For example, when writing a note, you probably won't need the priority and status fields.
+> No fields are required — you can omit any field entirely or leave its value empty. For example, when writing a note, you probably won't need the priority, status and deadline fields.
 > When a field is omitted or left empty:
-> - NAME, STATUS default to empty string ""
+> - NAME, STATUS, DEADLINE default to empty string ""
 > - PRIORITY defaults to 0
 > - TAGS defaults to a list with one empty element [""]
+> - TIME is a system field, always present and set to the entry's directory name (creation timestamp in YYYYMMDDTHHMMSS format). It cannot be changed or removed — it reflects when the entry was created
 
 When you have many entries, you'll want to filter them:
 
@@ -124,12 +123,6 @@ cat > MADO/.templates/bug.md << 'EOF'
 
 ## Actual Behavior
 EOF
-
-# Create a note template
-cat > MADO/.templates/note.md << 'EOF'
-- NAME:
-- TAGS: note
-EOF
 ```
 
 You can create entries with custom templates:
@@ -146,7 +139,7 @@ The `-f` flag controls how entries are displayed:
 ``` bash
 # Default unix format: path:1:1: fields
 mado -p 'all'
-# /home/user/project/MADO/20260516T161611/MAIN.md:1:1: TIME:[20260516T123214] NAME:[cmp operators for strings] PRIORITY:[10] STATUS:[closed] TAGS:[feat,search]
+# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1:1: TIME:[20260521T204844] NAME:[The ability to specify the name of the main directory (TASKS by default)] PRIORITY:[10] DEADLINE:[] STATUS:[closed] TAGS:[feat,flag]
 # Compatible with Emacs compile buffer and other tools that parse file:line:col
 
 # Paths only — useful for piping to other tools
@@ -158,7 +151,7 @@ grep 'match' $(mado -p 'all' -f path)
 
 # Newline-delimited JSON for scripts
 mado -p 'all' -f jsonl
-# {"time":"20260516T161611","name":"Fix login bug","priority":10,"status":"opened","tags":["bug","critical"],"path":"/home/user/project/MADO/20260516T161611/MAIN.md"}
+# {"time":"20260521T204844","name":"The ability to specify the name of the main directory (TASKS by default)","priority":10,"deadline":"","status":"closed","tags":["feat","flag"],"path":"/home/user/project/MADO/20260521T204844/MAIN.md"}
 # Pipe JSON output to jq for advanced processing
 mado -p 'priority > 5' -f jsonl | jq '.name'
 mado -p 'all' -f jsonl | jq -s 'group_by(.status)'
@@ -208,6 +201,7 @@ keywords
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
+| `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
 > **Note:** all operators also work with `anyof(...)` and `allof(...)`.
