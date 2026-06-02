@@ -48,7 +48,6 @@ void lexerror(const char *fmt, ...) {
 
 NUMBER             [0-9]{1,3}
 WHITESPACE         [ \t\r]
-
 TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 STRING             \"[^\"]*\"|\'[^\']*\'
@@ -117,10 +116,15 @@ NEWLINE            \n
                           int matches_count = 0, matched_token = 0;
 
                           for (int i = 0; i < n_keywords; i++) {
-                              if (yyleng <= (int)strlen(keywords[i].word) &&
+                              int cur_word_len = (int)strlen(keywords[i].word);
+                              if (yyleng <= cur_word_len &&
                                   strncasecmp(yytext, keywords[i].word, yyleng) == 0) {
-                                  matches_count++;
                                   matched_token = keywords[i].token;
+                                  if (yyleng == cur_word_len) {
+                                      matches_count = 1;
+                                      break;
+                                  }
+                                  matches_count++;
                               }
                           }
 
