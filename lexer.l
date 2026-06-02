@@ -1,6 +1,7 @@
 %{
 
 #include <stdarg.h>
+#include <strings.h>
 
 #include "parser.tab.h"
 
@@ -123,7 +124,6 @@ NEWLINE            \n
                               const char *word;
                               int token;
                           } keywords[] = {
-                              // TODO(20260602T132808): register independent guess
                               {"deadline", TOKEN_DEADLINE},
                               {"priority", TOKEN_PRIORITY},
                               {"status",   TOKEN_STATUS},
@@ -144,7 +144,7 @@ NEWLINE            \n
 
                           for (int i = 0; i < n_keywords; i++) {
                               if (yyleng <= (int)strlen(keywords[i].word) &&
-                                  strncmp(yytext, keywords[i].word, yyleng) == 0) {
+                                  strncasecmp(yytext, keywords[i].word, yyleng) == 0) {
                                   matches_count++;
                                   matched_token = keywords[i].token;
                               }
