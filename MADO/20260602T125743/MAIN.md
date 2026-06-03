@@ -1,7 +1,7 @@
 - NAME: start emacs plugin like magit for mado
 - PRIORITY: 10
 - TAGS: feat, emacs, plugin
-- STATUS: opened
+- STATUS: closed
 
 # Resources
 

@@ -177,8 +177,8 @@ static void entry_print(Entry *e, OutputFormat fmt) {
 
     // FMT_ONLY_PATH
     if (fmt == FMT_ONLY_PATH) {
-        if (shown & FIELD_PATH)
-            printf("%s/%s.md\n", e->path, g_config.entry_file_name);
+        // the path is always output, it is a mandatory part of the format
+        printf("%s/%s.md\n", e->path, g_config.entry_file_name);
         return;
     }
 
