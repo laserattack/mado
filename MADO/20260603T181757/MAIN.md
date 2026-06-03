@@ -1,0 +1,4 @@
+- NAME: add hint when -H is used with unix/path format
+- PRIORITY: 10
+- TAGS: feat, ux, hint
+- STATUS: opened

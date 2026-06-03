@@ -1,0 +1,4 @@
+- NAME: add the ability to get a list of all tags used in entries
+- PRIORITY: 30
+- TAGS: feat, tags, emacs, filtering
+- STATUS: opened
