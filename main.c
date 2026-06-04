@@ -99,7 +99,7 @@ static regex_t g_deadline_regex;
 
 static int g_regex_initialized = 0;
 
-static Error init_regexes(void) {
+static Error init_regexes() {
     if (g_regex_initialized)
         return ERR_SUCCESS;
 
@@ -912,12 +912,31 @@ static Error entries_process_with_filter(const char *query,
 
 // ================ ENTRYPOINT
 
+static Error print_repo_info() {
+    char *main_dir = find_dir_up(g_config.main_dir_name);
+    if (!main_dir) {
+        printf("No mado repostory here\n");
+        return ERR_SUCCESS;
+    }
+
+    Entry **entries = entries_get_all(main_dir);
+    int count = entries ? dalen(entries) : 0;
+
+    printf("Main directory: %s\n", main_dir);
+    printf("Entries count:  %d\n", count);
+
+    entries_free(entries);
+    free(main_dir);
+    return ERR_SUCCESS;
+}
+
 static void usage() {
     fprintf(
         stdout,
         "usage: %s [OPTION]...\n"
         "  -h           show this help\n"
         "  -C dir       change working directory before any operations\n"
+        "  -V           show repository info\n"
         "  -i           initialize main directory in current location\n"
         "  -t template  use template file from '%s/%s/<template>.md'\n"
         "  -n           create new entry\n"
@@ -966,12 +985,16 @@ int main(int argc, char **argv) {
 
     OutputFormat fmt = FMT_UNIX;
     char *query = NULL;
-    int do_init = 0, do_new = 0, do_help = 0, do_remove = 0, do_print = 0,
-        force = 0, only = 0;
+    int do_init = 0, do_info = 0, do_new = 0, do_help = 0, do_remove = 0,
+        do_print = 0, force = 0, only = 0;
 
     ARGBEGIN {
     case 'h': {
         do_help = 1;
+        break;
+    }
+    case 'V': {
+        do_info = 1;
         break;
     }
     case 'C': {
@@ -1156,6 +1179,8 @@ int main(int argc, char **argv) {
                                            (void *)(intptr_t)fmt);
     } else if (do_remove) {
         return entries_process_with_filter(query, entry_op_delete, NULL);
+    } else if (do_info) {
+        return print_repo_info();
     }
 
     usage();
