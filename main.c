@@ -291,7 +291,8 @@ static void entry_print(Entry *e, OutputFormat fmt) {
 static Error templates_dir_init() {
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
-        fprintf(stderr, "Error: entries directory not found\n");
+        fprintf(stderr, "Error: entries directory '%s' not found\n",
+                g_config.main_dir_name);
         return ERR_FAILURE;
     }
 
@@ -408,7 +409,8 @@ static Error entry_create(const char *entry_path, const char *template_name) {
         char template_file[PATH_MAX];
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: entries directory not found\n");
+            fprintf(stderr, "Error: entries directory '%s' not found\n",
+                    g_config.main_dir_name);
             return ERR_FAILURE;
         }
 
@@ -1168,7 +1170,8 @@ int main(int argc, char **argv) {
     } else if (do_new) {
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: entries directory not found\n");
+            fprintf(stderr, "Error: entries directory '%s' not found\n",
+                    g_config.main_dir_name);
             return ERR_FAILURE;
         }
         Error ret = entry_create_dir_and_md(main_dir, fmt);
