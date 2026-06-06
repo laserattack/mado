@@ -990,6 +990,29 @@ int main(int argc, char **argv) {
     int do_init = 0, do_info = 0, do_new = 0, do_help = 0, do_remove = 0,
         do_print = 0, force = 0, only = 0;
 
+    // Save argc/argv for second pass
+    int saved_argc = argc;
+    char **saved_argv = argv;
+
+    // First pass: check for -o
+    ARGBEGIN {
+    case 'o':
+        only = 1;
+        break;
+    default:
+        break;
+    }
+    ARGEND;
+
+    // Apply -o effect before processing field flags
+    if (only)
+        g_config.hide_fields = FIELD_ALL;
+
+    // Restore argc/argv for second pass
+    argc = saved_argc;
+    argv = saved_argv;
+
+    // Second pass: process all arguments
     ARGBEGIN {
     case 'h': {
         do_help = 1;
@@ -1084,8 +1107,7 @@ int main(int argc, char **argv) {
         break;
     }
     case 'o': {
-        only = 1;
-        g_config.hide_fields = FIELD_ALL;
+        // Already handled in first pass
         break;
     }
     case 'p': {
