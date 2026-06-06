@@ -230,3 +230,7 @@ This will produce an executable file `./mado`
   - `make`
   - `flex`
   - `bison`
+
+## Integrations
+
+- [emado](https://github.com/laserattack/emado) - Emacs interface for mado
