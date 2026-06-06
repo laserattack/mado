@@ -1,4 +1,5 @@
 #include <dirent.h>
+#include <getopt.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -6,9 +7,6 @@
 #include <string.h>
 #include <time.h>
 
-char *argv0;
-
-#include "utils/arg.h"
 #include "utils/da.h"
 
 #define FS_IMPL
@@ -61,6 +59,8 @@ typedef enum {
 } EntryField;
 
 // ================ GLOBAL
+
+static char *argv0;
 
 // config
 
@@ -980,6 +980,8 @@ static void usage() {
 }
 
 int main(int argc, char **argv) {
+    argv0 = argv[0];
+
     if (init_regexes() != ERR_SUCCESS) {
         return ERR_FAILURE;
     }
@@ -989,194 +991,133 @@ int main(int argc, char **argv) {
     char *query = NULL;
     int do_init = 0, do_info = 0, do_new = 0, do_help = 0, do_remove = 0,
         do_print = 0, force = 0, only = 0;
-
-    // Save argc/argv for second pass
-    int saved_argc = argc;
-    char **saved_argv = argv;
+    int opt;
 
     // First pass: check for -o
-    ARGBEGIN {
-    case 'o':
-        only = 1;
-        break;
-    default:
-        break;
+    while ((opt = getopt(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH")) != -1) {
+        if (opt == 'o') {
+            only = 1;
+            g_config.hide_fields = FIELD_ALL;
+        }
     }
-    ARGEND;
 
-    // Apply -o effect before processing field flags
-    if (only)
-        g_config.hide_fields = FIELD_ALL;
-
-    // Restore argc/argv for second pass
-    argc = saved_argc;
-    argv = saved_argv;
+    // Reset getopt for second pass
+    optind = 1;
 
     // Second pass: process all arguments
-    ARGBEGIN {
-    case 'h': {
-        do_help = 1;
-        break;
-    }
-    case 'V': {
-        do_info = 1;
-        break;
-    }
-    case 'C': {
-        const char *dir = ARGF();
-        if (!dir) {
-            fprintf(stderr, "Error: -C requires a directory argument\n");
+    while ((opt = getopt(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH")) != -1) {
+        switch (opt) {
+        case 'h':
+            do_help = 1;
+            break;
+        case 'V':
+            do_info = 1;
+            break;
+        case 'C':
+            if (chdir(optarg) != 0) {
+                fprintf(stderr,
+                        "Error: failed to change directory to '%s': %s\n",
+                        optarg, strerror(errno));
+                return ERR_FAILURE;
+            }
+            break;
+        case 'i':
+            do_init = 1;
+            break;
+        case 'F':
+            force = 1;
+            break;
+        case 'D':
+            g_config.main_dir_name = optarg;
+            break;
+        case 'E':
+            g_config.entry_file_name = optarg;
+            break;
+        case 'L': {
+            int lines = atoi(optarg);
+            if (lines <= 0) {
+                fprintf(stderr, "Error: -L must be a positive number\n");
+                return ERR_FAILURE;
+            }
+            g_config.max_header_lines = lines;
+            break;
+        }
+        case 'n':
+            do_new = 1;
+            break;
+        case 't':
+            g_config.template_name = optarg;
+            break;
+        case 'f':
+            if (strcmp(optarg, "path") == 0) {
+                fmt = FMT_ONLY_PATH;
+            } else if (strcmp(optarg, "unix") == 0) {
+                fmt = FMT_UNIX;
+            } else if (strcmp(optarg, "jsonl") == 0) {
+                fmt = FMT_JSONL;
+            } else {
+                fprintf(stderr, "Error: unknown format '%s'\n", optarg);
+                return ERR_FAILURE;
+            }
+            break;
+        case 'o':
+            // Already handled in first pass
+            break;
+        case 'p':
+            query = optarg;
+            do_print = 1;
+            break;
+        case 'r':
+            query = optarg;
+            do_remove = 1;
+            break;
+        case 'N':
+            if (only)
+                g_config.hide_fields &= ~FIELD_NAME;
+            else
+                g_config.hide_fields |= FIELD_NAME;
+            break;
+        case 'T':
+            if (only)
+                g_config.hide_fields &= ~FIELD_TIME;
+            else
+                g_config.hide_fields |= FIELD_TIME;
+            break;
+        case 'I':
+            if (only)
+                g_config.hide_fields &= ~FIELD_DEADLINE;
+            else
+                g_config.hide_fields |= FIELD_DEADLINE;
+            break;
+        case 'P':
+            if (only)
+                g_config.hide_fields &= ~FIELD_PRIORITY;
+            else
+                g_config.hide_fields |= FIELD_PRIORITY;
+            break;
+        case 'S':
+            if (only)
+                g_config.hide_fields &= ~FIELD_STATUS;
+            else
+                g_config.hide_fields |= FIELD_STATUS;
+            break;
+        case 'A':
+            if (only)
+                g_config.hide_fields &= ~FIELD_TAGS;
+            else
+                g_config.hide_fields |= FIELD_TAGS;
+            break;
+        case 'H':
+            if (only)
+                g_config.hide_fields &= ~FIELD_PATH;
+            else
+                g_config.hide_fields |= FIELD_PATH;
+            break;
+        default:
+            fprintf(stderr, "Error: unknown flag '%c'\n", opt);
             return ERR_FAILURE;
         }
-        if (chdir(dir) != 0) {
-            fprintf(stderr, "Error: failed to change directory to '%s': %s\n",
-                    dir, strerror(errno));
-            return ERR_FAILURE;
-        }
-        break;
     }
-    case 'i': {
-        do_init = 1;
-        break;
-    }
-    case 'F': {
-        force = 1;
-        break;
-    }
-    case 'D': {
-        const char *dir_str = ARGF();
-        if (!dir_str) {
-            fprintf(stderr, "Error: -D requires a directory name argument\n");
-            return ERR_FAILURE;
-        }
-        g_config.main_dir_name = dir_str;
-        break;
-    }
-    case 'E': {
-        const char *entry_name = ARGF();
-        if (!entry_name) {
-            fprintf(stderr, "Error: -E requires a entry file name argument\n");
-            return ERR_FAILURE;
-        }
-        g_config.entry_file_name = entry_name;
-        break;
-    }
-    case 'L': {
-        const char *lines_str = ARGF();
-        if (!lines_str) {
-            fprintf(stderr, "Error: -L requires a number argument\n");
-            return ERR_FAILURE;
-        }
-        int lines = atoi(lines_str);
-        if (lines <= 0) {
-            fprintf(stderr, "Error: -L must be a positive number\n");
-            return ERR_FAILURE;
-        }
-        g_config.max_header_lines = lines;
-        break;
-    }
-    case 'n': {
-        do_new = 1;
-        break;
-    }
-    case 't': {
-        const char *template_name = ARGF();
-        if (!template_name) {
-            fprintf(stderr, "Error: -t requires a template name argument\n");
-            return ERR_FAILURE;
-        }
-        g_config.template_name = template_name;
-        break;
-    }
-    case 'f': {
-        const char *fmt_str = ARGF();
-        if (!fmt_str) {
-            fprintf(stderr, "Error: -f requires a format argument\n");
-            return ERR_FAILURE;
-        }
-        if (strcmp(fmt_str, "path") == 0) {
-            fmt = FMT_ONLY_PATH;
-        } else if (strcmp(fmt_str, "unix") == 0) {
-            fmt = FMT_UNIX;
-        } else if (strcmp(fmt_str, "jsonl") == 0) {
-            fmt = FMT_JSONL;
-        } else {
-            fprintf(stderr, "Error: unknown format '%s'\n", fmt_str);
-            return ERR_FAILURE;
-        }
-        break;
-    }
-    case 'o': {
-        // Already handled in first pass
-        break;
-    }
-    case 'p': {
-        query = ARGF();
-        if (!query) {
-            fprintf(stderr, "Error: -p requires a query argument\n");
-            return ERR_FAILURE;
-        }
-        do_print = 1;
-        break;
-    }
-    case 'r': {
-        query = ARGF();
-        if (!query) {
-            fprintf(stderr, "Error: -r requires a query argument\n");
-            return ERR_FAILURE;
-        }
-        do_remove = 1;
-        break;
-    }
-    // hide field
-    case 'N':
-        if (only)
-            g_config.hide_fields &= ~FIELD_NAME;
-        else
-            g_config.hide_fields |= FIELD_NAME;
-        break;
-    case 'T':
-        if (only)
-            g_config.hide_fields &= ~FIELD_TIME;
-        else
-            g_config.hide_fields |= FIELD_TIME;
-        break;
-    case 'I':
-        if (only)
-            g_config.hide_fields &= ~FIELD_DEADLINE;
-        else
-            g_config.hide_fields |= FIELD_DEADLINE;
-        break;
-    case 'P':
-        if (only)
-            g_config.hide_fields &= ~FIELD_PRIORITY;
-        else
-            g_config.hide_fields |= FIELD_PRIORITY;
-        break;
-    case 'S':
-        if (only)
-            g_config.hide_fields &= ~FIELD_STATUS;
-        else
-            g_config.hide_fields |= FIELD_STATUS;
-        break;
-    case 'A':
-        if (only)
-            g_config.hide_fields &= ~FIELD_TAGS;
-        else
-            g_config.hide_fields |= FIELD_TAGS;
-        break;
-    case 'H':
-        if (only)
-            g_config.hide_fields &= ~FIELD_PATH;
-        else
-            g_config.hide_fields |= FIELD_PATH;
-        break;
-    default: {
-        fprintf(stderr, "Error: unknown flag '%c'\n", ARGC());
-        return ERR_FAILURE;
-    }
-    }
-    ARGEND;
 
     if (do_help) {
         usage();
