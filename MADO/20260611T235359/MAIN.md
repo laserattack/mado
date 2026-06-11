@@ -1,0 +1,4 @@
+- NAME: add long equivalents to all flags
+- PRIORITY: 30
+- TAGS: ux, flag, feat
+- STATUS: closed

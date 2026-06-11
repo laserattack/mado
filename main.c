@@ -71,6 +71,30 @@ static char *argv0;
 #define MAX_HEADER_LINES_DEFAULT 30
 #define MAX_HEADER_LINE_LEN_DEFAULT 1024 // 1kb
 
+static struct option long_options[] = {
+    {"help", no_argument, 0, 'h'},
+    {"repo", no_argument, 0, 'V'},
+    {"directory", required_argument, 0, 'C'},
+    {"init", no_argument, 0, 'i'},
+    {"force", no_argument, 0, 'F'},
+    {"main-dir", required_argument, 0, 'D'},
+    {"entry-file", required_argument, 0, 'E'},
+    {"lines", required_argument, 0, 'L'},
+    {"new", no_argument, 0, 'n'},
+    {"template", required_argument, 0, 't'},
+    {"format", required_argument, 0, 'f'},
+    {"only-hidden", no_argument, 0, 'o'},
+    {"print", required_argument, 0, 'p'},
+    {"remove", required_argument, 0, 'r'},
+    {"hide-name", no_argument, 0, 'N'},
+    {"hide-time", no_argument, 0, 'T'},
+    {"hide-deadline", no_argument, 0, 'I'},
+    {"hide-priority", no_argument, 0, 'P'},
+    {"hide-status", no_argument, 0, 'S'},
+    {"hide-tags", no_argument, 0, 'A'},
+    {"hide-path", no_argument, 0, 'H'},
+    {0, 0, 0, 0}};
+
 static struct {
     const char *main_dir_name;
     const char *templates_dir_name;
@@ -917,7 +941,7 @@ static Error entries_process_with_filter(const char *query,
 static Error print_repo_info() {
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
-        printf("No mado repostory here\n");
+        printf("No mado repository here\n");
         return ERR_SUCCESS;
     }
 
@@ -936,45 +960,55 @@ static void usage() {
     fprintf(
         stdout,
         "usage: %s [OPTION]...\n"
-        "  -h           show this help\n"
-        "  -C dir       change working directory before any operations\n"
-        "  -V           show repository info\n"
-        "  -i           initialize main directory in current location\n"
-        "  -t template  use template file from '%s/%s/<template>.md'\n"
-        "  -n           create new entry\n"
-        "  -D dir       use custom main directory name instead of "
+        "  -h, --help                 show this help\n"
+        "  -C, --directory DIR        change working directory before any "
+        "operations\n"
+        "  -V, --repo                 show repository info\n"
+        "  -i, --init                 initialize main directory in current "
+        "location\n"
+        "  -t, --template TEMPLATE    use template file from "
+        "'%s/%s/<template>.md'\n"
+        "  -n, --new                  create new entry\n"
+        "  -D, --main-dir NAME        use custom main directory name instead "
+        "of "
         "'" MAIN_DIR_NAME_DEFAULT "'\n"
-        "  -E entry     use custom entry file name instead of "
+        "  -E, --entry-file NAME      use custom entry file name instead of "
         "'" ENTRY_FILE_NAME_DEFAULT "'\n"
-        "  -F           force init main dir in cwd even if exists above\n"
-        "  -p query     print entries using query (e.g. 'priority > 5')\n"
-        "  -r query     remove entries matching query\n"
-        "  -f format    output format for -p:\n"
-        "                 unix: path:1:1: STATUS:[...] NAME:[...] ...\n"
-        "                 path: absolute paths only, one per line\n"
-        "                 jsonl: newline-delimited JSON\n"
-        "  -L lines     max header lines to scan for fields "
+        "  -F, --force                force init main dir in cwd even if "
+        "exists above\n"
+        "  -p, --print QUERY          print entries using query (e.g. "
+        "'priority > 5')\n"
+        "  -r, --remove QUERY         remove entries matching query\n"
+        "  -f, --format FORMAT        output format for -p:\n"
+        "                             unix: path:1:1: STATUS:[...] NAME:[...] "
+        "...\n"
+        "                             path: absolute paths only, one per line\n"
+        "                             jsonl: newline-delimited JSON\n"
+        "  -L, --lines LINES          max header lines to scan for fields "
         "(default: " TOSTRING(
             MAX_HEADER_LINES_DEFAULT) ")\n"
                                       "\n"
-                                      "  -N           hide name field in "
-                                      "output\n"
-                                      "  -T           hide time field in "
-                                      "output\n"
-                                      "  -I           hide deadline field in "
-                                      "output\n"
-                                      "  -P           hide priority field "
-                                      "in output\n"
-                                      "  -S           hide status field in "
-                                      "output\n"
-                                      "  -A           hide tags field in "
-                                      "output\n"
-                                      "  -H           hide path field in "
-                                      "output\n"
-                                      "  -o           only mode: hide all "
-                                      "fields, then -N/-T/-I/-P/-S/-A/-H\n"
-                                      "               show specific fields "
-                                      "(e.g. -oNA for name and "
+                                      "  -N, --hide-name            hide "
+                                      "name "
+                                      "field in output\n"
+                                      "  -T, --hide-time            hide "
+                                      "time "
+                                      "field in output\n"
+                                      "  -I, --hide-deadline        hide "
+                                      "deadline field in output\n"
+                                      "  -P, --hide-priority        hide "
+                                      "priority field in output\n"
+                                      "  -S, --hide-status          hide "
+                                      "status field in output\n"
+                                      "  -A, --hide-tags            hide tags "
+                                      "field in output\n"
+                                      "  -H, --hide-path            hide path "
+                                      "field in output\n"
+                                      "  -o, --only-hidden          only mode: "
+                                      "hide all fields, then "
+                                      "-N/-T/-I/-P/-S/-A/-H\n"
+                                      "                             show "
+                                      "specific fields (e.g. -oNA for name and "
                                       "tags)\n",
         argv0, g_config.main_dir_name, g_config.templates_dir_name);
 }
@@ -994,7 +1028,8 @@ int main(int argc, char **argv) {
     int opt;
 
     // First pass: check for -o
-    while ((opt = getopt(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH")) != -1) {
+    while ((opt = getopt_long(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH",
+                              long_options, NULL)) != -1) {
         if (opt == 'o') {
             only = 1;
             g_config.hide_fields = FIELD_ALL;
@@ -1005,7 +1040,8 @@ int main(int argc, char **argv) {
     optind = 1;
 
     // Second pass: process all arguments
-    while ((opt = getopt(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH")) != -1) {
+    while ((opt = getopt_long(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH",
+                              long_options, NULL)) != -1) {
         switch (opt) {
         case 'h':
             do_help = 1;

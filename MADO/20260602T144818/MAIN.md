@@ -1,7 +1,7 @@
 - NAME: implement modifier for single-tag multi-condition matching
-- PRIORITY: 30
+- PRIORITY: 0
 - TAGS: feat, parser, lexer, ast
-- STATUS: opened
+- STATUS: not need
 - DEADLINE:
 
 # Problem
