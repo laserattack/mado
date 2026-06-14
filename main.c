@@ -27,19 +27,20 @@
 
 // ================ TYPES
 
-typedef enum { ERR_SUCCESS = 0, ERR_FAILURE } Error;
+typedef enum { ERR_SUCCESS = 0,
+               ERR_FAILURE } Error;
 
 typedef enum {
     FMT_UNIX,
     FMT_ONLY_PATH,
     FMT_JSONL,
-} OutputFormat;
+} Output_Format;
 
 typedef struct Entry {
-    char *path; // absolute path to entry dir
+    char *path;
     char *name;
     uint16_t priority;
-    char **tags; // dynarr
+    char **tags;
     char *status;
     char *time;
     char *deadline;
@@ -56,44 +57,18 @@ typedef enum {
     FIELD_PATH = 1 << 6,
     FIELD_ALL = FIELD_NAME | FIELD_TIME | FIELD_DEADLINE | FIELD_PRIORITY |
                 FIELD_STATUS | FIELD_TAGS | FIELD_PATH
-} EntryField;
+} Entry_Field;
 
 // ================ GLOBAL
 
 static char *argv0;
-
-// config
 
 #define MAIN_DIR_NAME_DEFAULT "MADO"
 #define TEMPLATES_DIR_NAME_DEFAULT ".templates"
 #define ENTRY_FILE_NAME_DEFAULT "MAIN"
 #define TEMPLATE_NAME_DEFAULT "task"
 #define MAX_HEADER_LINES_DEFAULT 30
-#define MAX_HEADER_LINE_LEN_DEFAULT 1024 // 1kb
-
-static struct option long_options[] = {
-    {"help", no_argument, 0, 'h'},
-    {"repo", no_argument, 0, 'V'},
-    {"directory", required_argument, 0, 'C'},
-    {"init", no_argument, 0, 'i'},
-    {"force", no_argument, 0, 'F'},
-    {"main-dir", required_argument, 0, 'D'},
-    {"entry-file", required_argument, 0, 'E'},
-    {"lines", required_argument, 0, 'L'},
-    {"new", no_argument, 0, 'n'},
-    {"template", required_argument, 0, 't'},
-    {"format", required_argument, 0, 'f'},
-    {"only-hidden", no_argument, 0, 'o'},
-    {"print", required_argument, 0, 'p'},
-    {"remove", required_argument, 0, 'r'},
-    {"hide-name", no_argument, 0, 'N'},
-    {"hide-time", no_argument, 0, 'T'},
-    {"hide-deadline", no_argument, 0, 'I'},
-    {"hide-priority", no_argument, 0, 'P'},
-    {"hide-status", no_argument, 0, 'S'},
-    {"hide-tags", no_argument, 0, 'A'},
-    {"hide-path", no_argument, 0, 'H'},
-    {0, 0, 0, 0}};
+#define MAX_HEADER_LINE_LEN_DEFAULT 1024
 
 static struct {
     const char *main_dir_name;
@@ -102,7 +77,7 @@ static struct {
     const char *template_name;
     int max_header_lines;
     int max_header_line_len;
-    EntryField hide_fields;
+    Entry_Field hide_fields;
 } g_config = {
     .main_dir_name = MAIN_DIR_NAME_DEFAULT,
     .templates_dir_name = TEMPLATES_DIR_NAME_DEFAULT,
@@ -113,7 +88,6 @@ static struct {
     .hide_fields = FIELD_NONE,
 };
 
-// precompiled regexp for file parsing
 static regex_t g_entry_dir_regex;
 static regex_t g_name_regex;
 static regex_t g_priority_regex;
@@ -131,8 +105,7 @@ static Error init_regexes() {
         fprintf(stderr, "Error: failed to compile entry_dir regex\n");
         return ERR_FAILURE;
     }
-    if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) !=
-        0) {
+    if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) != 0) {
         fprintf(stderr, "Error: failed to compile name regex\n");
         return ERR_FAILURE;
     }
@@ -141,20 +114,16 @@ static Error init_regexes() {
         fprintf(stderr, "Error: failed to compile priority regex\n");
         return ERR_FAILURE;
     }
-    if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) !=
-        0) {
+    if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) != 0) {
         fprintf(stderr, "Error: failed to compile tags regex\n");
         return ERR_FAILURE;
     }
-    if (regcomp(&g_status_regex, "^- STATUS:[[:space:]]*(.*)$", REG_EXTENDED) !=
-        0) {
+    if (regcomp(&g_status_regex, "^- STATUS:[[:space:]]*(.*)$", REG_EXTENDED) != 0) {
         fprintf(stderr, "Error: failed to compile status regex\n");
         return ERR_FAILURE;
     }
     if (regcomp(&g_deadline_regex,
-                "^- "
-                "DEADLINE:[[:space:]]*([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|["
-                "0-9]{4}|[0-9]{6})?)?)[[:space:]]*$",
+                "^- DEADLINE:[[:space:]]*([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)[[:space:]]*$",
                 REG_EXTENDED) != 0) {
         fprintf(stderr, "Error: failed to compile deadline regex\n");
         return ERR_FAILURE;
@@ -167,7 +136,6 @@ static Error init_regexes() {
 static void free_regexes() {
     if (!g_regex_initialized)
         return;
-
     regfree(&g_entry_dir_regex);
     regfree(&g_name_regex);
     regfree(&g_priority_regex);
@@ -195,22 +163,18 @@ static void print_json_string(const char *str) {
     putchar('"');
 }
 
-static void entry_print(Entry *e, OutputFormat fmt) {
-    EntryField hidden = g_config.hide_fields;
-    EntryField shown = FIELD_ALL & ~hidden;
+static void entry_print(Entry *e, Output_Format fmt) {
+    Entry_Field hidden = g_config.hide_fields;
+    Entry_Field shown = FIELD_ALL & ~hidden;
 
-    // FMT_ONLY_PATH
     if (fmt == FMT_ONLY_PATH) {
-        // the path is always output, it is a mandatory part of the format
         printf("%s/%s.md\n", e->path, g_config.entry_file_name);
         return;
     }
 
-    // FMT_JSONL
     if (fmt == FMT_JSONL) {
         printf("{");
         int has_any = 0;
-
         if (shown & FIELD_TIME) {
             if (has_any)
                 printf(",");
@@ -271,34 +235,20 @@ static void entry_print(Entry *e, OutputFormat fmt) {
         return;
     }
 
-    // FMT_UNIX
     if (fmt == FMT_UNIX) {
-        // the path is always output, it is a mandatory part of the unix format
         printf("%s/%s.md:1:1:", e->path, g_config.entry_file_name);
-
-        if (shown & FIELD_TIME) {
-            printf(" ");
-            printf("TIME:[%s]", e->time);
-        }
-        if (shown & FIELD_NAME) {
-            printf(" ");
-            printf("NAME:[%s]", e->name);
-        }
-        if (shown & FIELD_PRIORITY) {
-            printf(" ");
-            printf("PRIORITY:[%d]", e->priority);
-        }
-        if (shown & FIELD_DEADLINE) {
-            printf(" ");
-            printf("DEADLINE:[%s]", e->deadline);
-        }
-        if (shown & FIELD_STATUS) {
-            printf(" ");
-            printf("STATUS:[%s]", e->status);
-        }
+        if (shown & FIELD_TIME)
+            printf(" TIME:[%s]", e->time);
+        if (shown & FIELD_NAME)
+            printf(" NAME:[%s]", e->name);
+        if (shown & FIELD_PRIORITY)
+            printf(" PRIORITY:[%d]", e->priority);
+        if (shown & FIELD_DEADLINE)
+            printf(" DEADLINE:[%s]", e->deadline);
+        if (shown & FIELD_STATUS)
+            printf(" STATUS:[%s]", e->status);
         if (shown & FIELD_TAGS) {
-            printf(" ");
-            printf("TAGS:[");
+            printf(" TAGS:[");
             for (int j = 0; j < dalen(e->tags); j++) {
                 if (strcmp(e->tags[j], "") == 0)
                     continue;
@@ -315,20 +265,17 @@ static void entry_print(Entry *e, OutputFormat fmt) {
 static Error templates_dir_init() {
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
-        fprintf(stderr, "Error: entries directory '%s' not found\n",
-                g_config.main_dir_name);
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_config.main_dir_name);
         return ERR_FAILURE;
     }
 
     char templates_dir[PATH_MAX - 15];
-    snprintf(templates_dir, sizeof(templates_dir), "%s/%s", main_dir,
-             g_config.templates_dir_name);
+    snprintf(templates_dir, sizeof(templates_dir), "%s/%s", main_dir, g_config.templates_dir_name);
 
     if (!file_exists(templates_dir)) {
         if (mkdir(templates_dir, 0755) != 0) {
             free(main_dir);
-            fprintf(stderr, "Error: failed to create templates directory: %s\n",
-                    templates_dir);
+            fprintf(stderr, "Error: failed to create templates directory: %s\n", templates_dir);
             return ERR_FAILURE;
         }
         printf("Created templates directory: %s\n", templates_dir);
@@ -338,21 +285,15 @@ static Error templates_dir_init() {
 
     char task_template[PATH_MAX];
     snprintf(task_template, sizeof(task_template), "%s/task.md", templates_dir);
-
     if (!file_exists(task_template)) {
         FILE *f = fopen(task_template, "w");
         if (f) {
-            fprintf(f, "- NAME:\n");
-            fprintf(f, "- PRIORITY:\n");
-            fprintf(f, "- TAGS:\n");
-            fprintf(f, "- STATUS:\n");
-            fprintf(f, "- DEADLINE:\n");
+            fprintf(f, "- NAME:\n- PRIORITY:\n- TAGS:\n- STATUS:\n- DEADLINE:\n");
             fclose(f);
             printf("Created task template: %s\n", task_template);
         } else {
             free(main_dir);
-            fprintf(stderr, "Error: failed to create task template: %s\n",
-                    task_template);
+            fprintf(stderr, "Error: failed to create task template: %s\n", task_template);
             return ERR_FAILURE;
         }
     } else {
@@ -361,18 +302,15 @@ static Error templates_dir_init() {
 
     char note_template[PATH_MAX];
     snprintf(note_template, sizeof(note_template), "%s/note.md", templates_dir);
-
     if (!file_exists(note_template)) {
         FILE *f = fopen(note_template, "w");
         if (f) {
-            fprintf(f, "- NAME:\n");
-            fprintf(f, "- TAGS:\n");
+            fprintf(f, "- NAME:\n- TAGS:\n");
             fclose(f);
             printf("Created note template: %s\n", note_template);
         } else {
             free(main_dir);
-            fprintf(stderr, "Error: failed to create note template: %s\n",
-                    note_template);
+            fprintf(stderr, "Error: failed to create note template: %s\n", note_template);
             return ERR_FAILURE;
         }
     } else {
@@ -386,17 +324,14 @@ static Error templates_dir_init() {
 static Error entries_dir_init(int force) {
     char *cwd = get_cwd();
     char entries_dir[PATH_MAX];
-    snprintf(entries_dir, sizeof(entries_dir), "%s/%s", cwd,
-             g_config.main_dir_name);
+    snprintf(entries_dir, sizeof(entries_dir), "%s/%s", cwd, g_config.main_dir_name);
 
     if (!force) {
         char *entries_dir_existing = find_dir_up(g_config.main_dir_name);
         if (entries_dir_existing) {
-            printf("Entries directory already exists: %s\n",
-                   entries_dir_existing);
+            printf("Entries directory already exists: %s\n", entries_dir_existing);
             if (strcmp(entries_dir_existing, entries_dir))
-                printf("Hint: use -F to force initialization in current "
-                       "directory\n");
+                printf("Hint: use -F to force initialization in current directory\n");
             free(entries_dir_existing);
             free(cwd);
             return ERR_SUCCESS;
@@ -406,16 +341,13 @@ static Error entries_dir_init(int force) {
     if (file_exists(entries_dir)) {
         printf("Entries directory already exists: %s\n", entries_dir);
         if (force)
-            printf("Hint: -F has no effect because '%s' already exists in this "
-                   "location\n",
-                   g_config.main_dir_name);
+            printf("Hint: -F has no effect because '%s' already exists in this location\n", g_config.main_dir_name);
     } else {
         if (mkdir(entries_dir, 0755) == 0) {
             printf("Created entries directory: %s\n", entries_dir);
         } else {
             free(cwd);
-            fprintf(stderr, "Error: failed to create entries directory: %s\n",
-                    entries_dir);
+            fprintf(stderr, "Error: failed to create entries directory: %s\n", entries_dir);
             return ERR_FAILURE;
         }
     }
@@ -426,35 +358,30 @@ static Error entries_dir_init(int force) {
 
 static Error entry_create(const char *entry_path, const char *template_name) {
     char entry_md[PATH_MAX];
-    snprintf(entry_md, sizeof(entry_md), "%s/%s.md", entry_path,
-             g_config.entry_file_name);
+    snprintf(entry_md, sizeof(entry_md), "%s/%s.md", entry_path, g_config.entry_file_name);
 
     if (template_name) {
         char template_file[PATH_MAX];
         char *main_dir = find_dir_up(g_config.main_dir_name);
         if (!main_dir) {
-            fprintf(stderr, "Error: entries directory '%s' not found\n",
-                    g_config.main_dir_name);
+            fprintf(stderr, "Error: entries directory '%s' not found\n", g_config.main_dir_name);
             return ERR_FAILURE;
         }
 
-        snprintf(template_file, sizeof(template_file), "%s/%s/%s.md", main_dir,
-                 g_config.templates_dir_name, template_name);
+        snprintf(template_file, sizeof(template_file), "%s/%s/%s.md", main_dir, g_config.templates_dir_name, template_name);
         free(main_dir);
 
         if (file_exists(template_file)) {
             FILE *src = fopen(template_file, "r");
             if (!src) {
-                fprintf(stderr, "Error: failed to open template: %s\n",
-                        template_file);
+                fprintf(stderr, "Error: failed to open template: %s\n", template_file);
                 return ERR_FAILURE;
             }
 
             FILE *dst = fopen(entry_md, "w");
             if (!dst) {
                 fclose(src);
-                fprintf(stderr, "Error: failed to create %s.md: %s\n",
-                        g_config.entry_file_name, entry_md);
+                fprintf(stderr, "Error: failed to create %s.md: %s\n", g_config.entry_file_name, entry_md);
                 return ERR_FAILURE;
             }
 
@@ -467,27 +394,21 @@ static Error entry_create(const char *entry_path, const char *template_name) {
             fclose(dst);
             return ERR_SUCCESS;
         } else {
-            fprintf(stderr, "Error: template '%s' was not found\n",
-                    template_name);
-            if (strcmp(template_name, "task") == 0 ||
-                strcmp(template_name, "note") == 0) {
-                printf("Hint: create default templates with '%s -i'\n", argv0);
-            }
+            fprintf(stderr, "Error: template '%s' was not found\n", template_name);
             return ERR_FAILURE;
         }
     }
 
     FILE *f = fopen(entry_md, "w");
     if (!f) {
-        fprintf(stderr, "Error: failed to create %s.md in: %s\n",
-                g_config.entry_file_name, entry_path);
+        fprintf(stderr, "Error: failed to create %s.md in: %s\n", g_config.entry_file_name, entry_path);
         return ERR_FAILURE;
     }
     fclose(f);
     return ERR_SUCCESS;
 }
 
-static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
+static Error entry_create_dir_and_md(const char *main_dir, Output_Format fmt) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
 
@@ -510,22 +431,14 @@ static Error entry_create_dir_and_md(const char *main_dir, OutputFormat fmt) {
         return ERR_FAILURE;
     }
 
-    Entry entry = {
-        .path = entry_path,
-        .name = "",
-        .status = "",
-        .time = dir_name,
-        .deadline = "",
-    };
-
+    Entry entry = {.path = entry_path, .name = "", .status = "", .time = dir_name, .deadline = ""};
     entry_print(&entry, fmt);
     return ERR_SUCCESS;
 }
 
 static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
     char entry_file[PATH_MAX];
-    snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir,
-             g_config.entry_file_name);
+    snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir, g_config.entry_file_name);
 
     FILE *f = fopen(entry_file, "r");
     if (!f)
@@ -544,33 +457,26 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
 
     while (lines_processed < g_config.max_header_lines &&
            fgets(line, g_config.max_header_line_len, f)) {
-
         lines_processed++;
-
         size_t len = strlen(line);
 
-        // skipping the part of the line that does not fit in the buffer
         if (len > 0 && line[len - 1] != '\n' && !feof(f)) {
             int c;
             while ((c = fgetc(f)) != '\n' && c != EOF)
                 ;
         }
-
         if (len > 0 && line[len - 1] == '\n')
             line[len - 1] = '\0';
 
         char *value;
-
         if ((value = regex_extract_first_group(line, &g_name_regex)) != NULL) {
             free(entry->name);
             entry->name = strdup(trim(value));
             free(value);
-        } else if ((value = regex_extract_first_group(
-                        line, &g_priority_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_priority_regex)) != NULL) {
             entry->priority = atoi(value);
             free(value);
-        } else if ((value = regex_extract_first_group(line, &g_tags_regex)) !=
-                   NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_tags_regex)) != NULL) {
             char *tags_str = trim(value);
             if (tags_str && *tags_str) {
                 char *saveptr;
@@ -583,13 +489,11 @@ static Entry *entry_parse(const char *entry_dir, const char *entry_time) {
                 }
             }
             free(value);
-        } else if ((value = regex_extract_first_group(line, &g_status_regex)) !=
-                   NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_status_regex)) != NULL) {
             free(entry->status);
             entry->status = strdup(trim(value));
             free(value);
-        } else if ((value = regex_extract_first_group(
-                        line, &g_deadline_regex)) != NULL) {
+        } else if ((value = regex_extract_first_group(line, &g_deadline_regex)) != NULL) {
             free(entry->deadline);
             entry->deadline = strdup(trim(value));
             free(value);
@@ -621,12 +525,10 @@ static Entry **entries_get_all(const char *main_dir) {
         }
 
         char entry_dir[PATH_MAX - 10];
-        snprintf(entry_dir, sizeof(entry_dir), "%s/%s", main_dir,
-                 dirent->d_name);
+        snprintf(entry_dir, sizeof(entry_dir), "%s/%s", main_dir, dirent->d_name);
 
         char entry_file[PATH_MAX];
-        snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir,
-                 g_config.entry_file_name);
+        snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir, g_config.entry_file_name);
 
         if (!file_exists(entry_file))
             continue;
@@ -643,7 +545,6 @@ static Entry **entries_get_all(const char *main_dir) {
 static void entry_free(Entry *entry) {
     if (!entry)
         return;
-
     free(entry->path);
     free(entry->name);
     free(entry->status);
@@ -658,7 +559,6 @@ static void entry_free(Entry *entry) {
 static void entries_free(Entry **entries) {
     if (!entries)
         return;
-
     for (int i = 0; i < dalen(entries); i++)
         entry_free(entries[i]);
     dafree(entries);
@@ -671,24 +571,19 @@ static int entry_matches_condition(Entry *entry, ASTNode *node) {
     switch (node->type) {
     case NODE_ALL:
         return 1;
-
     case NODE_BINARY_OP:
         switch (node->binary.op) {
         case OP_AND:
-            return entry_matches_condition(entry, node->binary.left) &&
-                   entry_matches_condition(entry, node->binary.right);
+            return entry_matches_condition(entry, node->binary.left) && entry_matches_condition(entry, node->binary.right);
         case OP_OR:
-            return entry_matches_condition(entry, node->binary.left) ||
-                   entry_matches_condition(entry, node->binary.right);
+            return entry_matches_condition(entry, node->binary.left) || entry_matches_condition(entry, node->binary.right);
         default:
             return 0;
         }
-
     case NODE_UNARY_OP:
         if (node->unary.op == OP_NOT)
             return !entry_matches_condition(entry, node->unary.expr);
         return 0;
-
     case NODE_COMPARISON: {
         switch (node->comparison.field) {
         case CMP_PRIORITY: {
@@ -703,169 +598,170 @@ static int entry_matches_condition(Entry *entry, ASTNode *node) {
                 return entry_val >= cond_val;
             case CMP_LE:
                 return entry_val <= cond_val;
-            case CMP_TILDE: // fallthrough
+            case CMP_TILDE:
             case CMP_EQ:
                 return entry_val == cond_val;
-            case CMP_NTILDE: // fallthrough
+            case CMP_NTILDE:
             case CMP_NE:
                 return entry_val != cond_val;
             default:
                 return 0;
             }
-        } // case CMP_PRIORITY
-
+        }
         case CMP_TAG: {
             char *cond_tag = node->comparison.value.str_value;
             for (int i = 0; i < dalen(entry->tags); i++) {
-                if (node->comparison.cmp == CMP_EQ) {
+                switch (node->comparison.cmp) {
+                case CMP_EQ:
                     if (strcmp(entry->tags[i], cond_tag) == 0)
                         return 1;
-                } else if (node->comparison.cmp == CMP_NE) {
+                    break;
+                case CMP_NE:
                     if (strcmp(entry->tags[i], cond_tag) == 0)
                         return 0;
-                } else if (node->comparison.cmp == CMP_TILDE) {
+                    break;
+                case CMP_TILDE:
                     if (strstr(entry->tags[i], cond_tag) != NULL)
                         return 1;
-                } else if (node->comparison.cmp == CMP_NTILDE) {
+                    break;
+                case CMP_NTILDE:
                     if (strstr(entry->tags[i], cond_tag) != NULL)
                         return 0;
-                } else if (node->comparison.cmp == CMP_GT) {
+                    break;
+                case CMP_GT:
                     if (strcmp(entry->tags[i], cond_tag) > 0)
                         return 1;
-                } else if (node->comparison.cmp == CMP_LT) {
+                    break;
+                case CMP_LT:
                     if (strcmp(entry->tags[i], cond_tag) < 0)
                         return 1;
-                } else if (node->comparison.cmp == CMP_GE) {
+                    break;
+                case CMP_GE:
                     if (strcmp(entry->tags[i], cond_tag) >= 0)
                         return 1;
-                } else if (node->comparison.cmp == CMP_LE) {
+                    break;
+                case CMP_LE:
                     if (strcmp(entry->tags[i], cond_tag) <= 0)
                         return 1;
+                    break;
+                default:
+                    break;
                 }
             }
-            return (node->comparison.cmp == CMP_NE ||
-                    node->comparison.cmp == CMP_NTILDE);
-        } // case CMP_TAG
-
+            return (node->comparison.cmp == CMP_NE || node->comparison.cmp == CMP_NTILDE);
+        }
         case CMP_STATUS: {
-            char *cond_status = node->comparison.value.str_value;
+            char *cond = node->comparison.value.str_value;
             if (!entry->status)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(entry->status, cond_status) == 0;
+                return strcmp(entry->status, cond) == 0;
             case CMP_NE:
-                return strcmp(entry->status, cond_status) != 0;
+                return strcmp(entry->status, cond) != 0;
             case CMP_TILDE:
-                return strstr(entry->status, cond_status) != NULL;
+                return strstr(entry->status, cond) != NULL;
             case CMP_NTILDE:
-                return strstr(entry->status, cond_status) == NULL;
+                return strstr(entry->status, cond) == NULL;
             case CMP_GT:
-                return strcmp(entry->status, cond_status) > 0;
+                return strcmp(entry->status, cond) > 0;
             case CMP_LT:
-                return strcmp(entry->status, cond_status) < 0;
+                return strcmp(entry->status, cond) < 0;
             case CMP_GE:
-                return strcmp(entry->status, cond_status) >= 0;
+                return strcmp(entry->status, cond) >= 0;
             case CMP_LE:
-                return strcmp(entry->status, cond_status) <= 0;
+                return strcmp(entry->status, cond) <= 0;
             default:
                 return 0;
             }
-        } // case CMP_STATUS
-
+        }
         case CMP_DEADLINE: {
-            char *cond_deadline = node->comparison.value.str_value;
+            char *cond = node->comparison.value.str_value;
             if (!entry->deadline)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(entry->deadline, cond_deadline) == 0;
+                return strcmp(entry->deadline, cond) == 0;
             case CMP_NE:
-                return strcmp(entry->deadline, cond_deadline) != 0;
+                return strcmp(entry->deadline, cond) != 0;
             case CMP_TILDE:
-                return strstr(entry->deadline, cond_deadline) != NULL;
+                return strstr(entry->deadline, cond) != NULL;
             case CMP_NTILDE:
-                return strstr(entry->deadline, cond_deadline) == NULL;
+                return strstr(entry->deadline, cond) == NULL;
             case CMP_GT:
-                return strcmp(entry->deadline, cond_deadline) > 0;
+                return strcmp(entry->deadline, cond) > 0;
             case CMP_LT:
-                return strcmp(entry->deadline, cond_deadline) < 0;
+                return strcmp(entry->deadline, cond) < 0;
             case CMP_GE:
-                return strcmp(entry->deadline, cond_deadline) >= 0;
+                return strcmp(entry->deadline, cond) >= 0;
             case CMP_LE:
-                return strcmp(entry->deadline, cond_deadline) <= 0;
+                return strcmp(entry->deadline, cond) <= 0;
             default:
                 return 0;
             }
-        } // case CMP_DEADLINE
-
+        }
         case CMP_TIME: {
-            char *cond_time = node->comparison.value.str_value;
+            char *cond = node->comparison.value.str_value;
             if (!entry->time)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(entry->time, cond_time) == 0;
+                return strcmp(entry->time, cond) == 0;
             case CMP_NE:
-                return strcmp(entry->time, cond_time) != 0;
+                return strcmp(entry->time, cond) != 0;
             case CMP_TILDE:
-                return strstr(entry->time, cond_time) != NULL;
+                return strstr(entry->time, cond) != NULL;
             case CMP_NTILDE:
-                return strstr(entry->time, cond_time) == NULL;
+                return strstr(entry->time, cond) == NULL;
             case CMP_GT:
-                return strcmp(entry->time, cond_time) > 0;
+                return strcmp(entry->time, cond) > 0;
             case CMP_LT:
-                return strcmp(entry->time, cond_time) < 0;
+                return strcmp(entry->time, cond) < 0;
             case CMP_GE:
-                return strcmp(entry->time, cond_time) >= 0;
+                return strcmp(entry->time, cond) >= 0;
             case CMP_LE:
-                return strcmp(entry->time, cond_time) <= 0;
+                return strcmp(entry->time, cond) <= 0;
             default:
                 return 0;
             }
-        } // case CMP_TIME
-
+        }
         case CMP_NAME: {
-            char *cond_name = node->comparison.value.str_value;
+            char *cond = node->comparison.value.str_value;
             if (!entry->name)
                 return 0;
             switch (node->comparison.cmp) {
             case CMP_EQ:
-                return strcmp(entry->name, cond_name) == 0;
+                return strcmp(entry->name, cond) == 0;
             case CMP_NE:
-                return strcmp(entry->name, cond_name) != 0;
+                return strcmp(entry->name, cond) != 0;
             case CMP_TILDE:
-                return strstr(entry->name, cond_name) != NULL;
+                return strstr(entry->name, cond) != NULL;
             case CMP_NTILDE:
-                return strstr(entry->name, cond_name) == NULL;
+                return strstr(entry->name, cond) == NULL;
             case CMP_GT:
-                return strcmp(entry->name, cond_name) > 0;
+                return strcmp(entry->name, cond) > 0;
             case CMP_LT:
-                return strcmp(entry->name, cond_name) < 0;
+                return strcmp(entry->name, cond) < 0;
             case CMP_GE:
-                return strcmp(entry->name, cond_name) >= 0;
+                return strcmp(entry->name, cond) >= 0;
             case CMP_LE:
-                return strcmp(entry->name, cond_name) <= 0;
+                return strcmp(entry->name, cond) <= 0;
             default:
                 return 0;
             }
-        } // case CMP_NAME
-
+        }
         default:
             return 0;
-        } // switch (node->comparison.field)
-    } // case NODE_COMPARISON
-
+        }
+    }
     default:
         return 0;
     }
 }
 
 static Entry **entries_filter(Entry **entries, ASTNode *filter) {
-    if (!entries || dalen(entries) == 0 || !filter) {
+    if (!entries || dalen(entries) == 0 || !filter)
         return entries;
-    }
-
     Entry **filtered = NULL;
     for (int i = 0; i < dalen(entries); i++) {
         Entry *e = entries[i];
@@ -874,7 +770,6 @@ static Entry **entries_filter(Entry **entries, ASTNode *filter) {
         else
             entry_free(e);
     }
-
     dafree(entries);
     return filtered;
 }
@@ -882,20 +777,17 @@ static Entry **entries_filter(Entry **entries, ASTNode *filter) {
 typedef void (*entry_operation_fn)(Entry **entries, void *ctx);
 
 static void entry_op_print(Entry **entries, void *ctx) {
-    OutputFormat fmt = (OutputFormat)(intptr_t)ctx;
+    Output_Format fmt = (Output_Format)(intptr_t)ctx;
     if (!entries)
         return;
-
     for (int i = 0; i < dalen(entries); i++)
         entry_print(entries[i], fmt);
 }
 
 static void entry_op_delete(Entry **entries, void *ctx) {
     UNUSED(ctx);
-
     if (!entries)
         return;
-
     for (int i = 0; i < dalen(entries); i++) {
         Entry *e = entries[i];
         rmrf(e->path);
@@ -903,40 +795,31 @@ static void entry_op_delete(Entry **entries, void *ctx) {
     }
 }
 
-static Error entries_process_with_filter(const char *query,
-                                         entry_operation_fn op, void *ctx) {
-    // compile filter
-    ASTNode *filter = parse(query);
-    if (!filter) {
-        fprintf(stderr, "Error: failed to parse query\n");
-        return ERR_FAILURE;
+static Error entries_process_with_filter(const char *query, entry_operation_fn op, void *ctx) {
+    ASTNode *filter = NULL;
+    if (query) {
+        filter = parse(query);
+        if (!filter) {
+            fprintf(stderr, "Error: failed to parse query\n");
+            return ERR_FAILURE;
+        }
     }
 
-    // find main dir
     char *main_dir = find_dir_up(g_config.main_dir_name);
     if (!main_dir) {
         ast_free(filter);
-        fprintf(stderr, "Error: entries directory '%s' not found\n",
-                g_config.main_dir_name);
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_config.main_dir_name);
         return ERR_FAILURE;
     }
 
-    // find entries
     Entry **entries = entries_get_all(main_dir);
     entries = entries_filter(entries, filter);
-
-    // execute operation
     op(entries, ctx);
-
-    // cleanup
     entries_free(entries);
     free(main_dir);
     ast_free(filter);
-
     return ERR_SUCCESS;
 }
-
-// ================ ENTRYPOINT
 
 static Error print_repo_info() {
     char *main_dir = find_dir_up(g_config.main_dir_name);
@@ -944,225 +827,432 @@ static Error print_repo_info() {
         printf("No mado repository here\n");
         return ERR_SUCCESS;
     }
-
     Entry **entries = entries_get_all(main_dir);
     int count = entries ? dalen(entries) : 0;
-
     printf("Main directory: %s\n", main_dir);
     printf("Entries count:  %d\n", count);
-
     entries_free(entries);
     free(main_dir);
     return ERR_SUCCESS;
 }
 
-// clang-format off
-static void usage() {
-    fprintf(
-        stdout,
-        "usage: %s [OPTION]...\n"
-        "  -h, --help                 show this help\n"
-        "  -C, --directory DIR        change working directory before any operations\n"
-        "  -V, --repo                 show repository info\n"
-        "  -i, --init                 initialize main directory in current location\n"
-        "  -t, --template TEMPLATE    use template file from '%s/%s/<template>.md'\n"
-        "  -n, --new                  create new entry\n"
-        "  -D, --main-dir NAME        use custom main directory name instead of '" MAIN_DIR_NAME_DEFAULT "'\n"
-        "  -E, --entry-file NAME      use custom entry file name instead of '" ENTRY_FILE_NAME_DEFAULT "'\n"
-        "  -F, --force                force init main dir in cwd even if exists above\n"
-        "  -p, --print QUERY          print entries using query (e.g. 'priority > 5')\n"
-        "  -r, --remove QUERY         remove entries matching query\n"
-        "  -f, --format FORMAT        output format for -p:\n"
-        "                             unix: path:1:1: STATUS:[...] NAME:[...] ...\n"
-        "                             path: absolute paths only, one per line\n"
-        "                             jsonl: newline-delimited JSON\n"
-        "  -L, --lines LINES          max header lines to scan for fields (default: " TOSTRING(MAX_HEADER_LINES_DEFAULT) ")\n"
-        "\n"
-        "  -N, --hide-name            hide name field in output\n"
-        "  -T, --hide-time            hide time field in output\n"
-        "  -I, --hide-deadline        hide deadline field in output\n"
-        "  -P, --hide-priority        hide priority field in output\n"
-        "  -S, --hide-status          hide status field in output\n"
-        "  -A, --hide-tags            hide tags field in output\n"
-        "  -H, --hide-path            hide path field in output\n"
-        "  -o, --only-hidden          only mode: hide all fields, then -N/-T/-I/-P/-S/-A/-H\n"
-        "                             show specific fields (e.g. -oNA for name and tags)\n",
-        argv0, g_config.main_dir_name, g_config.templates_dir_name);
+static int parse_format(const char *format_str, Output_Format *fmt) {
+    if (strcmp(format_str, "path") == 0)
+        *fmt = FMT_ONLY_PATH;
+    else if (strcmp(format_str, "unix") == 0)
+        *fmt = FMT_UNIX;
+    else if (strcmp(format_str, "jsonl") == 0)
+        *fmt = FMT_JSONL;
+    else
+        return 0;
+    return 1;
 }
-// clang-format on
 
-int main(int argc, char **argv) {
-    argv0 = argv[0];
+// ================ COMMAND SYSTEM
 
-    if (init_regexes() != ERR_SUCCESS) {
-        return ERR_FAILURE;
-    }
-    atexit(free_regexes);
+typedef struct {
+    const char *name;
+    int has_arg;
+    int *flag;
+    int val;
+    const char *description;
+} Mado_Option;
 
-    OutputFormat fmt = FMT_UNIX;
-    char *query = NULL;
-    int do_init = 0, do_info = 0, do_new = 0, do_help = 0, do_remove = 0,
-        do_print = 0, force = 0, only = 0;
-    int opt;
+typedef Error (*command_handler)(int argc, char **argv);
 
-    // First pass: check for -o
-    while ((opt = getopt_long(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH",
-                              long_options, NULL)) != -1) {
-        if (opt == 'o') {
-            only = 1;
-            g_config.hide_fields = FIELD_ALL;
+typedef struct {
+    const char *name;
+    const char *description;
+    const char *usage;
+    const Mado_Option *options;
+    command_handler handler;
+} Command;
+
+static Error cmd_init(int argc, char **argv);
+static Error cmd_new(int argc, char **argv);
+static Error cmd_list(int argc, char **argv);
+static Error cmd_remove(int argc, char **argv);
+static Error cmd_info(int argc, char **argv);
+static Error cmd_help(int argc, char **argv);
+
+static Command commands[] = {
+    {"init",
+     "Initialize mado repository",
+     "mado init [COMMAND OPTIONS]",
+     (Mado_Option[]){
+         {"force", no_argument, NULL, 'F', "Force init in current directory"},
+         {"main-dir", required_argument, NULL, 'D', "Custom main directory name"},
+         {NULL, 0, NULL, 0, NULL}},
+     cmd_init},
+
+    {"new",
+     "Create new entry",
+     "mado new [COMMAND OPTIONS]",
+     (Mado_Option[]){
+         {"template", required_argument, NULL, 't', "Template to use (task, note)"},
+         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+         {NULL, 0, NULL, 0, NULL}},
+     cmd_new},
+
+    {"list",
+     "List entries with optional filtering",
+     "mado list [COMMAND OPTIONS] <QUERY>",
+     (Mado_Option[]){
+         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+         {"hide-name", no_argument, NULL, 'N', "Hide name field"},
+         {"hide-time", no_argument, NULL, 'T', "Hide time field"},
+         {"hide-deadline", no_argument, NULL, 'I', "Hide deadline field"},
+         {"hide-priority", no_argument, NULL, 'P', "Hide priority field"},
+         {"hide-status", no_argument, NULL, 'S', "Hide status field"},
+         {"hide-tags", no_argument, NULL, 'A', "Hide tags field"},
+         {"hide-path", no_argument, NULL, 'H', "Hide path field"},
+         {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
+         {NULL, 0, NULL, 0, NULL}},
+     cmd_list},
+
+    {"remove",
+     "Remove entries matching query",
+     "mado remove <QUERY>",
+     NULL,
+     cmd_remove},
+
+    {"info",
+     "Show repository information",
+     "mado info",
+     NULL,
+     cmd_info},
+
+    {"help",
+     "Show help for commands",
+     "mado help [COMMAND]",
+     NULL,
+     cmd_help},
+
+    {NULL, NULL, NULL, NULL, NULL}};
+
+static struct option *mado_option_to_getopt(const Mado_Option *opts, char **short_str) {
+    int n = 0;
+    while (opts[n].name)
+        n++;
+
+    struct option *gopts = malloc((n + 1) * sizeof(struct option));
+    size_t ssize = 32;
+    char *sstr = malloc(ssize);
+    sstr[0] = '\0';
+
+    for (int i = 0; i < n; i++) {
+        gopts[i].name = opts[i].name;
+        gopts[i].has_arg = opts[i].has_arg;
+        gopts[i].flag = opts[i].flag;
+        gopts[i].val = opts[i].val;
+
+        if (opts[i].val && isprint(opts[i].val)) {
+            size_t len = strlen(sstr);
+            if (len + 3 >= ssize) {
+                ssize *= 2;
+                sstr = realloc(sstr, ssize);
+            }
+            sstr[len] = opts[i].val;
+            if (opts[i].has_arg == required_argument) {
+                sstr[len + 1] = ':';
+                sstr[len + 2] = '\0';
+            } else if (opts[i].has_arg == optional_argument) {
+                sstr[len + 1] = ':';
+                sstr[len + 2] = ':';
+                sstr[len + 3] = '\0';
+            } else {
+                sstr[len + 1] = '\0';
+            }
         }
     }
+    gopts[n] = (struct option){0, 0, 0, 0};
+    *short_str = sstr;
+    return gopts;
+}
 
-    // Reset getopt for second pass
-    optind = 1;
+static char *mado_options_help(const Mado_Option *opts) {
+    size_t size = 256;
+    char *buf = malloc(size);
+    buf[0] = '\0';
 
-    // Second pass: process all arguments
-    while ((opt = getopt_long(argc, argv, "hVC:iFD:E:L:nt:f:op:r:NTIPSAH",
-                              long_options, NULL)) != -1) {
+    for (int i = 0; opts[i].name; i++) {
+        char line[128];
+        if (opts[i].val && isprint(opts[i].val)) {
+            snprintf(line, sizeof(line), "  -%c, --%-16s %s\n",
+                     opts[i].val, opts[i].name, opts[i].description);
+        } else {
+            snprintf(line, sizeof(line), "  --%-20s %s\n",
+                     opts[i].name, opts[i].description);
+        }
+        size_t needed = strlen(buf) + strlen(line) + 1;
+        if (needed > size) {
+            size *= 2;
+            buf = realloc(buf, size);
+        }
+        strcat(buf, line);
+    }
+    return buf;
+}
+
+static void print_command_help(const Command *cmd) {
+    fprintf(stdout, "Usage: %s\n\n", cmd->usage);
+    fprintf(stdout, "%s\n", cmd->description);
+    if (cmd->options) {
+        fprintf(stdout, "\nOptions:\n");
+        char *help = mado_options_help(cmd->options);
+        fprintf(stdout, "%s", help);
+        free(help);
+    }
+}
+
+static Command *find_command(const char *name) {
+    for (int i = 0; commands[i].name; i++) {
+        if (strcmp(commands[i].name, name) == 0)
+            return &commands[i];
+    }
+    return NULL;
+}
+
+static void print_usage() {
+    fprintf(stdout, "Usage: %s [GLOBAL FLAGS] <command> [COMMAND OPTIONS]\n\n", argv0);
+    fprintf(stdout, "Global flags:\n");
+    fprintf(stdout, "  -C, --change-working-dir <DIR>   Change working directory before command\n");
+    fprintf(stdout, "  -h, --help                       Show this help\n");
+    fprintf(stdout, "\nCommands:\n");
+    for (int i = 0; commands[i].name; i++)
+        fprintf(stdout, "  %-12s %s\n", commands[i].name, commands[i].description);
+    fprintf(stdout, "\nRun '%s help <command>' for more information on a command.\n", argv0);
+}
+
+// ================ COMMAND HANDLERS
+
+static Error cmd_init(int argc, char **argv) {
+    int force = 0;
+    const Command *cmd = find_command(argv[0]);
+    char *short_str;
+    struct option *gopts = mado_option_to_getopt(cmd->options, &short_str);
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
         switch (opt) {
-        case 'h':
-            do_help = 1;
-            break;
-        case 'V':
-            do_info = 1;
-            break;
-        case 'C':
-            if (chdir(optarg) != 0) {
-                fprintf(stderr,
-                        "Error: failed to change directory to '%s': %s\n",
-                        optarg, strerror(errno));
-                return ERR_FAILURE;
-            }
-            break;
-        case 'i':
-            do_init = 1;
-            break;
         case 'F':
             force = 1;
             break;
         case 'D':
             g_config.main_dir_name = optarg;
             break;
-        case 'E':
-            g_config.entry_file_name = optarg;
-            break;
-        case 'L': {
-            int lines = atoi(optarg);
-            if (lines <= 0) {
-                fprintf(stderr, "Error: -L must be a positive number\n");
-                return ERR_FAILURE;
-            }
-            g_config.max_header_lines = lines;
-            break;
+        default:
+            free(short_str);
+            free(gopts);
+            return ERR_FAILURE;
         }
-        case 'n':
-            do_new = 1;
-            break;
+    }
+    free(short_str);
+    free(gopts);
+
+    Error err = entries_dir_init(force);
+    if (err != ERR_SUCCESS)
+        return err;
+    return templates_dir_init();
+}
+
+static Error cmd_new(int argc, char **argv) {
+    Output_Format fmt = FMT_UNIX;
+    const Command *cmd = find_command(argv[0]);
+    char *short_str;
+    struct option *gopts = mado_option_to_getopt(cmd->options, &short_str);
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
+        switch (opt) {
         case 't':
             g_config.template_name = optarg;
             break;
         case 'f':
-            if (strcmp(optarg, "path") == 0) {
-                fmt = FMT_ONLY_PATH;
-            } else if (strcmp(optarg, "unix") == 0) {
-                fmt = FMT_UNIX;
-            } else if (strcmp(optarg, "jsonl") == 0) {
-                fmt = FMT_JSONL;
-            } else {
+            if (!parse_format(optarg, &fmt)) {
                 fprintf(stderr, "Error: unknown format '%s'\n", optarg);
+                free(short_str);
+                free(gopts);
+                return ERR_FAILURE;
+            }
+            break;
+        default:
+            free(short_str);
+            free(gopts);
+            return ERR_FAILURE;
+        }
+    }
+    free(short_str);
+    free(gopts);
+
+    char *main_dir = find_dir_up(g_config.main_dir_name);
+    if (!main_dir) {
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_config.main_dir_name);
+        return ERR_FAILURE;
+    }
+    Error ret = entry_create_dir_and_md(main_dir, fmt);
+    free(main_dir);
+    return ret;
+}
+
+static Error cmd_list(int argc, char **argv) {
+    char *query = NULL;
+    Output_Format fmt = FMT_UNIX;
+    const Command *cmd = find_command(argv[0]);
+    char *short_str;
+    struct option *gopts = mado_option_to_getopt(cmd->options, &short_str);
+
+    int only = 0;
+    int opt;
+
+    opterr = 0;
+    while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
+        if (opt == 'o') {
+            only = 1;
+            g_config.hide_fields = FIELD_ALL;
+        }
+    }
+
+    optind = 1;
+    opterr = 1;
+
+    while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
+        switch (opt) {
+        case 'f':
+            if (!parse_format(optarg, &fmt)) {
+                free(short_str);
+                free(gopts);
                 return ERR_FAILURE;
             }
             break;
         case 'o':
-            // Already handled in first pass
-            break;
-        case 'p':
-            query = optarg;
-            do_print = 1;
-            break;
-        case 'r':
-            query = optarg;
-            do_remove = 1;
             break;
         case 'N':
-            if (only)
-                g_config.hide_fields &= ~FIELD_NAME;
-            else
-                g_config.hide_fields |= FIELD_NAME;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_NAME) : (g_config.hide_fields | FIELD_NAME);
             break;
         case 'T':
-            if (only)
-                g_config.hide_fields &= ~FIELD_TIME;
-            else
-                g_config.hide_fields |= FIELD_TIME;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_TIME) : (g_config.hide_fields | FIELD_TIME);
             break;
         case 'I':
-            if (only)
-                g_config.hide_fields &= ~FIELD_DEADLINE;
-            else
-                g_config.hide_fields |= FIELD_DEADLINE;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_DEADLINE) : (g_config.hide_fields | FIELD_DEADLINE);
             break;
         case 'P':
-            if (only)
-                g_config.hide_fields &= ~FIELD_PRIORITY;
-            else
-                g_config.hide_fields |= FIELD_PRIORITY;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_PRIORITY) : (g_config.hide_fields | FIELD_PRIORITY);
             break;
         case 'S':
-            if (only)
-                g_config.hide_fields &= ~FIELD_STATUS;
-            else
-                g_config.hide_fields |= FIELD_STATUS;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_STATUS) : (g_config.hide_fields | FIELD_STATUS);
             break;
         case 'A':
-            if (only)
-                g_config.hide_fields &= ~FIELD_TAGS;
-            else
-                g_config.hide_fields |= FIELD_TAGS;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_TAGS) : (g_config.hide_fields | FIELD_TAGS);
             break;
         case 'H':
-            if (only)
-                g_config.hide_fields &= ~FIELD_PATH;
-            else
-                g_config.hide_fields |= FIELD_PATH;
+            g_config.hide_fields = only ? (g_config.hide_fields & ~FIELD_PATH) : (g_config.hide_fields | FIELD_PATH);
             break;
         default:
-            fprintf(stderr, "Error: unknown flag '%c'\n", opt);
+            free(short_str);
+            free(gopts);
             return ERR_FAILURE;
         }
     }
+    free(short_str);
+    free(gopts);
 
-    if (do_help) {
-        usage();
-        return ERR_SUCCESS;
-    } else if (do_init) {
-        Error err = entries_dir_init(force);
-        if (err != ERR_SUCCESS)
-            return err;
-        err = templates_dir_init();
-        if (err != ERR_SUCCESS)
-            return err;
-        return ERR_SUCCESS;
-    } else if (do_new) {
-        char *main_dir = find_dir_up(g_config.main_dir_name);
-        if (!main_dir) {
-            fprintf(stderr, "Error: entries directory '%s' not found\n",
-                    g_config.main_dir_name);
-            return ERR_FAILURE;
-        }
-        Error ret = entry_create_dir_and_md(main_dir, fmt);
-        free(main_dir);
-        return ret;
-    } else if (do_print) {
-        return entries_process_with_filter(query, entry_op_print,
-                                           (void *)(intptr_t)fmt);
-    } else if (do_remove) {
-        return entries_process_with_filter(query, entry_op_delete, NULL);
-    } else if (do_info) {
-        return print_repo_info();
+    if (optind < argc)
+        query = argv[optind];
+    return entries_process_with_filter(query, entry_op_print, (void *)(intptr_t)fmt);
+}
+
+static Error cmd_remove(int argc, char **argv) {
+    if (argc < 2) {
+        fprintf(stderr, "Error: remove requires a query argument\n");
+        return ERR_FAILURE;
     }
+    return entries_process_with_filter(argv[1], entry_op_delete, NULL);
+}
 
-    usage();
+static Error cmd_info(int argc, char **argv) {
+    UNUSED(argc);
+    UNUSED(argv);
+    return print_repo_info();
+}
+
+static Error cmd_help(int argc, char **argv) {
+    if (argc < 2) {
+        print_usage();
+        return ERR_SUCCESS;
+    }
+    Command *cmd = find_command(argv[1]);
+    if (!cmd) {
+        fprintf(stderr, "Unknown command: %s\n\n", argv[1]);
+        print_usage();
+        return ERR_FAILURE;
+    }
+    print_command_help(cmd);
     return ERR_SUCCESS;
+}
+
+// ================ GLOBAL FLAGS
+
+static int handle_global_flags(int argc, char **argv) {
+    static struct option global_options[] = {
+        {"change-working-dir", required_argument, 0, 'C'},
+        {"help", no_argument, 0, 'h'},
+        {0, 0, 0, 0}};
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, "+C:h", global_options, NULL)) != -1) {
+        switch (opt) {
+        case 'C':
+            if (chdir(optarg) != 0) {
+                fprintf(stderr, "Error: failed to change directory to '%s': %s\n", optarg, strerror(errno));
+                return -1;
+            }
+            break;
+        case 'h':
+            print_usage();
+            return 1;
+        default:
+            return -1;
+        }
+    }
+    return 0;
+}
+
+// ================ ENTRYPOINT
+
+int main(int argc, char **argv) {
+    argv0 = argv[0];
+
+    if (init_regexes() != ERR_SUCCESS)
+        return ERR_FAILURE;
+    atexit(free_regexes);
+
+    if (argc < 2) {
+        print_usage();
+        return ERR_SUCCESS;
+    }
+
+    int ret = handle_global_flags(argc, argv);
+    if (ret != 0)
+        return ret < 0 ? ERR_FAILURE : ERR_SUCCESS;
+
+    if (optind >= argc) {
+        print_usage();
+        return ERR_SUCCESS;
+    }
+
+    char *command_name = argv[optind];
+    Command *cmd = find_command(command_name);
+
+    if (!cmd) {
+        fprintf(stderr, "Error: unknown command '%s'\n\n", command_name);
+        print_usage();
+        return ERR_FAILURE;
+    }
+
+    int cmd_argc = argc - optind;
+    char **cmd_argv = argv + optind;
+    optind = 1;
+
+    return cmd->handler(cmd_argc, cmd_argv);
 }
