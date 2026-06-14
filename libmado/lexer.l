@@ -12,7 +12,7 @@ void set_query_string(const char *query) {
     g_current_query = query;
 }
 
-int yywrap(void) {
+int yywrap() {
     return 1;
 }
 

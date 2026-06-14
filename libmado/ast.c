@@ -7,9 +7,9 @@
 extern void set_query_string(const char *query); // in lexer, for error print
 extern struct yy_buffer_state *yy_scan_string(const char *);
 
-extern int yyparse(void);
+extern int yyparse();
 extern void yyrestart(FILE *);
-extern void yylex_destroy(void);
+extern void yylex_destroy();
 
 extern ASTNode *ast_root;
 

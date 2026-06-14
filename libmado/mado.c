@@ -21,11 +21,9 @@
 #include "ast.h"
 #include "mado.h"
 
-#define UNUSED(x) (void)(x)
-
 // ================ CONFIG
 
-void mado_init_config(Mado_Config *cfg) {
+static void mado_init_config(Mado_Config *cfg) {
     cfg->main_dir_name = "MADO";
     cfg->templates_dir_name = ".templates";
     cfg->entry_file_name = "MAIN";
@@ -45,7 +43,7 @@ static regex_t g_status_regex;
 static regex_t g_deadline_regex;
 static int g_regex_initialized = 0;
 
-int mado_init_regexes(void) {
+static int mado_init_regexes() {
     if (g_regex_initialized)
         return 0;
     if (regcomp(&g_entry_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0)
@@ -64,7 +62,7 @@ int mado_init_regexes(void) {
     return 0;
 }
 
-void mado_free_regexes(void) {
+static void mado_free_regexes() {
     if (!g_regex_initialized)
         return;
     regfree(&g_entry_dir_regex);
@@ -289,7 +287,7 @@ int mado_entries_dir_init(const Mado_Config *cfg, int force) {
     return 0;
 }
 
-int mado_entry_create(const Mado_Config *cfg, const char *entry_path, const char *template_name) {
+static int mado_entry_create(const Mado_Config *cfg, const char *entry_path, const char *template_name) {
     char entry_md[PATH_MAX];
     snprintf(entry_md, sizeof(entry_md), "%s/%s.md", entry_path, cfg->entry_file_name);
 
@@ -364,7 +362,10 @@ int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, M
 
 // ================ PARSE
 
-Mado_Entry *mado_entry_parse(const Mado_Config *cfg, const char *entry_dir, const char *entry_time) {
+Mado_Entry *mado_entry_parse(const Mado_Config *cfg, const char *entry_dir) {
+    const char *dir_name = strrchr(entry_dir, '/');
+    dir_name = dir_name ? dir_name + 1 : entry_dir;
+
     char entry_file[PATH_MAX];
     snprintf(entry_file, sizeof(entry_file), "%s/%s.md", entry_dir, cfg->entry_file_name);
 
@@ -377,7 +378,7 @@ Mado_Entry *mado_entry_parse(const Mado_Config *cfg, const char *entry_dir, cons
     entry->path = strdup(entry_dir);
     entry->status = strdup("");
     entry->name = strdup("");
-    entry->time = strdup(entry_time);
+    entry->time = strdup(dir_name);
     entry->deadline = strdup("99990000T000000");
 
     char *line = malloc(cfg->max_header_line_len);
@@ -453,7 +454,7 @@ Mado_Entry **mado_entries_get_all(const Mado_Config *cfg, const char *main_dir) 
         if (!file_exists(entry_file))
             continue;
 
-        Mado_Entry *entry = mado_entry_parse(cfg, entry_dir, dirent->d_name);
+        Mado_Entry *entry = mado_entry_parse(cfg, entry_dir);
         if (entry)
             dapush(entries, entry);
     }
@@ -488,7 +489,7 @@ void mado_entries_free(Mado_Entry **entries) {
 
 // ================ FILTER
 
-int mado_entry_matches_condition(Mado_Entry *entry, ASTNode *node) {
+static int mado_entry_matches_condition(Mado_Entry *entry, ASTNode *node) {
     if (!node)
         return 1;
     switch (node->type) {
@@ -771,4 +772,13 @@ int mado_parse_format(const char *format_str, Mado_Output_Format *fmt) {
     else
         return 0;
     return 1;
+}
+
+int mado_init(Mado_Config *cfg) {
+    mado_init_config(cfg);
+    return mado_init_regexes();
+}
+
+void mado_deinit() {
+    mado_free_regexes();
 }

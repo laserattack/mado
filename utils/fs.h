@@ -54,7 +54,7 @@ int file_exists(const char *path) {
     return stat(path, &st) == 0;
 }
 
-char *get_cwd(void) {
+char *get_cwd() {
     char *buf = NULL;
     size_t size = 128;
 

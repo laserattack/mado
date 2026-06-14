@@ -1,5 +1,5 @@
-#ifndef ENTRY_H
-#define ENTRY_H
+#ifndef MADO_H
+#define MADO_H
 
 #include "ast.h"
 #include <stdint.h>
@@ -46,27 +46,30 @@ typedef struct Mado_Config {
     Mado_Entry_Field hide_fields;
 } Mado_Config;
 
-void mado_init_config(Mado_Config *cfg);
-int mado_init_regexes(void);
-void mado_free_regexes(void);
+// Lifecycle
+int mado_init(Mado_Config *cfg);
+void mado_deinit();
 
+// Entries
+Mado_Entry *mado_entry_parse(const Mado_Config *cfg, const char *entry_dir);
 void mado_entry_print(const Mado_Config *cfg, Mado_Entry *e, Mado_Output_Format fmt);
-Mado_Entry *mado_entry_parse(const Mado_Config *cfg, const char *entry_dir, const char *entry_time);
-Mado_Entry **mado_entries_get_all(const Mado_Config *cfg, const char *main_dir);
 void mado_entry_free(Mado_Entry *entry);
+Mado_Entry **mado_entries_get_all(const Mado_Config *cfg, const char *main_dir);
 void mado_entries_free(Mado_Entry **entries);
 
-int mado_entry_matches_condition(Mado_Entry *entry, ASTNode *node);
+// Filter & process
 Mado_Entry **mado_entries_filter(Mado_Entry **entries, ASTNode *filter);
 int mado_entries_process_with_filter(const Mado_Config *cfg, const char *query, Mado_Entry_Operation_Fn op, void *ctx);
 void mado_entry_op_print(Mado_Entry **entries, void *ctx);
 void mado_entry_op_delete(Mado_Entry **entries, void *ctx);
 
+// Repo management
 int mado_templates_dir_init(const Mado_Config *cfg);
 int mado_entries_dir_init(const Mado_Config *cfg, int force);
-int mado_entry_create(const Mado_Config *cfg, const char *entry_path, const char *template_name);
 int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, Mado_Output_Format fmt);
 int mado_print_repo_info(const Mado_Config *cfg);
+
+// Utils
 int mado_parse_format(const char *format_str, Mado_Output_Format *fmt);
 
 #endif

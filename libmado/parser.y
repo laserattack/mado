@@ -5,7 +5,7 @@
 
 #include "ast.h"
 
-extern int yylex(void);
+extern int yylex();
 extern void yyerror(const char *fmt, ...);
 
 typedef enum { LM_ALLOF, LM_ANYOF } ListModifier;
@@ -55,7 +55,7 @@ static ASTNode *create_comparison(ComparisonField field,
     return node;
 }
 
-static ASTNode *create_all(void) {
+static ASTNode *create_all() {
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = NODE_ALL;
     return node;

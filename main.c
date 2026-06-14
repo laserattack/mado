@@ -157,7 +157,7 @@ static Mado_Command *find_command(const char *name) {
     return NULL;
 }
 
-static void print_usage(void) {
+static void print_usage() {
     fprintf(stdout, "Usage: %s [GLOBAL FLAGS] <command> [COMMAND OPTIONS]\n\n", argv0);
     fprintf(stdout, "Global flags:\n");
     fprintf(stdout, "  -C, --change-working-dir <DIR>   Change working directory before command\n");
@@ -360,10 +360,9 @@ static int handle_global_flags(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     argv0 = argv[0];
-    mado_init_config(&g_mado_config);
-    if (mado_init_regexes() != 0)
+    if (mado_init(&g_mado_config) != 0)
         return 1;
-    atexit(mado_free_regexes);
+    atexit(mado_deinit);
 
     if (argc < 2) {
         print_usage();
