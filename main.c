@@ -956,62 +956,40 @@ static Error print_repo_info() {
     return ERR_SUCCESS;
 }
 
+// clang-format off
 static void usage() {
     fprintf(
         stdout,
         "usage: %s [OPTION]...\n"
         "  -h, --help                 show this help\n"
-        "  -C, --directory DIR        change working directory before any "
-        "operations\n"
+        "  -C, --directory DIR        change working directory before any operations\n"
         "  -V, --repo                 show repository info\n"
-        "  -i, --init                 initialize main directory in current "
-        "location\n"
-        "  -t, --template TEMPLATE    use template file from "
-        "'%s/%s/<template>.md'\n"
+        "  -i, --init                 initialize main directory in current location\n"
+        "  -t, --template TEMPLATE    use template file from '%s/%s/<template>.md'\n"
         "  -n, --new                  create new entry\n"
-        "  -D, --main-dir NAME        use custom main directory name instead "
-        "of "
-        "'" MAIN_DIR_NAME_DEFAULT "'\n"
-        "  -E, --entry-file NAME      use custom entry file name instead of "
-        "'" ENTRY_FILE_NAME_DEFAULT "'\n"
-        "  -F, --force                force init main dir in cwd even if "
-        "exists above\n"
-        "  -p, --print QUERY          print entries using query (e.g. "
-        "'priority > 5')\n"
+        "  -D, --main-dir NAME        use custom main directory name instead of '" MAIN_DIR_NAME_DEFAULT "'\n"
+        "  -E, --entry-file NAME      use custom entry file name instead of '" ENTRY_FILE_NAME_DEFAULT "'\n"
+        "  -F, --force                force init main dir in cwd even if exists above\n"
+        "  -p, --print QUERY          print entries using query (e.g. 'priority > 5')\n"
         "  -r, --remove QUERY         remove entries matching query\n"
         "  -f, --format FORMAT        output format for -p:\n"
-        "                             unix: path:1:1: STATUS:[...] NAME:[...] "
-        "...\n"
+        "                             unix: path:1:1: STATUS:[...] NAME:[...] ...\n"
         "                             path: absolute paths only, one per line\n"
         "                             jsonl: newline-delimited JSON\n"
-        "  -L, --lines LINES          max header lines to scan for fields "
-        "(default: " TOSTRING(
-            MAX_HEADER_LINES_DEFAULT) ")\n"
-                                      "\n"
-                                      "  -N, --hide-name            hide "
-                                      "name "
-                                      "field in output\n"
-                                      "  -T, --hide-time            hide "
-                                      "time "
-                                      "field in output\n"
-                                      "  -I, --hide-deadline        hide "
-                                      "deadline field in output\n"
-                                      "  -P, --hide-priority        hide "
-                                      "priority field in output\n"
-                                      "  -S, --hide-status          hide "
-                                      "status field in output\n"
-                                      "  -A, --hide-tags            hide tags "
-                                      "field in output\n"
-                                      "  -H, --hide-path            hide path "
-                                      "field in output\n"
-                                      "  -o, --only-hidden          only mode: "
-                                      "hide all fields, then "
-                                      "-N/-T/-I/-P/-S/-A/-H\n"
-                                      "                             show "
-                                      "specific fields (e.g. -oNA for name and "
-                                      "tags)\n",
+        "  -L, --lines LINES          max header lines to scan for fields (default: " TOSTRING(MAX_HEADER_LINES_DEFAULT) ")\n"
+        "\n"
+        "  -N, --hide-name            hide name field in output\n"
+        "  -T, --hide-time            hide time field in output\n"
+        "  -I, --hide-deadline        hide deadline field in output\n"
+        "  -P, --hide-priority        hide priority field in output\n"
+        "  -S, --hide-status          hide status field in output\n"
+        "  -A, --hide-tags            hide tags field in output\n"
+        "  -H, --hide-path            hide path field in output\n"
+        "  -o, --only-hidden          only mode: hide all fields, then -N/-T/-I/-P/-S/-A/-H\n"
+        "                             show specific fields (e.g. -oNA for name and tags)\n",
         argv0, g_config.main_dir_name, g_config.templates_dir_name);
 }
+// clang-format on
 
 int main(int argc, char **argv) {
     argv0 = argv[0];

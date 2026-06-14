@@ -1,4 +1,4 @@
 - NAME: add sorting
-- PRIORITY: 20
+- PRIORITY: 60
 - TAGS: feat, sorting
 - STATUS: opened
