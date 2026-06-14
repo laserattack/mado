@@ -120,20 +120,27 @@ static struct option *option_to_getopt(const Option *opts, char **short_str) {
 
 static char *options_help(const Option *opts) {
     size_t size = 256;
+    size_t used = 0;
     char *buf = malloc(size);
     buf[0] = '\0';
+
     for (int i = 0; opts[i].name; i++) {
-        char line[128];
-        if (opts[i].val && isprint(opts[i].val))
-            snprintf(line, sizeof(line), "  -%c, --%-16s %s\n", opts[i].val, opts[i].name, opts[i].description);
-        else
-            snprintf(line, sizeof(line), "  --%-20s %s\n", opts[i].name, opts[i].description);
-        size_t needed = strlen(buf) + strlen(line) + 1;
-        if (needed > size) {
+        const char *fmt = opts[i].val && isprint(opts[i].val)
+                              ? "  -%c, --%-16s %s\n"
+                              : "  --%-20s %s\n";
+
+        int needed = snprintf(NULL, 0, fmt,
+                              opts[i].val, opts[i].name, opts[i].description);
+
+        while (used + needed + 1 > size) {
             size *= 2;
             buf = realloc(buf, size);
         }
-        strcat(buf, line);
+
+        if (opts[i].val && isprint(opts[i].val))
+            used += sprintf(buf + used, fmt, opts[i].val, opts[i].name, opts[i].description);
+        else
+            used += sprintf(buf + used, fmt, opts[i].name, opts[i].description);
     }
     return buf;
 }
