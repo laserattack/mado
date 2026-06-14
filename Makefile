@@ -6,6 +6,8 @@ BISON = bison
 TARGET = mado
 TARGET_SRC = main.c
 
+MADO_SRC = mado.c
+
 LEXER = lexer.l
 LEX_OUT = lex.yy.c
 
@@ -23,8 +25,8 @@ $(LEX_OUT): $(LEXER)
 $(PARSER_OUT) $(PARSER_HEADER): $(PARSER)
 	$(BISON) -d $(PARSER)
 
-$(TARGET): $(LEX_OUT) $(PARSER_OUT) $(TARGET_SRC) $(AST_SRC)
-	$(CC) $(CFLAGS) $(LEX_OUT) $(PARSER_OUT) $(TARGET_SRC) $(AST_SRC) -o $(TARGET)
+$(TARGET): $(LEX_OUT) $(PARSER_OUT) $(TARGET_SRC) $(AST_SRC) $(MADO_SRC)
+	$(CC) $(CFLAGS) $(LEX_OUT) $(PARSER_OUT) $(TARGET_SRC) $(AST_SRC) $(MADO_SRC) -o $(TARGET)
 
 llm:
 	gitingest
