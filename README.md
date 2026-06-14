@@ -26,7 +26,7 @@ mkdir myproject
 cd myproject
 
 # Initialize MADO directory (like git init)
-mado -i
+mado init
 ```
 
 Once the `MADO/` directory is initialized, you can work with entries
@@ -36,7 +36,7 @@ file tree
 
 ``` bash
 # Create your first entry
-mado -n
+mado new
 ```
 
 The entry will be created with the following content:
@@ -74,35 +74,35 @@ When you have many entries, you'll want to filter them:
 
 ``` bash
 # List all entries
-mado -p 'all'
+mado list 'all'
 
 # Find critical bugs
-mado -p 'tag = bug and priority > 5'
+mado list 'tag = bug and priority > 5'
 
 # Delete low priority entries
-mado -r 'priority < 5'
+mado remove 'priority < 5'
 
 # Filter by entry name (exact match)
-mado -p 'name = login'
+mado list 'name = login'
 
 # Filter by entry name (substring)
-mado -p 'name ~ login'
-mado -p 'name ~ "fix login"' # multiple words — quotes required
+mado list 'name ~ login'
+mado list 'name ~ "fix login"' # multiple words — quotes required
 
 # Filter by creation time
-mado -p 'time ~ 20260516' # Entries created on 2026-05-16
-mado -p 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
-mado -p 'time >= 2023 and time <= 2025' # Entries created between 2023 and 2025 (inclusive)
+mado list 'time ~ 20260516' # Entries created on 2026-05-16
+mado list 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
+mado list 'time >= 2023 and time <= 2025' # Entries created between 2023 and 2025 (inclusive)
 
 # Find entries with complex conditions
-mado -p '(tag = bug or tag = critical) and status = opened and deadline < 20260602'
-mado -p 'not (priority < 3 or status = closed)'
-mado -p '(priority > 5 and tag = urgent) or status = reopened'
+mado list '(tag = bug or tag = critical) and status = opened and deadline < 20260602'
+mado list 'not (priority < 3 or status = closed)'
+mado list '(priority > 5 and tag = urgent) or status = reopened'
 
 # Syntactic sugar for matching multiple values
-mado -p 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
-mado -p 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
-mado -p 'tag = allof(bug, critical)' # Entry has BOTH "bug" AND "critical" tags
+mado list 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
+mado list 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
+mado list 'tag = allof(bug, critical)' # Entry has BOTH "bug" AND "critical" tags
 ```
 
 ## Customizing Templates
@@ -129,7 +129,7 @@ EOF
 You can create entries with custom templates:
 
 ``` bash
-mado -n -t bug
+mado new -t bug
 # The template must exist at: MADO/.templates/bug.md
 ```
 
@@ -139,24 +139,23 @@ The `-f` flag controls how entries are displayed:
 
 ``` bash
 # Default unix format: path:1:1: fields
-mado -p 'all'
-# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1:1: TIME:[20260521T204844] NAME:[The ability to specify the name of the main directory (TASKS by default)] PRIORITY:[10] DEADLINE:[99990000T000000] STATUS:[closed] TAGS:[feat,flag]
+mado list 'all'
+# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1:1: TIME:[20260521T204844] NAME:[...] PRIORITY:[10] DEADLINE:[99990000T000000] STATUS:[closed] TAGS:[feat,flag]
 # Compatible with Emacs compile buffer and other tools that parse file:line:col
 
 # Paths only — useful for piping to other tools
-mado -p 'all' -f path
+mado list -f path 'all'
 # /home/user/project/MADO/20260516T161611/MAIN.md
 # Search across entry bodies with grep
-grep 'match' $(mado -p 'all' -f path)
-# /home/user/project/MADO/20260512T224126/MAIN.md:Operator '=' remains for exact matches.
+grep 'match' $(mado list -f path 'all')
 
 # Newline-delimited JSON for scripts
-mado -p 'all' -f jsonl
-# {"time":"20260521T204844","name":"The ability to specify the name of the main directory (TASKS by default)","priority":10,"deadline":"99990000T000000","status":"closed","tags":["feat","flag"],"path":"/home/user/project/MADO/20260521T204844/MAIN.md"}
+mado list -f jsonl 'all'
+# {"time":"20260521T204844","name":"...","priority":10,"deadline":"99990000T000000","status":"closed","tags":["feat","flag"],"path":"/home/user/project/MADO/20260521T204844/MAIN.md"}
 # Pipe JSON output to jq for advanced processing
-mado -p 'priority > 5' -f jsonl | jq '.name'
-mado -p 'all' -f jsonl | jq -s 'group_by(.status)'
-mado -p 'all' -f jsonl | jq -s 'sort_by(.priority)'
+mado list -f jsonl 'priority > 5' | jq '.name'
+mado list -f jsonl 'all' | jq -s 'group_by(.status)'
+mado list -f jsonl 'all' | jq -s 'sort_by(.priority)'
 ```
 
 ## Query Syntax
@@ -230,7 +229,3 @@ This will produce an executable file `./mado`
   - `make`
   - `flex`
   - `bison`
-
-## Integrations
-
-- [emado](https://github.com/laserattack/emado) - Emacs interface for mado
