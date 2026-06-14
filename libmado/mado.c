@@ -682,7 +682,7 @@ static int mado_entry_matches_condition(Mado_Entry *entry, ASTNode *node) {
     }
 }
 
-Mado_Entry **mado_entries_filter(Mado_Entry **entries, ASTNode *filter) {
+static Mado_Entry **mado_entries_filter(Mado_Entry **entries, ASTNode *filter) {
     if (!entries || dalen(entries) == 0 || !filter)
         return entries;
     Mado_Entry **filtered = NULL;

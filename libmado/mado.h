@@ -1,7 +1,6 @@
 #ifndef MADO_H
 #define MADO_H
 
-#include "ast.h"
 #include <stdint.h>
 
 typedef enum {
@@ -58,7 +57,6 @@ Mado_Entry **mado_entries_get_all(const Mado_Config *cfg, const char *main_dir);
 void mado_entries_free(Mado_Entry **entries);
 
 // Filter & process
-Mado_Entry **mado_entries_filter(Mado_Entry **entries, ASTNode *filter);
 int mado_entries_process_with_filter(const Mado_Config *cfg, const char *query, Mado_Entry_Operation_Fn op, void *ctx);
 void mado_entry_op_print(Mado_Entry **entries, void *ctx);
 void mado_entry_op_delete(Mado_Entry **entries, void *ctx);
