@@ -721,7 +721,7 @@ void mado_entry_op_delete(Mado_Entry **entries, void *ctx) {
     }
 }
 
-int mado_entries_process_with_filter(const Mado_Config *cfg, const char *query, Mado_Entry_Operation_Fn op, void *ctx) {
+int mado_entries_process(const Mado_Config *cfg, const char *query, Mado_Entry_Operation_Fn op, void *ctx) {
     ASTNode *filter = NULL;
     if (query) {
         filter = parse(query);

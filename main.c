@@ -298,7 +298,7 @@ static int cmd_list(int argc, char **argv) {
         const Mado_Config *cfg;
         Mado_Output_Format fmt;
     } ctx = {&g_mado_config, fmt};
-    return mado_entries_process_with_filter(&g_mado_config, query, mado_entry_op_print, &ctx);
+    return mado_entries_process(&g_mado_config, query, mado_entry_op_print, &ctx);
 }
 
 static int cmd_remove(int argc, char **argv) {
@@ -306,7 +306,7 @@ static int cmd_remove(int argc, char **argv) {
         fprintf(stderr, "Error: remove requires a query argument\n");
         return -1;
     }
-    return mado_entries_process_with_filter(&g_mado_config, argv[1], mado_entry_op_delete, NULL);
+    return mado_entries_process(&g_mado_config, argv[1], mado_entry_op_delete, NULL);
 }
 
 static int cmd_info(int argc, char **argv) {
