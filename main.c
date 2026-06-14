@@ -30,7 +30,7 @@ typedef struct {
     int *flag;
     int val;
     const char *description;
-} Mado_Option;
+} Option;
 
 typedef int (*command_handler)(int argc, char **argv);
 
@@ -38,9 +38,9 @@ typedef struct {
     const char *name;
     const char *description;
     const char *usage;
-    const Mado_Option *options;
+    const Option *options;
     command_handler handler;
-} Mado_Command;
+} Command;
 
 static int cmd_init(int argc, char **argv);
 static int cmd_new(int argc, char **argv);
@@ -49,21 +49,21 @@ static int cmd_remove(int argc, char **argv);
 static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
 
-static Mado_Command commands[] = {
+static Command commands[] = {
     {"init", "Initialize mado repository", "mado init [COMMAND OPTIONS]",
-     (Mado_Option[]){
+     (Option[]){
          {"force", no_argument, NULL, 'F', "Force init in current directory"},
          {"main-dir", required_argument, NULL, 'D', "Custom main directory name"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_init},
     {"new", "Create new entry", "mado new [COMMAND OPTIONS]",
-     (Mado_Option[]){
+     (Option[]){
          {"template", required_argument, NULL, 't', "Template to use (task, note)"},
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_new},
     {"list", "List entries with optional filtering", "mado list [COMMAND OPTIONS] <QUERY>",
-     (Mado_Option[]){
+     (Option[]){
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {"hide-name", no_argument, NULL, 'N', "Hide name field"},
          {"hide-time", no_argument, NULL, 'T', "Hide time field"},
@@ -80,7 +80,7 @@ static Mado_Command commands[] = {
     {"help", "Show help for commands", "mado help [COMMAND]", NULL, cmd_help},
     {NULL, NULL, NULL, NULL, NULL}};
 
-static struct option *mado_option_to_getopt(const Mado_Option *opts, char **short_str) {
+static struct option *option_to_getopt(const Option *opts, char **short_str) {
     int n = 0;
     while (opts[n].name)
         n++;
@@ -119,7 +119,7 @@ static struct option *mado_option_to_getopt(const Mado_Option *opts, char **shor
     return gopts;
 }
 
-static char *mado_options_help(const Mado_Option *opts) {
+static char *options_help(const Option *opts) {
     size_t size = 256;
     char *buf = malloc(size);
     buf[0] = '\0';
@@ -139,18 +139,18 @@ static char *mado_options_help(const Mado_Option *opts) {
     return buf;
 }
 
-static void print_command_help(const Mado_Command *cmd) {
+static void print_command_help(const Command *cmd) {
     fprintf(stdout, "Usage: %s\n\n", cmd->usage);
     fprintf(stdout, "%s\n", cmd->description);
     if (cmd->options) {
         fprintf(stdout, "\nOptions:\n");
-        char *help = mado_options_help(cmd->options);
+        char *help = options_help(cmd->options);
         fprintf(stdout, "%s", help);
         free(help);
     }
 }
 
-static Mado_Command *find_command(const char *name) {
+static Command *find_command(const char *name) {
     for (int i = 0; commands[i].name; i++)
         if (strcmp(commands[i].name, name) == 0)
             return &commands[i];
@@ -172,9 +172,9 @@ static void print_usage() {
 
 static int cmd_init(int argc, char **argv) {
     int force = 0;
-    const Mado_Command *cmd = find_command(argv[0]);
+    const Command *cmd = find_command(argv[0]);
     char *short_str;
-    struct option *gopts = mado_option_to_getopt(cmd->options, &short_str);
+    struct option *gopts = option_to_getopt(cmd->options, &short_str);
     int opt;
     while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
         switch (opt) {
@@ -199,9 +199,9 @@ static int cmd_init(int argc, char **argv) {
 
 static int cmd_new(int argc, char **argv) {
     Mado_Output_Format fmt = MADO_FMT_UNIX;
-    const Mado_Command *cmd = find_command(argv[0]);
+    const Command *cmd = find_command(argv[0]);
     char *short_str;
-    struct option *gopts = mado_option_to_getopt(cmd->options, &short_str);
+    struct option *gopts = option_to_getopt(cmd->options, &short_str);
     int opt;
     while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
         switch (opt) {
@@ -237,9 +237,9 @@ static int cmd_new(int argc, char **argv) {
 static int cmd_list(int argc, char **argv) {
     char *query = NULL;
     Mado_Output_Format fmt = MADO_FMT_UNIX;
-    const Mado_Command *cmd = find_command(argv[0]);
+    const Command *cmd = find_command(argv[0]);
     char *short_str;
-    struct option *gopts = mado_option_to_getopt(cmd->options, &short_str);
+    struct option *gopts = option_to_getopt(cmd->options, &short_str);
     int only = 0, opt;
 
     opterr = 0;
@@ -320,7 +320,7 @@ static int cmd_help(int argc, char **argv) {
         print_usage();
         return 0;
     }
-    Mado_Command *cmd = find_command(argv[1]);
+    Command *cmd = find_command(argv[1]);
     if (!cmd) {
         fprintf(stderr, "Unknown command: %s\n\n", argv[1]);
         print_usage();
@@ -379,7 +379,7 @@ int main(int argc, char **argv) {
     }
 
     char *command_name = argv[optind];
-    Mado_Command *cmd = find_command(command_name);
+    Command *cmd = find_command(command_name);
     if (!cmd) {
         fprintf(stderr, "Error: unknown command '%s'\n\n", command_name);
         print_usage();
