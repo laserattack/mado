@@ -53,7 +53,6 @@ static Command commands[] = {
     {"init", "Initialize mado repository", "mado init [COMMAND OPTIONS]",
      (Option[]){
          {"force", no_argument, NULL, 'F', "Force init in current directory"},
-         {"main-dir", required_argument, NULL, 'D', "Custom main directory name"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_init},
     {"new", "Create new entry", "mado new [COMMAND OPTIONS]",
@@ -160,8 +159,10 @@ static Command *find_command(const char *name) {
 static void print_usage() {
     fprintf(stdout, "Usage: %s [GLOBAL FLAGS] [command] [COMMAND OPTIONS]\n\n", argv0);
     fprintf(stdout, "Global flags:\n");
-    fprintf(stdout, "  -C, --change-working-dir <DIR>   Change working directory before command\n");
-    fprintf(stdout, "  -h, --help                       Show this help\n");
+    fprintf(stdout, "  -C, --working-dir <DIR>   Change working directory before command\n");
+    fprintf(stdout, "  -D, --main-dir <NAME>     Custom main directory name\n");
+    fprintf(stdout, "  -E, --entry-file <NAME>   Custom entry file name\n");
+    fprintf(stdout, "  -h, --help                Show this help\n");
     fprintf(stdout, "\nCommands:\n");
     for (int i = 0; commands[i].name; i++)
         fprintf(stdout, "  %-12s %s\n", commands[i].name, commands[i].description);
@@ -180,9 +181,6 @@ static int cmd_init(int argc, char **argv) {
         switch (opt) {
         case 'F':
             force = 1;
-            break;
-        case 'D':
-            g_mado_config.main_dir_name = optarg;
             break;
         default:
             free(short_str);
@@ -334,17 +332,25 @@ static int cmd_help(int argc, char **argv) {
 
 static int handle_global_flags(int argc, char **argv) {
     static struct option global_options[] = {
-        {"change-working-dir", required_argument, 0, 'C'},
+        {"working-dir", required_argument, 0, 'C'},
+        {"main-dir", required_argument, 0, 'D'},
+        {"entry-file", required_argument, 0, 'E'},
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}};
     int opt;
-    while ((opt = getopt_long(argc, argv, "+C:h", global_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "+C:D:E:h", global_options, NULL)) != -1) {
         switch (opt) {
         case 'C':
             if (chdir(optarg) != 0) {
                 fprintf(stderr, "Error: failed to change directory to '%s': %s\n", optarg, strerror(errno));
                 return -1;
             }
+            break;
+        case 'D':
+            g_mado_config.main_dir_name = optarg;
+            break;
+        case 'E':
+            g_mado_config.entry_file_name = optarg;
             break;
         case 'h':
             print_usage();
