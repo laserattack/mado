@@ -142,7 +142,7 @@ static void print_command_help(const Command *cmd) {
     fprintf(stdout, "Usage: %s\n\n", cmd->usage);
     fprintf(stdout, "%s\n", cmd->description);
     if (cmd->options) {
-        fprintf(stdout, "\nOptions:\n");
+        fprintf(stdout, "\nCommand options:\n");
         char *help = options_help(cmd->options);
         fprintf(stdout, "%s", help);
         free(help);
@@ -157,8 +157,8 @@ static Command *find_command(const char *name) {
 }
 
 static void print_usage() {
-    fprintf(stdout, "Usage: %s [GLOBAL FLAGS] [command] [COMMAND OPTIONS]\n\n", argv0);
-    fprintf(stdout, "Global flags:\n");
+    fprintf(stdout, "Usage: %s [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n", argv0);
+    fprintf(stdout, "Global options:\n");
     fprintf(stdout, "  -C, --working-dir <DIR>   Change working directory before command\n");
     fprintf(stdout, "  -D, --main-dir <NAME>     Custom main directory name\n");
     fprintf(stdout, "  -E, --entry-file <NAME>   Custom entry file name\n");
@@ -166,7 +166,7 @@ static void print_usage() {
     fprintf(stdout, "\nCommands:\n");
     for (int i = 0; commands[i].name; i++)
         fprintf(stdout, "  %-12s %s\n", commands[i].name, commands[i].description);
-    fprintf(stdout, "\nRun '%s help <command>' for more information on a command.\n", argv0);
+    fprintf(stdout, "\nRun '%s help <command>' for more information on a command\n", argv0);
 }
 
 // ================ COMMAND HANDLERS
@@ -328,9 +328,9 @@ static int cmd_help(int argc, char **argv) {
     return 0;
 }
 
-// ================ GLOBAL FLAGS
+// ================ GLOBAL OPTIONS
 
-static int handle_global_flags(int argc, char **argv) {
+static int handle_global_options(int argc, char **argv) {
     static struct option global_options[] = {
         {"working-dir", required_argument, 0, 'C'},
         {"main-dir", required_argument, 0, 'D'},
@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
-    int ret = handle_global_flags(argc, argv);
+    int ret = handle_global_options(argc, argv);
     if (ret != 0)
         return ret < 0 ? 1 : 0;
 
