@@ -20,7 +20,7 @@ char *argv0;
 
 // ================ GLOBAL CONFIG
 
-static Mado_Config g_config;
+static Mado_Config g_mado_config;
 
 // ================ COMMAND SYSTEM
 
@@ -182,7 +182,7 @@ static int cmd_init(int argc, char **argv) {
             force = 1;
             break;
         case 'D':
-            g_config.main_dir_name = optarg;
+            g_mado_config.main_dir_name = optarg;
             break;
         default:
             free(short_str);
@@ -192,9 +192,9 @@ static int cmd_init(int argc, char **argv) {
     }
     free(short_str);
     free(gopts);
-    if (mado_entries_dir_init(&g_config, force) != 0)
+    if (mado_entries_dir_init(&g_mado_config, force) != 0)
         return -1;
-    return mado_templates_dir_init(&g_config);
+    return mado_templates_dir_init(&g_mado_config);
 }
 
 static int cmd_new(int argc, char **argv) {
@@ -206,7 +206,7 @@ static int cmd_new(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1) {
         switch (opt) {
         case 't':
-            g_config.template_name = optarg;
+            g_mado_config.template_name = optarg;
             break;
         case 'f':
             if (!mado_parse_format(optarg, &fmt)) {
@@ -224,12 +224,12 @@ static int cmd_new(int argc, char **argv) {
     }
     free(short_str);
     free(gopts);
-    char *main_dir = find_dir_up(g_config.main_dir_name);
+    char *main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (!main_dir) {
-        fprintf(stderr, "Error: entries directory '%s' not found\n", g_config.main_dir_name);
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name);
         return -1;
     }
-    int ret = mado_entry_create_dir_and_md(&g_config, main_dir, fmt);
+    int ret = mado_entry_create_dir_and_md(&g_mado_config, main_dir, fmt);
     free(main_dir);
     return ret;
 }
@@ -246,7 +246,7 @@ static int cmd_list(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, short_str, gopts, NULL)) != -1)
         if (opt == 'o') {
             only = 1;
-            g_config.hide_fields = MADO_FIELD_ALL;
+            g_mado_config.hide_fields = MADO_FIELD_ALL;
         }
     optind = 1;
     opterr = 1;
@@ -263,25 +263,25 @@ static int cmd_list(int argc, char **argv) {
         case 'o':
             break;
         case 'N':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_NAME) : (g_config.hide_fields | MADO_FIELD_NAME);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_NAME) : (g_mado_config.hide_fields | MADO_FIELD_NAME);
             break;
         case 'T':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_TIME) : (g_config.hide_fields | MADO_FIELD_TIME);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_TIME) : (g_mado_config.hide_fields | MADO_FIELD_TIME);
             break;
         case 'I':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_DEADLINE) : (g_config.hide_fields | MADO_FIELD_DEADLINE);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_DEADLINE) : (g_mado_config.hide_fields | MADO_FIELD_DEADLINE);
             break;
         case 'P':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_PRIORITY) : (g_config.hide_fields | MADO_FIELD_PRIORITY);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_PRIORITY) : (g_mado_config.hide_fields | MADO_FIELD_PRIORITY);
             break;
         case 'S':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_STATUS) : (g_config.hide_fields | MADO_FIELD_STATUS);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_STATUS) : (g_mado_config.hide_fields | MADO_FIELD_STATUS);
             break;
         case 'A':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_TAGS) : (g_config.hide_fields | MADO_FIELD_TAGS);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_TAGS) : (g_mado_config.hide_fields | MADO_FIELD_TAGS);
             break;
         case 'H':
-            g_config.hide_fields = only ? (g_config.hide_fields & ~MADO_FIELD_PATH) : (g_config.hide_fields | MADO_FIELD_PATH);
+            g_mado_config.hide_fields = only ? (g_mado_config.hide_fields & ~MADO_FIELD_PATH) : (g_mado_config.hide_fields | MADO_FIELD_PATH);
             break;
         default:
             free(short_str);
@@ -297,8 +297,8 @@ static int cmd_list(int argc, char **argv) {
     struct {
         const Mado_Config *cfg;
         Mado_Output_Format fmt;
-    } ctx = {&g_config, fmt};
-    return mado_entries_process_with_filter(&g_config, query, mado_entry_op_print, &ctx);
+    } ctx = {&g_mado_config, fmt};
+    return mado_entries_process_with_filter(&g_mado_config, query, mado_entry_op_print, &ctx);
 }
 
 static int cmd_remove(int argc, char **argv) {
@@ -306,13 +306,13 @@ static int cmd_remove(int argc, char **argv) {
         fprintf(stderr, "Error: remove requires a query argument\n");
         return -1;
     }
-    return mado_entries_process_with_filter(&g_config, argv[1], mado_entry_op_delete, NULL);
+    return mado_entries_process_with_filter(&g_mado_config, argv[1], mado_entry_op_delete, NULL);
 }
 
 static int cmd_info(int argc, char **argv) {
     UNUSED(argc);
     UNUSED(argv);
-    return mado_print_repo_info(&g_config);
+    return mado_print_repo_info(&g_mado_config);
 }
 
 static int cmd_help(int argc, char **argv) {
@@ -360,7 +360,7 @@ static int handle_global_flags(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     argv0 = argv[0];
-    mado_init_config(&g_config);
+    mado_init_config(&g_mado_config);
     if (mado_init_regexes() != 0)
         return 1;
     atexit(mado_free_regexes);

@@ -1,5 +1,7 @@
 lex.yy.c
 *.tab.*
+*.o
+*.a
 mado
 digest.txt
 TAGS
