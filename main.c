@@ -62,7 +62,7 @@ static Command commands[] = {
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_new},
-    {"list", "List entries with optional filtering", "mado list [COMMAND OPTIONS] <QUERY>",
+    {"list", "List entries with optional filtering", "mado list [COMMAND OPTIONS] [QUERY]",
      (Option[]){
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {"hide-name", no_argument, NULL, 'N', "Hide name field"},
@@ -158,7 +158,7 @@ static Command *find_command(const char *name) {
 }
 
 static void print_usage() {
-    fprintf(stdout, "Usage: %s [GLOBAL FLAGS] <command> [COMMAND OPTIONS]\n\n", argv0);
+    fprintf(stdout, "Usage: %s [GLOBAL FLAGS] [command] [COMMAND OPTIONS]\n\n", argv0);
     fprintf(stdout, "Global flags:\n");
     fprintf(stdout, "  -C, --change-working-dir <DIR>   Change working directory before command\n");
     fprintf(stdout, "  -h, --help                       Show this help\n");
