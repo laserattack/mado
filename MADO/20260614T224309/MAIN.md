@@ -1,0 +1,4 @@
+- NAME: compile and receive a filter through the libmado public interface
+- PRIORITY: 60
+- TAGS: libmado, feat, ast, filter
+- STATUS: opened
