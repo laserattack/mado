@@ -50,9 +50,9 @@ static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
 
 static Command commands[] = {
-    {"init", "Initialize mado repository", "mado init [COMMAND OPTIONS]",
+    {"init", "Initialize mado repository in current working directory", "mado init [COMMAND OPTIONS]",
      (Option[]){
-         {"force", no_argument, NULL, 'F', "Force init in current directory"},
+         {"force", no_argument, NULL, 'F', "Force init"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_init},
     {"new", "Create new entry", "mado new [COMMAND OPTIONS]",
