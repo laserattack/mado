@@ -166,7 +166,7 @@ static Command *find_command(const char *name) {
 static void print_usage() {
     fprintf(stdout, "Usage: %s [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n", argv0);
     fprintf(stdout, "Global options:\n");
-    fprintf(stdout, "  -C, --working-dir <DIR>   Change working directory before command\n");
+    fprintf(stdout, "  -C, --working-dir <DIR>   Change working directory\n");
     fprintf(stdout, "  -D, --main-dir <NAME>     Custom main directory name\n");
     fprintf(stdout, "  -E, --entry-file <NAME>   Custom entry file name\n");
     fprintf(stdout, "  -h, --help                Show this help\n");
