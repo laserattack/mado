@@ -1,5 +1,5 @@
 CC = cc
-CXX = g++
+CXX = c++
 CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
 CXXFLAGS = -Wall -Wextra -O2 -std=c++17
 AR = ar
