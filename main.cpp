@@ -14,8 +14,6 @@
 
 #include "mado.hpp"
 
-#define UNUSED(x) (void)(x)
-
 std::string find_dir_up(const std::string &dir_name) {
     auto current = std::filesystem::current_path();
     while (true) {
@@ -355,9 +353,7 @@ static int cmd_remove(int argc, char **argv) {
     return 0;
 }
 
-static int cmd_info(int argc, char **argv) {
-    UNUSED(argc);
-    UNUSED(argv);
+static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     return mado_print_repo_info(&g_mado_config);
 }
 
