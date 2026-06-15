@@ -1,5 +1,7 @@
 CC = cc
+CXX = g++
 CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
+CXXFLAGS = -Wall -Wextra -O2 -std=c++17
 AR = ar
 FLEX = flex
 BISON = bison
@@ -24,6 +26,9 @@ $(LEX_OUT): $(LEXER) $(PARSER_HEADER)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+mado.o: mado.cpp
+	$(CXX) $(CXXFLAGS) -c mado.cpp -o mado.o
 
 $(LIB): $(LEX_OBJ) $(PARSER_OBJ) $(LIB_OBJ)
 	$(AR) rcs $@ $^

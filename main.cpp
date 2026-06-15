@@ -12,27 +12,21 @@
 #include <getopt.h>
 #include <unistd.h>
 
-extern "C" {
-#include "mado.h"
-}
+#include "mado.hpp"
 
 #define UNUSED(x) (void)(x)
 
 std::string find_dir_up(const std::string &dir_name) {
     auto current = std::filesystem::current_path();
-
     while (true) {
         auto test = current / dir_name;
-        if (std::filesystem::exists(test)) {
+        if (std::filesystem::exists(test))
             return test.string();
-        }
-
         auto parent = current.parent_path();
         if (parent == current)
             break;
         current = parent;
     }
-
     return {};
 }
 
@@ -69,33 +63,27 @@ to_getopt(const My_Option *opts) {
     int n = 0;
     while (opts[n].name)
         n++;
-
     std::vector<struct option> gopts(n + 1);
     std::string short_str;
-
     for (int i = 0; i < n; i++) {
         gopts[i].name = opts[i].name;
         gopts[i].has_arg = opts[i].has_arg;
         gopts[i].flag = opts[i].flag;
         gopts[i].val = opts[i].val;
-
         if (opts[i].val && isprint(opts[i].val)) {
             short_str += opts[i].val;
-            if (opts[i].has_arg == required_argument) {
+            if (opts[i].has_arg == required_argument)
                 short_str += ':';
-            } else if (opts[i].has_arg == optional_argument) {
+            else if (opts[i].has_arg == optional_argument)
                 short_str += "::";
-            }
         }
     }
     gopts[n] = {nullptr, 0, nullptr, 0};
-
     return {gopts, short_str};
 }
 
 static std::string options_help(const My_Option *opts) {
     std::string result;
-
     for (int i = 0; opts[i].name; i++) {
         if (opts[i].val && isprint(opts[i].val)) {
             result += "  -" + std::string(1, opts[i].val) + ", --";
@@ -146,29 +134,11 @@ static int cmd_help(int argc, char **argv);
 
 static cmd::Command commands[] = {
     {"init", "Initialize mado repository in current working directory", "mado init [COMMAND OPTIONS]",
-     (cmd::My_Option[]){
-         {"force", no_argument, NULL, 'F', "Force init"},
-         {NULL, 0, NULL, 0, NULL}},
-     cmd_init},
+     (cmd::My_Option[]){{"force", no_argument, NULL, 'F', "Force init"}, {NULL, 0, NULL, 0, NULL}}, cmd_init},
     {"new", "Create new entry", "mado new [COMMAND OPTIONS]",
-     (cmd::My_Option[]){
-         {"template", required_argument, NULL, 't', "Template to use (task, note)"},
-         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
-         {NULL, 0, NULL, 0, NULL}},
-     cmd_new},
+     (cmd::My_Option[]){{"template", required_argument, NULL, 't', "Template to use (task, note)"}, {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"}, {NULL, 0, NULL, 0, NULL}}, cmd_new},
     {"list", "List entries with optional filtering", "mado list [COMMAND OPTIONS] [QUERY]",
-     (cmd::My_Option[]){
-         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
-         {"hide-name", no_argument, NULL, 'N', "Hide name field"},
-         {"hide-time", no_argument, NULL, 'T', "Hide time field"},
-         {"hide-deadline", no_argument, NULL, 'I', "Hide deadline field"},
-         {"hide-priority", no_argument, NULL, 'P', "Hide priority field"},
-         {"hide-status", no_argument, NULL, 'S', "Hide status field"},
-         {"hide-tags", no_argument, NULL, 'A', "Hide tags field"},
-         {"hide-path", no_argument, NULL, 'H', "Hide path field"},
-         {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
-         {NULL, 0, NULL, 0, NULL}},
-     cmd_list},
+     (cmd::My_Option[]){{"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"}, {"hide-name", no_argument, NULL, 'N', "Hide name field"}, {"hide-time", no_argument, NULL, 'T', "Hide time field"}, {"hide-deadline", no_argument, NULL, 'I', "Hide deadline field"}, {"hide-priority", no_argument, NULL, 'P', "Hide priority field"}, {"hide-status", no_argument, NULL, 'S', "Hide status field"}, {"hide-tags", no_argument, NULL, 'A', "Hide tags field"}, {"hide-path", no_argument, NULL, 'H', "Hide path field"}, {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"}, {NULL, 0, NULL, 0, NULL}}, cmd_list},
     {"remove", "Remove entries matching query", "mado remove <QUERY>", NULL, cmd_remove},
     {"info", "Show repository information", "mado info", NULL, cmd_info},
     {"help", "Show help for commands", "mado help [COMMAND]", NULL, cmd_help},
@@ -195,13 +165,10 @@ static int cmd_init(int argc, char **argv) {
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
-        switch (opt) {
-        case 'F':
+        if (opt == 'F')
             force = 1;
-            break;
-        default:
+        else
             return -1;
-        }
     }
     if (mado_entries_dir_init(&g_mado_config, force) != 0)
         return -1;
@@ -230,14 +197,14 @@ static int cmd_new(int argc, char **argv) {
     }
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name);
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name.c_str());
         return -1;
     }
     return mado_entry_create_dir_and_md(&g_mado_config, main_dir.c_str(), fmt);
 }
 
 static int cmd_list(int argc, char **argv) {
-    char *query = NULL;
+    char *query = nullptr;
     Mado_Output_Format fmt = MADO_FMT_UNIX;
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
@@ -253,19 +220,17 @@ static int cmd_list(int argc, char **argv) {
     opterr = 1;
 
     auto toggle_field = [&](Mado_Entry_Field field) {
-        if (only) {
+        if (only)
             g_mado_config.hide_fields = (Mado_Entry_Field)(g_mado_config.hide_fields & ~field);
-        } else {
+        else
             g_mado_config.hide_fields = (Mado_Entry_Field)(g_mado_config.hide_fields | field);
-        }
     };
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
         switch (opt) {
         case 'f':
-            if (!mado_parse_format(optarg, &fmt)) {
+            if (!mado_parse_format(optarg, &fmt))
                 return -1;
-            }
             break;
         case 'o':
             break;
@@ -297,11 +262,28 @@ static int cmd_list(int argc, char **argv) {
     if (optind < argc)
         query = argv[optind];
 
-    struct {
-        const Mado_Config *cfg;
-        Mado_Output_Format fmt;
-    } ctx = {&g_mado_config, fmt};
-    return mado_entries_process(&g_mado_config, query, mado_entry_op_print, &ctx);
+    ASTNode *filter = nullptr;
+    if (query) {
+        filter = parse(query);
+        if (!filter) {
+            fprintf(stderr, "Error: failed to parse query\n");
+            return -1;
+        }
+    }
+
+    std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
+    if (main_dir.empty()) {
+        ast_free(filter);
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name.c_str());
+        return -1;
+    }
+
+    Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
+        .filter(filter)
+        .print(&g_mado_config, fmt);
+
+    ast_free(filter);
+    return 0;
 }
 
 static int cmd_remove(int argc, char **argv) {
@@ -309,7 +291,26 @@ static int cmd_remove(int argc, char **argv) {
         fprintf(stderr, "Error: remove requires a query argument\n");
         return -1;
     }
-    return mado_entries_process(&g_mado_config, argv[1], mado_entry_op_delete, NULL);
+
+    ASTNode *filter = parse(argv[1]);
+    if (!filter) {
+        fprintf(stderr, "Error: failed to parse query\n");
+        return -1;
+    }
+
+    std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
+    if (main_dir.empty()) {
+        ast_free(filter);
+        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name.c_str());
+        return -1;
+    }
+
+    Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
+        .filter(filter)
+        .remove();
+
+    ast_free(filter);
+    return 0;
 }
 
 static int cmd_info(int argc, char **argv) {
