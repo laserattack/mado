@@ -225,7 +225,8 @@ This will produce an executable file `./mado`
 
 - **Unix system** (Linux, possibly macOS/BSD)
 - **Build dependencies**:
-  - C compiler (gcc/clang)
+  - C compiler
+  - C++ compiler
   - `make`
   - `flex`
   - `bison`
