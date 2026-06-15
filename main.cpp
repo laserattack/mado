@@ -13,11 +13,7 @@
 #include <unistd.h>
 
 extern "C" {
-#include "ast.h"
 #include "mado.h"
-#include "utils/da.h"
-#include "utils/fs.h"
-#include "utils/util.h"
 }
 
 #define UNUSED(x) (void)(x)
