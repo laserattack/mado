@@ -547,12 +547,11 @@ static int mado_entry_create(const Mado_Config *cfg, const char *entry_path, con
         }
     }
 
-    FILE *f = fopen(entry_md.c_str(), "w");
+    std::ofstream f(entry_md);
     if (!f) {
         std::cerr << "Error: failed to create '" << cfg->entry_file_name << ".md' in: " << entry_path << "\n";
         return -1;
     }
-    fclose(f);
     return 0;
 }
 
