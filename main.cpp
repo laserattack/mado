@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -103,12 +104,11 @@ static std::string options_help(const My_Option *opts) {
 }
 
 static void print_help(const Command *cmd) {
-    fprintf(stdout, "Usage: %s\n\n", cmd->usage);
-    fprintf(stdout, "%s\n", cmd->description);
+    std::cout << "Usage: " << cmd->usage << "\n\n";
+    std::cout << cmd->description << "\n";
     if (cmd->options) {
-        fprintf(stdout, "\nCommand options:\n");
-        std::string help = options_help(cmd->options);
-        fprintf(stdout, "%s", help.c_str());
+        std::cout << "\nCommand options:\n";
+        std::cout << options_help(cmd->options);
     }
 }
 
@@ -185,16 +185,16 @@ static cmd::Command commands[] = {
     {NULL, NULL, NULL, NULL, NULL}};
 
 static void print_usage() {
-    fprintf(stdout, "Usage: %s [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n", argv0);
-    fprintf(stdout, "Global options:\n");
-    fprintf(stdout, "  -C, --working-dir <DIR>   Change working directory\n");
-    fprintf(stdout, "  -D, --main-dir <NAME>     Custom main directory name\n");
-    fprintf(stdout, "  -E, --entry-file <NAME>   Custom entry file name\n");
-    fprintf(stdout, "  -h, --help                Show this help\n");
-    fprintf(stdout, "\nCommands:\n");
+    std::cout << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
+    std::cout << "Global options:\n";
+    std::cout << "  -C, --working-dir <DIR>   Change working directory\n";
+    std::cout << "  -D, --main-dir <NAME>     Custom main directory name\n";
+    std::cout << "  -E, --entry-file <NAME>   Custom entry file name\n";
+    std::cout << "  -h, --help                Show this help\n";
+    std::cout << "\nCommands:\n";
     for (int i = 0; commands[i].name; i++)
         fprintf(stdout, "  %-12s %s\n", commands[i].name, commands[i].description);
-    fprintf(stdout, "\nRun '%s help <command>' for more information on a command\n", argv0);
+    std::cout << "\nRun '" << argv0 << " help <command>' for more information on a command\n";
 }
 
 // ================ COMMAND HANDLERS
@@ -227,7 +227,7 @@ static int cmd_new(int argc, char **argv) {
             break;
         case 'f':
             if (!mado_parse_format(optarg, &fmt)) {
-                fprintf(stderr, "Error: unknown format '%s'\n", optarg);
+                std::cerr << "Error: unknown format '" << optarg << "'\n";
                 return -1;
             }
             break;
@@ -237,7 +237,7 @@ static int cmd_new(int argc, char **argv) {
     }
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name.c_str());
+        std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
     return mado_entry_create_dir_and_md(&g_mado_config, main_dir.c_str(), fmt);
@@ -306,7 +306,7 @@ static int cmd_list(int argc, char **argv) {
     if (query) {
         filter = parse(query);
         if (!filter) {
-            fprintf(stderr, "Error: failed to parse query\n");
+            std::cerr << "Error: failed to parse query\n";
             return -1;
         }
     }
@@ -314,7 +314,7 @@ static int cmd_list(int argc, char **argv) {
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
         ast_free(filter);
-        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name.c_str());
+        std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
@@ -328,20 +328,20 @@ static int cmd_list(int argc, char **argv) {
 
 static int cmd_remove(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Error: remove requires a query argument\n");
+        std::cerr << "Error: remove requires a query argument\n";
         return -1;
     }
 
     ASTNode *filter = parse(argv[1]);
     if (!filter) {
-        fprintf(stderr, "Error: failed to parse query\n");
+        std::cerr << "Error: failed to parse query\n";
         return -1;
     }
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
         ast_free(filter);
-        fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name.c_str());
+        std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
@@ -364,7 +364,7 @@ static int cmd_help(int argc, char **argv) {
     }
     cmd::Command *cmd = cmd::find_by_name(argv[1], commands);
     if (!cmd) {
-        fprintf(stderr, "Unknown command: %s\n\n", argv[1]);
+        std::cerr << "Unknown command: " << argv[1] << "\n\n";
         print_usage();
         return -1;
     }
@@ -386,7 +386,7 @@ static int handle_global_options(int argc, char **argv) {
         switch (opt) {
         case 'C':
             if (chdir(optarg) != 0) {
-                fprintf(stderr, "Error: failed to change directory to '%s': %s\n", optarg, strerror(errno));
+                std::cerr << "Error: failed to change directory to '" << optarg << "': " << strerror(errno) << "\n";
                 return -1;
             }
             break;
@@ -431,7 +431,7 @@ int main(int argc, char **argv) {
     char *command_name = argv[optind];
     cmd::Command *cmd = cmd::find_by_name(command_name, commands);
     if (!cmd) {
-        fprintf(stderr, "Error: unknown command '%s'\n\n", command_name);
+        std::cerr << "Error: unknown command '" << command_name << "'\n\n";
         print_usage();
         return 1;
     }
