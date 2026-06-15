@@ -1,7 +1,7 @@
-CC = cc
-CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
+CC = g++
+CXXFLAGS = -Wall -Wextra -O2 -std=c++17
 TARGET = mado
-MAIN_SRC = main.c
+MAIN_SRC = main.cpp
 LIB_DIR = libmado
 LIB = $(LIB_DIR)/libmado.a
 INCLUDES = -I$(LIB_DIR)
@@ -12,7 +12,7 @@ $(LIB):
 	$(MAKE) -C $(LIB_DIR)
 
 $(TARGET): $(MAIN_SRC) $(LIB)
-	$(CC) $(CFLAGS) $(INCLUDES) $(MAIN_SRC) -L$(LIB_DIR) -lmado -o $(TARGET)
+	$(CC) $(CXXFLAGS) $(INCLUDES) $(MAIN_SRC) -L$(LIB_DIR) -lmado -o $(TARGET)
 
 clean:
 	$(MAKE) -C $(LIB_DIR) clean
