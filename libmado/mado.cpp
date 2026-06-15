@@ -8,6 +8,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <memory>
 #include <regex>
 #include <string>
@@ -90,25 +91,21 @@ static void mado_free_regexes() {
 
 // ================ PRINT HELPERS
 
-static void print_json_string(const char *str) {
-    putchar('"');
-    for (const char *p = str; *p; p++) {
-        switch (*p) {
+static void print_json_string(const std::string &str) {
+    std::cout << '"';
+    for (char c : str) {
+        switch (c) {
         case '"':
-            printf("\\\"");
+            std::cout << "\\\"";
             break;
         case '\\':
-            printf("\\\\");
+            std::cout << "\\\\";
             break;
         default:
-            putchar(*p);
+            std::cout << c;
         }
     }
-    putchar('"');
-}
-
-static void print_json_string(const std::string &str) {
-    print_json_string(str.c_str());
+    std::cout << '"';
 }
 
 // ================ ENTRY
@@ -174,97 +171,87 @@ void Mado_Entry::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
     Mado_Entry_Field shown = (Mado_Entry_Field)(MADO_FIELD_ALL & ~hidden);
 
     if (fmt == MADO_FMT_ONLY_PATH) {
-        printf("%s/%s.md\n", path.c_str(), cfg->entry_file_name.c_str());
+        std::cout << path << "/" << cfg->entry_file_name << ".md\n";
         return;
     }
 
     if (fmt == MADO_FMT_JSONL) {
-        printf("{");
-        int has_any = 0;
+        std::cout << "{";
+        bool has_any = false;
+        auto sep = [&]() { if (has_any) std::cout << ","; has_any = true; };
+
         if (shown & MADO_FIELD_TIME) {
-            if (has_any)
-                printf(",");
-            printf("\"time\":");
+            sep();
+            std::cout << "\"time\":";
             print_json_string(time);
-            has_any = 1;
         }
         if (shown & MADO_FIELD_NAME) {
-            if (has_any)
-                printf(",");
-            printf("\"name\":");
+            sep();
+            std::cout << "\"name\":";
             print_json_string(name);
-            has_any = 1;
         }
         if (shown & MADO_FIELD_PRIORITY) {
-            if (has_any)
-                printf(",");
-            printf("\"priority\":%d", priority);
-            has_any = 1;
+            sep();
+            std::cout << "\"priority\":" << priority;
         }
         if (shown & MADO_FIELD_DEADLINE) {
-            if (has_any)
-                printf(",");
-            printf("\"deadline\":");
+            sep();
+            std::cout << "\"deadline\":";
             print_json_string(deadline);
-            has_any = 1;
         }
         if (shown & MADO_FIELD_STATUS) {
-            if (has_any)
-                printf(",");
-            printf("\"status\":");
+            sep();
+            std::cout << "\"status\":";
             print_json_string(status);
-            has_any = 1;
         }
         if (shown & MADO_FIELD_TAGS) {
-            if (has_any)
-                printf(",");
-            printf("\"tags\":[");
+            sep();
+            std::cout << "\"tags\":[";
             bool first_tag = true;
-            for (size_t j = 0; j < tags.size(); j++) {
-                if (tags[j].empty())
+            for (const auto &tag : tags) {
+                if (tag.empty())
                     continue;
                 if (!first_tag)
-                    printf(",");
-                print_json_string(tags[j]);
+                    std::cout << ",";
+                print_json_string(tag);
                 first_tag = false;
             }
-            printf("]");
-            has_any = 1;
+            std::cout << "]";
         }
         if (shown & MADO_FIELD_PATH) {
-            if (has_any)
-                printf(",");
-            printf("\"path\":\"%s/%s.md\"", path.c_str(), cfg->entry_file_name.c_str());
-            has_any = 1;
+            sep();
+            std::cout << "\"path\":\"" << path << "/" << cfg->entry_file_name << ".md\"";
         }
-        printf("}\n");
+        std::cout << "}\n";
         return;
     }
 
     if (fmt == MADO_FMT_UNIX) {
-        printf("%s/%s.md:1:1:", path.c_str(), cfg->entry_file_name.c_str());
+        std::cout << path << "/" << cfg->entry_file_name << ".md:1:1:";
         if (shown & MADO_FIELD_TIME)
-            printf(" TIME:[%s]", time.c_str());
+            std::cout << " TIME:[" << time << "]";
         if (shown & MADO_FIELD_NAME)
-            printf(" NAME:[%s]", name.c_str());
+            std::cout << " NAME:[" << name << "]";
         if (shown & MADO_FIELD_PRIORITY)
-            printf(" PRIORITY:[%d]", priority);
+            std::cout << " PRIORITY:[" << priority << "]";
         if (shown & MADO_FIELD_DEADLINE)
-            printf(" DEADLINE:[%s]", deadline.c_str());
+            std::cout << " DEADLINE:[" << deadline << "]";
         if (shown & MADO_FIELD_STATUS)
-            printf(" STATUS:[%s]", status.c_str());
+            std::cout << " STATUS:[" << status << "]";
         if (shown & MADO_FIELD_TAGS) {
-            printf(" TAGS:[");
-            for (size_t j = 0; j < tags.size(); j++) {
-                if (tags[j].empty())
+            std::cout << " TAGS:[";
+            bool first = true;
+            for (const auto &tag : tags) {
+                if (tag.empty())
                     continue;
-                printf("%s", tags[j].c_str());
-                if (j < tags.size() - 1 && !tags[j + 1].empty())
-                    printf(",");
+                if (!first)
+                    std::cout << ",";
+                std::cout << tag;
+                first = false;
             }
-            printf("]");
+            std::cout << "]";
         }
-        printf("\n");
+        std::cout << "\n";
     }
 }
 
@@ -456,8 +443,8 @@ void Mado_Entries::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
 
 void Mado_Entries::remove() const {
     for (auto &e : entries_) {
-        std::filesystem::remove_all(e->path.c_str());
-        printf("Removed: %s\n", e->path.c_str());
+        std::filesystem::remove_all(e->path);
+        std::cout << "Removed: " << e->path << "\n";
     }
 }
 
@@ -466,7 +453,7 @@ void Mado_Entries::remove() const {
 int mado_templates_dir_init(const Mado_Config *cfg) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (main_dir.empty()) {
-        fprintf(stderr, "Error: entries directory '%s' not found\n", cfg->main_dir_name.c_str());
+        std::cerr << "Error: entries directory '" << cfg->main_dir_name << "' not found\n";
         return -1;
     }
 
@@ -474,28 +461,27 @@ int mado_templates_dir_init(const Mado_Config *cfg) {
 
     if (!std::filesystem::exists(templates_dir)) {
         if (!std::filesystem::create_directory(templates_dir)) {
-            fprintf(stderr, "Error: failed to create templates directory: %s\n", templates_dir.c_str());
+            std::cerr << "Error: failed to create templates directory: " << templates_dir << "\n";
             return -1;
         }
-        printf("Created templates directory: %s\n", templates_dir.c_str());
+        std::cout << "Created templates directory: " << templates_dir << "\n";
     } else {
-        printf("Templates directory already exists: %s\n", templates_dir.c_str());
+        std::cout << "Templates directory already exists: " << templates_dir << "\n";
     }
 
     auto create_template = [&](const std::string &name, const std::string &content) {
         auto path = templates_dir / (name + ".md");
         if (!std::filesystem::exists(path)) {
-            FILE *f = fopen(path.c_str(), "w");
+            std::ofstream f(path);
             if (f) {
-                fprintf(f, "%s", content.c_str());
-                fclose(f);
-                printf("Created %s template: %s\n", name.c_str(), path.c_str());
+                f << content;
+                std::cout << "Created '" << name << "' template: " << path << "\n";
             } else {
-                fprintf(stderr, "Error: failed to create %s template: %s\n", name.c_str(), path.c_str());
+                std::cerr << "Error: failed to create '" << name << "' template: " << path << "\n";
                 return -1;
             }
         } else {
-            printf("%s template already exists: %s\n", name.c_str(), path.c_str());
+            std::cout << "'" << name << "' template already exists: " << path << "\n";
         }
         return 0;
     };
@@ -515,22 +501,22 @@ int mado_entries_dir_init(const Mado_Config *cfg, int force) {
     if (!force) {
         std::string entries_dir_existing = find_dir_up(cfg->main_dir_name);
         if (!entries_dir_existing.empty()) {
-            printf("Entries directory already exists: %s\n", entries_dir_existing.c_str());
+            std::cout << "Entries directory already exists: " << entries_dir_existing << "\n";
             if (std::filesystem::path(entries_dir_existing) != entries_dir)
-                printf("Hint: use -F to force initialization in current directory\n");
+                std::cout << "Hint: use -F to force initialization in current directory\n";
             return 0;
         }
     }
 
     if (std::filesystem::exists(entries_dir)) {
-        printf("Entries directory already exists: %s\n", entries_dir.c_str());
+        std::cout << "Entries directory already exists: " << entries_dir << "\n";
         if (force)
-            printf("Hint: -F has no effect because '%s' already exists in this location\n", cfg->main_dir_name.c_str());
+            std::cout << "Hint: -F has no effect because '" << cfg->main_dir_name << "' already exists in this location\n";
     } else {
         if (std::filesystem::create_directory(entries_dir)) {
-            printf("Created entries directory: %s\n", entries_dir.c_str());
+            std::cout << "Created entries directory: " << entries_dir << "\n";
         } else {
-            fprintf(stderr, "Error: failed to create entries directory: %s\n", entries_dir.c_str());
+            std::cerr << "Error: failed to create entries directory: " << entries_dir << "\n";
             return -1;
         }
     }
@@ -544,7 +530,7 @@ static int mado_entry_create(const Mado_Config *cfg, const char *entry_path, con
     if (template_name) {
         std::string main_dir = find_dir_up(cfg->main_dir_name);
         if (main_dir.empty()) {
-            fprintf(stderr, "Error: entries directory '%s' not found\n", cfg->main_dir_name.c_str());
+            std::cerr << "Error: entries directory '" << cfg->main_dir_name << "' not found\n";
             return -1;
         }
 
@@ -556,14 +542,14 @@ static int mado_entry_create(const Mado_Config *cfg, const char *entry_path, con
             std::filesystem::copy_file(template_file, entry_md, std::filesystem::copy_options::overwrite_existing);
             return 0;
         } else {
-            fprintf(stderr, "Error: template '%s' was not found\n", template_name);
+            std::cerr << "Error: template '" << template_name << "' was not found\n";
             return -1;
         }
     }
 
     FILE *f = fopen(entry_md.c_str(), "w");
     if (!f) {
-        fprintf(stderr, "Error: failed to create %s.md in: %s\n", cfg->entry_file_name.c_str(), entry_path);
+        std::cerr << "Error: failed to create '" << cfg->entry_file_name << ".md' in: " << entry_path << "\n";
         return -1;
     }
     fclose(f);
@@ -579,11 +565,11 @@ int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, M
     std::filesystem::path entry_path = std::filesystem::path(main_dir) / dir_name;
 
     if (std::filesystem::exists(entry_path)) {
-        fprintf(stderr, "Error: entry directory already exists\n");
+        std::cerr << "Error: entry directory already exists\n";
         return -1;
     }
     if (!std::filesystem::create_directory(entry_path)) {
-        fprintf(stderr, "Error: failed to create entry directory\n");
+        std::cerr << "Error: failed to create entry directory\n";
         return -1;
     }
     if (mado_entry_create(cfg, entry_path.c_str(), cfg->template_name.c_str()) != 0)
@@ -602,12 +588,12 @@ int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, M
 int mado_print_repo_info(const Mado_Config *cfg) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (main_dir.empty()) {
-        printf("No mado repository here\n");
+        std::cout << "No mado repository here\n";
         return 0;
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());
-    printf("Main directory: %s\n", main_dir.c_str());
-    printf("Entries count:  %zu\n", entries.size());
+    std::cout << "Main directory: " << main_dir << "\n";
+    std::cout << "Entries count:  " << entries.size() << "\n";
     return 0;
 }
 
