@@ -133,15 +133,57 @@ static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
 
 static cmd::Command commands[] = {
-    {"init", "Initialize mado repository in current working directory", "mado init [COMMAND OPTIONS]",
-     (cmd::My_Option[]){{"force", no_argument, NULL, 'F', "Force init"}, {NULL, 0, NULL, 0, NULL}}, cmd_init},
-    {"new", "Create new entry", "mado new [COMMAND OPTIONS]",
-     (cmd::My_Option[]){{"template", required_argument, NULL, 't', "Template to use (task, note)"}, {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"}, {NULL, 0, NULL, 0, NULL}}, cmd_new},
-    {"list", "List entries with optional filtering", "mado list [COMMAND OPTIONS] [QUERY]",
-     (cmd::My_Option[]){{"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"}, {"hide-name", no_argument, NULL, 'N', "Hide name field"}, {"hide-time", no_argument, NULL, 'T', "Hide time field"}, {"hide-deadline", no_argument, NULL, 'I', "Hide deadline field"}, {"hide-priority", no_argument, NULL, 'P', "Hide priority field"}, {"hide-status", no_argument, NULL, 'S', "Hide status field"}, {"hide-tags", no_argument, NULL, 'A', "Hide tags field"}, {"hide-path", no_argument, NULL, 'H', "Hide path field"}, {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"}, {NULL, 0, NULL, 0, NULL}}, cmd_list},
-    {"remove", "Remove entries matching query", "mado remove <QUERY>", NULL, cmd_remove},
-    {"info", "Show repository information", "mado info", NULL, cmd_info},
-    {"help", "Show help for commands", "mado help [COMMAND]", NULL, cmd_help},
+    {"init",
+     "Initialize mado repository in current working directory",
+     "mado init [COMMAND OPTIONS]",
+     (cmd::My_Option[]){
+         {"force", no_argument, NULL, 'F', "Force init"},
+         {NULL, 0, NULL, 0, NULL}},
+     cmd_init},
+
+    {"new",
+     "Create new entry",
+     "mado new [COMMAND OPTIONS]",
+     (cmd::My_Option[]){
+         {"template", required_argument, NULL, 't', "Template to use (task, note)"},
+         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+         {NULL, 0, NULL, 0, NULL}},
+     cmd_new},
+
+    {"list",
+     "List entries with optional filtering",
+     "mado list [COMMAND OPTIONS] [QUERY]",
+     (cmd::My_Option[]){
+         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+         {"hide-name", no_argument, NULL, 'N', "Hide name field"},
+         {"hide-time", no_argument, NULL, 'T', "Hide time field"},
+         {"hide-deadline", no_argument, NULL, 'I', "Hide deadline field"},
+         {"hide-priority", no_argument, NULL, 'P', "Hide priority field"},
+         {"hide-status", no_argument, NULL, 'S', "Hide status field"},
+         {"hide-tags", no_argument, NULL, 'A', "Hide tags field"},
+         {"hide-path", no_argument, NULL, 'H', "Hide path field"},
+         {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
+         {NULL, 0, NULL, 0, NULL}},
+     cmd_list},
+
+    {"remove",
+     "Remove entries matching query",
+     "mado remove <QUERY>",
+     NULL,
+     cmd_remove},
+
+    {"info",
+     "Show repository information",
+     "mado info",
+     NULL,
+     cmd_info},
+
+    {"help",
+     "Show help for commands",
+     "mado help [COMMAND]",
+     NULL,
+     cmd_help},
+
     {NULL, NULL, NULL, NULL, NULL}};
 
 static void print_usage() {
