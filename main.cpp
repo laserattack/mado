@@ -1,13 +1,13 @@
-#include <string>
-#include <utility>
-#include <vector>
-
 #include <cctype>
 #include <cerrno>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include <getopt.h>
 #include <unistd.h>
@@ -21,6 +21,24 @@ extern "C" {
 }
 
 #define UNUSED(x) (void)(x)
+
+std::string find_dir_up(const std::string &dir_name) {
+    auto current = std::filesystem::current_path();
+
+    while (true) {
+        auto test = current / dir_name;
+        if (std::filesystem::exists(test)) {
+            return test.string();
+        }
+
+        auto parent = current.parent_path();
+        if (parent == current)
+            break;
+        current = parent;
+    }
+
+    return {};
+}
 
 char *argv0;
 
@@ -214,14 +232,12 @@ static int cmd_new(int argc, char **argv) {
             return -1;
         }
     }
-    char *main_dir = find_dir_up(g_mado_config.main_dir_name);
-    if (!main_dir) {
+    std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
+    if (main_dir.empty()) {
         fprintf(stderr, "Error: entries directory '%s' not found\n", g_mado_config.main_dir_name);
         return -1;
     }
-    int ret = mado_entry_create_dir_and_md(&g_mado_config, main_dir, fmt);
-    free(main_dir);
-    return ret;
+    return mado_entry_create_dir_and_md(&g_mado_config, main_dir.c_str(), fmt);
 }
 
 static int cmd_list(int argc, char **argv) {
