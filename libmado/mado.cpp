@@ -45,7 +45,6 @@ static void mado_init_config(Mado_Config *cfg) {
     cfg->entry_file_name = "MAIN";
     cfg->template_name = "task";
     cfg->max_header_lines = 30;
-    cfg->max_header_line_len = 1024;
     cfg->hide_fields = MADO_FIELD_NONE;
 }
 
@@ -465,7 +464,7 @@ void Mado_Entries::remove() const {
 // ================ INIT
 
 int mado_templates_dir_init(const Mado_Config *cfg) {
-    std::string main_dir = find_dir_up(cfg->main_dir_name.c_str());
+    std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (main_dir.empty()) {
         fprintf(stderr, "Error: entries directory '%s' not found\n", cfg->main_dir_name.c_str());
         return -1;
@@ -514,7 +513,7 @@ int mado_entries_dir_init(const Mado_Config *cfg, int force) {
     std::filesystem::path entries_dir = cwd / cfg->main_dir_name;
 
     if (!force) {
-        std::string entries_dir_existing = find_dir_up(cfg->main_dir_name.c_str());
+        std::string entries_dir_existing = find_dir_up(cfg->main_dir_name);
         if (!entries_dir_existing.empty()) {
             printf("Entries directory already exists: %s\n", entries_dir_existing.c_str());
             if (std::filesystem::path(entries_dir_existing) != entries_dir)
@@ -543,13 +542,15 @@ static int mado_entry_create(const Mado_Config *cfg, const char *entry_path, con
     std::filesystem::path entry_md = std::filesystem::path(entry_path) / (cfg->entry_file_name + ".md");
 
     if (template_name) {
-        std::string main_dir = find_dir_up(cfg->main_dir_name.c_str());
+        std::string main_dir = find_dir_up(cfg->main_dir_name);
         if (main_dir.empty()) {
             fprintf(stderr, "Error: entries directory '%s' not found\n", cfg->main_dir_name.c_str());
             return -1;
         }
 
-        std::filesystem::path template_file = std::filesystem::path(main_dir) / cfg->templates_dir_name / (std::string(template_name) + ".md");
+        std::filesystem::path template_file = std::filesystem::path(main_dir) /
+                                              cfg->templates_dir_name /
+                                              (std::string(template_name) + ".md");
 
         if (std::filesystem::exists(template_file)) {
             std::filesystem::copy_file(template_file, entry_md, std::filesystem::copy_options::overwrite_existing);

@@ -40,7 +40,6 @@ struct Mado_Config {
     std::string entry_file_name;
     std::string template_name;
     int max_header_lines;
-    int max_header_line_len;
     Mado_Entry_Field hide_fields;
 };
 
