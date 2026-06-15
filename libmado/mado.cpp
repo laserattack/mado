@@ -411,8 +411,6 @@ bool Mado_Entry::matches_condition(const ASTNode *node) const {
 
 Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir) {
     Mado_Entries result;
-
-    std::regex entry_dir_regex(R"(^[0-9]{8}T[0-9]{6}$)");
     std::filesystem::path dir_path(main_dir);
 
     if (!std::filesystem::exists(dir_path) || !std::filesystem::is_directory(dir_path))
@@ -423,7 +421,7 @@ Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir)
             continue;
 
         std::string dir_name = dirent.path().filename().string();
-        if (!std::regex_match(dir_name, entry_dir_regex))
+        if (regexec(&g_entry_dir_regex, dir_name.c_str(), 0, NULL, 0) != 0)
             continue;
 
         auto entry_file = dirent.path() / (cfg->entry_file_name + ".md");
