@@ -34,7 +34,7 @@ namespace cmd {
 
 typedef int (*Handler)(int argc, char **argv);
 
-struct Option {
+struct My_Option {
     const char *name;
     int has_arg;
     int *flag;
@@ -46,12 +46,12 @@ struct Command {
     const char *name;
     const char *description;
     const char *usage;
-    const Option *options;
+    const My_Option *options;
     Handler handler;
 };
 
 static std::pair<std::vector<struct option>, std::string>
-to_getopt(const Option *opts) {
+to_getopt(const My_Option *opts) {
     int n = 0;
     while (opts[n].name)
         n++;
@@ -79,7 +79,7 @@ to_getopt(const Option *opts) {
     return {gopts, short_str};
 }
 
-static std::string options_help(const Option *opts) {
+static std::string options_help(const My_Option *opts) {
     std::string result;
 
     for (int i = 0; opts[i].name; i++) {
@@ -132,18 +132,18 @@ static int cmd_help(int argc, char **argv);
 
 static cmd::Command commands[] = {
     {"init", "Initialize mado repository in current working directory", "mado init [COMMAND OPTIONS]",
-     (cmd::Option[]){
+     (cmd::My_Option[]){
          {"force", no_argument, NULL, 'F', "Force init"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_init},
     {"new", "Create new entry", "mado new [COMMAND OPTIONS]",
-     (cmd::Option[]){
+     (cmd::My_Option[]){
          {"template", required_argument, NULL, 't', "Template to use (task, note)"},
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_new},
     {"list", "List entries with optional filtering", "mado list [COMMAND OPTIONS] [QUERY]",
-     (cmd::Option[]){
+     (cmd::My_Option[]){
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {"hide-name", no_argument, NULL, 'N', "Hide name field"},
          {"hide-time", no_argument, NULL, 'T', "Hide time field"},
