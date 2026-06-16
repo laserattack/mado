@@ -138,10 +138,10 @@ mado new -t bug
 The `-f` flag controls how entries are displayed:
 
 ``` bash
-# Default unix format: path:1:1: fields
+# Default unix format: path:1: fields
 mado list 'all'
-# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1:1: TIME:[20260521T204844] NAME:[...] PRIORITY:[10] DEADLINE:[99990000T000000] STATUS:[closed] TAGS:[feat,flag]
-# Compatible with Emacs compile buffer and other tools that parse file:line:col
+# /home/user/project/mado/MADO/20260521T204844/MAIN.md:1: TIME:[20260521T204844] NAME:[...] PRIORITY:[10] DEADLINE:[99990000T000000] STATUS:[closed] TAGS:[feat,flag]
+# Compatible with Emacs compile buffer and other tools that parse file:line:
 
 # Paths only — useful for piping to other tools
 mado list -f path 'all'

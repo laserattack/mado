@@ -40,6 +40,7 @@ struct Mado_Config {
     std::string entry_file_name;
     std::string template_name;
     int max_header_lines;
+    bool abs_paths;
     Mado_Entry_Field hide_fields;
 };
 
@@ -87,7 +88,7 @@ void mado_deinit();
 
 int mado_templates_dir_init(const Mado_Config *cfg);
 int mado_entries_dir_init(const Mado_Config *cfg, int force);
-int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, Mado_Output_Format fmt);
+int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir);
 int mado_print_repo_info(const Mado_Config *cfg);
 
 // ================ UTILS

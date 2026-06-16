@@ -143,8 +143,8 @@ static cmd::Command commands[] = {
      "Create new entry",
      "mado new [COMMAND OPTIONS]",
      (cmd::My_Option[]){
-         {"template", required_argument, NULL, 't', "Template to use (task, note)"},
-         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+         {"template", required_argument, NULL, 't', "Template to use"},
+         {"abs-path", no_argument, NULL, 'a', "Show absolute path to created entry"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_new},
 
@@ -153,21 +153,24 @@ static cmd::Command commands[] = {
      "mado list [COMMAND OPTIONS] [QUERY]",
      (cmd::My_Option[]){
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
-         {"hide-name", no_argument, NULL, 'N', "Hide name field"},
-         {"hide-time", no_argument, NULL, 'T', "Hide time field"},
-         {"hide-deadline", no_argument, NULL, 'I', "Hide deadline field"},
-         {"hide-priority", no_argument, NULL, 'P', "Hide priority field"},
-         {"hide-status", no_argument, NULL, 'S', "Hide status field"},
-         {"hide-tags", no_argument, NULL, 'A', "Hide tags field"},
-         {"hide-path", no_argument, NULL, 'H', "Hide path field"},
+         {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
          {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
+         {"hide-name", no_argument, NULL, 'n', "Hide name field"},
+         {"hide-time", no_argument, NULL, 't', "Hide time field"},
+         {"hide-deadline", no_argument, NULL, 'd', "Hide deadline field"},
+         {"hide-priority", no_argument, NULL, 'p', "Hide priority field"},
+         {"hide-status", no_argument, NULL, 's', "Hide status field"},
+         {"hide-tags", no_argument, NULL, 'g', "Hide tags field"},
+         {"hide-path", no_argument, NULL, 'h', "Hide path field"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_list},
 
     {"remove",
      "Remove entries matching query",
      "mado remove <QUERY>",
-     NULL,
+     (cmd::My_Option[]){
+         {"abs-path", no_argument, NULL, 'a', "Show absolute path to removed entry"},
+         {NULL, 0, NULL, 0, NULL}},
      cmd_remove},
 
     {"info",
@@ -216,7 +219,6 @@ static int cmd_init(int argc, char **argv) {
 }
 
 static int cmd_new(int argc, char **argv) {
-    Mado_Output_Format fmt = MADO_FMT_UNIX;
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
@@ -225,11 +227,8 @@ static int cmd_new(int argc, char **argv) {
         case 't':
             g_mado_config.template_name = optarg;
             break;
-        case 'f':
-            if (!mado_parse_format(optarg, &fmt)) {
-                std::cerr << "Error: unknown format '" << optarg << "'\n";
-                return -1;
-            }
+        case 'a':
+            g_mado_config.abs_paths = true;
             break;
         default:
             return -1;
@@ -240,7 +239,7 @@ static int cmd_new(int argc, char **argv) {
         std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
-    return mado_entry_create_dir_and_md(&g_mado_config, main_dir.c_str(), fmt);
+    return mado_entry_create_dir_and_md(&g_mado_config, main_dir.c_str());
 }
 
 static int cmd_list(int argc, char **argv) {
@@ -272,27 +271,30 @@ static int cmd_list(int argc, char **argv) {
             if (!mado_parse_format(optarg, &fmt))
                 return -1;
             break;
+        case 'a':
+            g_mado_config.abs_paths = true;
+            break;
         case 'o':
             break;
-        case 'N':
+        case 'n':
             toggle_field(MADO_FIELD_NAME);
             break;
-        case 'T':
+        case 't':
             toggle_field(MADO_FIELD_TIME);
             break;
-        case 'I':
+        case 'd':
             toggle_field(MADO_FIELD_DEADLINE);
             break;
-        case 'P':
+        case 'p':
             toggle_field(MADO_FIELD_PRIORITY);
             break;
-        case 'S':
+        case 's':
             toggle_field(MADO_FIELD_STATUS);
             break;
-        case 'A':
+        case 'g':
             toggle_field(MADO_FIELD_TAGS);
             break;
-        case 'H':
+        case 'h':
             toggle_field(MADO_FIELD_PATH);
             break;
         default:
@@ -327,14 +329,31 @@ static int cmd_list(int argc, char **argv) {
 }
 
 static int cmd_remove(int argc, char **argv) {
-    if (argc < 2) {
-        std::cerr << "Error: remove requires a query argument\n";
-        return -1;
+    char *query = nullptr;
+    const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
+    auto [gopts, short_str] = cmd::to_getopt(cmd->options);
+    int opt;
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+        switch (opt) {
+        case 'a':
+            g_mado_config.abs_paths = true;
+            break;
+        default:
+            return -1;
+        }
     }
+    if (optind < argc)
+        query = argv[optind];
 
-    ASTNode *filter = parse(argv[1]);
-    if (!filter) {
-        std::cerr << "Error: failed to parse query\n";
+    ASTNode *filter = nullptr;
+    if (query) {
+        filter = parse(query);
+        if (!filter) {
+            std::cerr << "Error: failed to parse query\n";
+            return -1;
+        }
+    } else {
+        std::cerr << "Error: remove requires a query argument\n";
         return -1;
     }
 

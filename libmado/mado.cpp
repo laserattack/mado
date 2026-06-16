@@ -47,6 +47,7 @@ static void mado_init_config(Mado_Config *cfg) {
     cfg->template_name = "task";
     cfg->max_header_lines = 30;
     cfg->hide_fields = MADO_FIELD_NONE;
+    cfg->abs_paths = false;
 }
 
 // ================ REGEX
@@ -122,7 +123,7 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
 
     auto entry = std::make_unique<Mado_Entry>();
     entry->priority = 0;
-    entry->path = entry_dir;
+    entry->path = cfg->abs_paths ? entry_dir : std::filesystem::relative(entry_dir);
     entry->time = dir_name;
     entry->deadline = "99990000T000000";
 
@@ -227,7 +228,7 @@ void Mado_Entry::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
     }
 
     if (fmt == MADO_FMT_UNIX) {
-        std::cout << path << "/" << cfg->entry_file_name << ".md:1:1:";
+        std::cout << path << "/" << cfg->entry_file_name << ".md:1:";
         if (shown & MADO_FIELD_TIME)
             std::cout << " TIME:[" << time << "]";
         if (shown & MADO_FIELD_NAME)
@@ -444,7 +445,7 @@ void Mado_Entries::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
 void Mado_Entries::remove() const {
     for (auto &e : entries_) {
         std::filesystem::remove_all(e->path);
-        std::cout << "Removed: " << e->path << "\n";
+        std::cout << e->path << "\n";
     }
 }
 
@@ -555,7 +556,7 @@ static int mado_entry_create(const Mado_Config *cfg, const char *entry_path, con
     return 0;
 }
 
-int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, Mado_Output_Format fmt) {
+int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir) {
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     char dir_name[16];
@@ -574,13 +575,7 @@ int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir, M
     if (mado_entry_create(cfg, entry_path.c_str(), cfg->template_name.c_str()) != 0)
         return -1;
 
-    Mado_Entry entry;
-    entry.path = entry_path.string();
-    entry.name = "";
-    entry.status = "";
-    entry.time = dir_name;
-    entry.deadline = "";
-    entry.print(cfg, fmt);
+    std::cout << (cfg->abs_paths ? entry_path.string() : std::filesystem::relative(entry_path).string()) << "\n";
     return 0;
 }
 
