@@ -6,9 +6,11 @@ typedef enum {
     NODE_UNARY_OP,
     NODE_COMPARISON,
     NODE_ALL
-} NodeType;
+} Node_Type;
 
-typedef enum { OP_AND, OP_OR, OP_NOT } Operator;
+typedef enum { OP_AND,
+               OP_OR,
+               OP_NOT } Operator;
 
 typedef enum {
     CMP_PRIORITY,
@@ -17,7 +19,7 @@ typedef enum {
     CMP_NAME,
     CMP_TIME,
     CMP_DEADLINE
-} ComparisonField;
+} Comparison_Field;
 
 typedef enum {
     CMP_GT,
@@ -28,33 +30,57 @@ typedef enum {
     CMP_LE,
     CMP_TILDE,
     CMP_NTILDE
-} ComparisonOperator;
+} Comparison_Operator;
 
-typedef struct ASTNode {
-    NodeType type;
+typedef struct AST_Node {
+    Node_Type type;
     union {
         struct {
             Operator op;
-            struct ASTNode *left;
-            struct ASTNode *right;
+            struct AST_Node *left;
+            struct AST_Node *right;
         } binary;
         struct {
             Operator op;
-            struct ASTNode *expr;
+            struct AST_Node *expr;
         } unary;
         struct {
-            ComparisonField field;
-            ComparisonOperator cmp;
+            Comparison_Field field;
+            Comparison_Operator cmp;
             union {
                 int int_value;
                 char *str_value;
             } value;
         } comparison;
     };
-} ASTNode;
+} AST_Node;
 
-extern ASTNode *parse(const char *query);
-extern void ast_free(ASTNode *node);
-extern void ast_print(ASTNode *node, int indent);
+typedef struct String_List {
+    char **items;
+    int count;
+} String_List;
+
+typedef struct Num_List {
+    int *items;
+    int count;
+} Num_List;
+
+typedef enum { LM_ALLOF,
+               LM_ANYOF } ListModifier;
+
+AST_Node *parse(const char *query);
+void ast_free(AST_Node *node);
+AST_Node *create_binary_op(Operator op, AST_Node *left, AST_Node *right);
+AST_Node *create_unary_op(Operator op, AST_Node *expr);
+AST_Node *create_comparison(Comparison_Field field, Comparison_Operator cmp, int int_val, char *str_val);
+AST_Node *create_all();
+AST_Node *expand_list(Comparison_Field field, Comparison_Operator op,
+                      String_List *str_list, Num_List *num_list,
+                      ListModifier lm);
+
+String_List *create_string_list(char *first);
+Num_List *create_number_list(int first);
+void append_string(String_List *list, char *item);
+void append_number(Num_List *list, int item);
 
 #endif

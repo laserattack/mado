@@ -320,7 +320,7 @@ static int cmd_list(int argc, char **argv) {
     if (optind < argc)
         query = argv[optind];
 
-    ASTNode *filter = nullptr;
+    AST_Node *filter = nullptr;
     if (query) {
         filter = parse(query);
         if (!filter) {
@@ -362,7 +362,7 @@ static int cmd_remove(int argc, char **argv) {
     if (optind < argc)
         query = argv[optind];
 
-    ASTNode *filter = nullptr;
+    AST_Node *filter = nullptr;
     if (query) {
         filter = parse(query);
         if (!filter) {

@@ -8,121 +8,16 @@
 extern int yylex();
 extern void yyerror(const char *fmt, ...);
 
-typedef enum { LM_ALLOF, LM_ANYOF } ListModifier;
-
-typedef struct StringList {
-    char **items;
-    int count;
-} StringList;
-
-typedef struct NumList {
-    int *items;
-    int count;
-} NumList;
-
-ASTNode *ast_root = NULL;
-
-static ASTNode *create_binary_op(Operator op, ASTNode *left, ASTNode *right) {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_BINARY_OP;
-    node->binary.op = op;
-    node->binary.left = left;
-    node->binary.right = right;
-    return node;
-}
-
-static ASTNode *create_unary_op(Operator op, ASTNode *expr) {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_UNARY_OP;
-    node->unary.op = op;
-    node->unary.expr = expr;
-    return node;
-}
-
-static ASTNode *create_comparison(ComparisonField field,
-                                  ComparisonOperator cmp,
-                                  int int_val,
-                                  char *str_val) {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_COMPARISON;
-    node->comparison.field = field;
-    node->comparison.cmp = cmp;
-    if (str_val) {
-        node->comparison.value.str_value = str_val;
-    } else {
-        node->comparison.value.int_value = int_val;
-    }
-    return node;
-}
-
-static ASTNode *create_all() {
-    ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = NODE_ALL;
-    return node;
-}
-
-static ASTNode *expand_list(ComparisonField field, ComparisonOperator op,
-                            StringList *str_list, NumList *num_list,
-                            ListModifier lm) {
-    Operator comb = (lm == LM_ALLOF) ? OP_AND : OP_OR;
-    ASTNode *result = NULL;
-
-    int count = str_list ? str_list->count : num_list->count;
-    for (int i = 0; i < count; i++) {
-        ASTNode *cmp = str_list
-            ? create_comparison(field, op, 0, str_list->items[i])
-            : create_comparison(field, op, num_list->items[i], NULL);
-
-        result = result ? create_binary_op(comb, result, cmp) : cmp;
-    }
-
-    if (str_list) {
-        free(str_list->items);
-        free(str_list);
-    } else {
-        free(num_list->items);
-        free(num_list);
-    }
-
-    return result;
-}
-
-static StringList *create_string_list(char *first) {
-    StringList *list = malloc(sizeof(StringList));
-    list->items = malloc(sizeof(char*));
-    list->items[0] = first;
-    list->count = 1;
-    return list;
-}
-
-static void append_string(StringList *list, char *item) {
-    list->count++;
-    list->items = realloc(list->items, list->count * sizeof(char*));
-    list->items[list->count - 1] = item;
-}
-
-static NumList *create_number_list(int first) {
-    NumList *list = malloc(sizeof(NumList));
-    list->items = malloc(sizeof(int));
-    list->items[0] = first;
-    list->count = 1;
-    return list;
-}
-
-static void append_number(NumList *list, int item) {
-    list->count++;
-    list->items = realloc(list->items, list->count * sizeof(int));
-    list->items[list->count - 1] = item;
-}
+extern AST_Node *ast_root;
 
 %}
 
 %union {
     int num;
     char *str;
-    struct StringList *str_list;
-    struct NumList *num_list;
-    struct ASTNode *node;
+    struct String_List *str_list;
+    struct Num_List *num_list;
+    struct AST_Node *node;
 }
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT

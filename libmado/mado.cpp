@@ -259,7 +259,7 @@ void Mado_Entry::print(const Mado_Config *cfg) const {
     }
 }
 
-bool Mado_Entry::matches_condition(const ASTNode *node) const {
+bool Mado_Entry::matches_condition(const AST_Node *node) const {
     if (!node)
         return true;
     switch (node->type) {
@@ -426,7 +426,7 @@ Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir)
     return result;
 }
 
-Mado_Entries &Mado_Entries::filter(const ASTNode *filter) {
+Mado_Entries &Mado_Entries::filter(const AST_Node *filter) {
     if (!filter)
         return *this;
 

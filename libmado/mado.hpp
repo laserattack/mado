@@ -72,7 +72,7 @@ class Mado_Entry {
     void print(const Mado_Config *cfg) const;
 
   private:
-    bool matches_condition(const ASTNode *node) const;
+    bool matches_condition(const AST_Node *node) const;
     friend class Mado_Entries;
 };
 
@@ -82,7 +82,7 @@ class Mado_Entries {
   public:
     static Mado_Entries get_all(const Mado_Config *cfg, const char *main_dir);
 
-    Mado_Entries &filter(const ASTNode *filter);
+    Mado_Entries &filter(const AST_Node *filter);
     Mado_Entries &sort(const Mado_Config *cfg);
 
     void print(const Mado_Config *cfg) const;
