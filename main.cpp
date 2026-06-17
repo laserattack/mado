@@ -233,7 +233,10 @@ static int cmd_new(int argc, char **argv) {
             g_mado_config.abs_paths = true;
             break;
         case 'f':
-            mado_parse_format(optarg, &g_mado_config.fmt);
+            if (!mado_parse_format(optarg, &g_mado_config.fmt)) {
+                std::cerr << "Error: invalid format '" << optarg << "'\n";
+                return -1;
+            }
             break;
         default:
             return -1;
@@ -279,8 +282,10 @@ static int cmd_list(int argc, char **argv) {
             }
             break;
         case 'f':
-            if (!mado_parse_format(optarg, fmt))
+            if (!mado_parse_format(optarg, fmt)) {
+                std::cerr << "Error: invalid format '" << optarg << "'\n";
                 return -1;
+            }
             break;
         case 'a':
             g_mado_config.abs_paths = true;
