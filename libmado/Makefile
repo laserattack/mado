@@ -1,7 +1,7 @@
 CC = cc
 CXX = c++
-CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
-CXXFLAGS = -Wall -Wextra -O2 -std=c++17
+CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L -MMD
+CXXFLAGS = -Wall -Wextra -O2 -std=c++17 -MMD
 AR = ar
 FLEX = flex
 BISON = bison
@@ -15,6 +15,8 @@ PARSER = parser.y
 PARSER_OUT = parser.tab.c
 PARSER_HEADER = parser.tab.h
 PARSER_OBJ = parser.tab.o
+
+DEPS = $(LIB_OBJ:.o=.d) $(LEX_OBJ:.o=.d) $(PARSER_OBJ:.o=.d)
 
 all: $(LIB)
 
@@ -33,7 +35,9 @@ mado.o: mado.cpp
 $(LIB): $(LEX_OBJ) $(PARSER_OBJ) $(LIB_OBJ)
 	$(AR) rcs $@ $^
 
+-include $(DEPS)
+
 clean:
-	rm -f $(LEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(LIB) *.o
+	rm -f $(LEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(LIB) *.o *.d
 
 .PHONY: all clean

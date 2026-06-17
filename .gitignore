@@ -1,6 +1,7 @@
 lex.yy.c
 *.tab.*
 *.o
+*.d
 *.a
 mado
 digest.txt
