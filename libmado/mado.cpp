@@ -1,28 +1,18 @@
-#include <dirent.h>
-#include <limits.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-
+#include <algorithm>
+#include <cstring>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <memory>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <vector>
 
-extern "C" {
-#define UTIL_IMPL
-#include "utils/util.h"
-
-#define REGEX_IMPL
-#include "utils/regex.h"
-}
-
 #include "mado.hpp"
+
+// ================ HELPERS
 
 static std::string find_dir_up(const std::string &dir_name) {
     auto current = std::filesystem::current_path();
@@ -52,46 +42,6 @@ static void mado_init_config(Mado_Config *cfg) {
     cfg->fmt = MADO_FMT_UNIX;
 }
 
-// ================ REGEX
-
-static regex_t g_entry_dir_regex;
-static regex_t g_name_regex;
-static regex_t g_priority_regex;
-static regex_t g_tags_regex;
-static regex_t g_status_regex;
-static regex_t g_deadline_regex;
-static int g_regex_initialized = 0;
-
-static int mado_init_regexes() {
-    if (g_regex_initialized)
-        return 0;
-    if (regcomp(&g_entry_dir_regex, "^[0-9]{8}T[0-9]{6}$", REG_EXTENDED) != 0)
-        return -1;
-    if (regcomp(&g_name_regex, "^- NAME:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
-        return -1;
-    if (regcomp(&g_priority_regex, "^- PRIORITY:[[:space:]]*([0-9]{1,3})$", REG_EXTENDED) != 0)
-        return -1;
-    if (regcomp(&g_tags_regex, "^- TAGS:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
-        return -1;
-    if (regcomp(&g_status_regex, "^- STATUS:[[:space:]]*(.*)$", REG_EXTENDED) != 0)
-        return -1;
-    if (regcomp(&g_deadline_regex, "^- DEADLINE:[[:space:]]*([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)[[:space:]]*$", REG_EXTENDED) != 0)
-        return -1;
-    g_regex_initialized = 1;
-    return 0;
-}
-
-static void mado_free_regexes() {
-    if (!g_regex_initialized)
-        return;
-    regfree(&g_entry_dir_regex);
-    regfree(&g_name_regex);
-    regfree(&g_priority_regex);
-    regfree(&g_tags_regex);
-    regfree(&g_status_regex);
-    regfree(&g_deadline_regex);
-}
-
 // ================ PRINT HELPERS
 
 static void print_json_string(const std::string &str) {
@@ -114,6 +64,9 @@ static void print_json_string(const std::string &str) {
 // ================ ENTRY
 
 std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char *entry_dir) {
+    static std::regex g_priority_value_regex("^[0-9]{1,3}$");
+    static std::regex g_deadline_value_regex("^([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)$");
+
     std::filesystem::path dir_path(entry_dir);
     std::string dir_name = dir_path.filename().string();
 
@@ -129,38 +82,45 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
     entry->time = dir_name;
     entry->deadline = "99990000T000000";
 
+    auto trim = [](std::string &s) {
+        s.erase(0, s.find_first_not_of(" \t"));
+        s.erase(s.find_last_not_of(" \t") + 1);
+    };
+
     std::string line;
     int lines_processed = 0;
 
     while (lines_processed < cfg->max_header_lines && std::getline(f, line)) {
         lines_processed++;
 
-        char *value;
-        if ((value = regex_extract_first_group(line.c_str(), &g_name_regex)) != NULL) {
-            entry->name = trim(value);
-            free(value);
-        } else if ((value = regex_extract_first_group(line.c_str(), &g_priority_regex)) != NULL) {
-            entry->priority = atoi(value);
-            free(value);
-        } else if ((value = regex_extract_first_group(line.c_str(), &g_tags_regex)) != NULL) {
-            char *tags_str = trim(value);
-            if (tags_str && *tags_str) {
-                char *saveptr;
-                char *token = strtok_r(tags_str, ",", &saveptr);
-                while (token) {
-                    char *clean = trim(token);
-                    if (*clean)
-                        entry->tags.push_back(clean);
-                    token = strtok_r(NULL, ",", &saveptr);
+        if (line.rfind("- NAME:", 0) == 0) {
+            entry->name = line.substr(7);
+            trim(entry->name);
+        } else if (line.rfind("- PRIORITY:", 0) == 0) {
+            std::string val = line.substr(11);
+            trim(val);
+            if (std::regex_match(val, g_priority_value_regex))
+                entry->priority = std::stoi(val);
+        } else if (line.rfind("- TAGS:", 0) == 0) {
+            std::string tags_str = line.substr(7);
+            trim(tags_str);
+            if (!tags_str.empty()) {
+                std::stringstream ss(tags_str);
+                std::string token;
+                while (std::getline(ss, token, ',')) {
+                    trim(token);
+                    if (!token.empty())
+                        entry->tags.push_back(token);
                 }
             }
-            free(value);
-        } else if ((value = regex_extract_first_group(line.c_str(), &g_status_regex)) != NULL) {
-            entry->status = trim(value);
-            free(value);
-        } else if ((value = regex_extract_first_group(line.c_str(), &g_deadline_regex)) != NULL) {
-            entry->deadline = trim(value);
-            free(value);
+        } else if (line.rfind("- STATUS:", 0) == 0) {
+            entry->status = line.substr(9);
+            trim(entry->status);
+        } else if (line.rfind("- DEADLINE:", 0) == 0) {
+            std::string val = line.substr(11);
+            trim(val);
+            if (std::regex_match(val, g_deadline_value_regex))
+                entry->deadline = val;
         }
     }
 
@@ -182,7 +142,11 @@ void Mado_Entry::print(const Mado_Config *cfg) const {
     if (fmt == MADO_FMT_JSONL) {
         std::cout << "{";
         bool has_any = false;
-        auto sep = [&]() { if (has_any) std::cout << ","; has_any = true; };
+        auto sep = [&]() {
+            if (has_any)
+                std::cout << ",";
+            has_any = true;
+        };
 
         if (shown & MADO_FIELD_TIME) {
             sep();
@@ -400,6 +364,7 @@ bool Mado_Entry::matches_condition(const AST_Node *node) const {
 // ================ ENTRIES
 
 Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir) {
+    static std::regex g_entry_dir_regex("^[0-9]{8}T[0-9]{6}$");
     Mado_Entries result;
     std::filesystem::path dir_path(main_dir);
 
@@ -411,7 +376,7 @@ Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir)
             continue;
 
         std::string dir_name = dirent.path().filename().string();
-        if (regexec(&g_entry_dir_regex, dir_name.c_str(), 0, NULL, 0) != 0)
+        if (!std::regex_match(dir_name, g_entry_dir_regex))
             continue;
 
         auto entry_file = dirent.path() / (cfg->entry_file_name + ".md");
@@ -739,9 +704,8 @@ int mado_parse_format(const char *format_str, Mado_Output_Format *fmt) {
 
 int mado_init(Mado_Config *cfg) {
     mado_init_config(cfg);
-    return mado_init_regexes();
+    return 0;
 }
 
 void mado_deinit() {
-    mado_free_regexes();
 }

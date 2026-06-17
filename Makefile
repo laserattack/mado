@@ -4,7 +4,7 @@ TARGET = mado
 MAIN_SRC = main.cpp
 LIB_DIR = libmado
 LIB = $(LIB_DIR)/libmado.a
-LIB_SRC = $(wildcard $(LIB_DIR)/*.cpp $(LIB_DIR)/*.c $(LIB_DIR)/*.h $(LIB_DIR)/*.hpp $(LIB_DIR)/utils/*.h)
+LIB_SRC = $(wildcard $(LIB_DIR)/*.cpp $(LIB_DIR)/*.c $(LIB_DIR)/*.h $(LIB_DIR)/*.hpp)
 INCLUDES = -I$(LIB_DIR)
 
 all: $(TARGET)
