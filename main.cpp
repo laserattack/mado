@@ -153,7 +153,7 @@ static cmd::Command commands[] = {
      "List entries with optional filtering",
      "mado list [COMMAND OPTIONS] [QUERY]",
      (cmd::My_Option[]){
-         {"sort", required_argument, NULL, 'S', "Sort entries (+field,-field,field,...)"},
+         {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
          {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
@@ -161,7 +161,7 @@ static cmd::Command commands[] = {
          {"hide-time", no_argument, NULL, 't', "Hide time field"},
          {"hide-deadline", no_argument, NULL, 'd', "Hide deadline field"},
          {"hide-priority", no_argument, NULL, 'p', "Hide priority field"},
-         {"hide-status", no_argument, NULL, 's', "Hide status field"},
+         {"hide-status", no_argument, NULL, 'u', "Hide status field"},
          {"hide-tags", no_argument, NULL, 'g', "Hide tags field"},
          {"hide-path", no_argument, NULL, 'h', "Hide path field"},
          {NULL, 0, NULL, 0, NULL}},
@@ -275,7 +275,7 @@ static int cmd_list(int argc, char **argv) {
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
         switch (opt) {
-        case 'S':
+        case 's':
             if (!mado_parse_sort(optarg, &g_mado_config.sort_criteria)) {
                 std::cerr << "Error: invalid sort format\n";
                 return -1;
@@ -304,7 +304,7 @@ static int cmd_list(int argc, char **argv) {
         case 'p':
             toggle_field(MADO_FIELD_PRIORITY);
             break;
-        case 's':
+        case 'u':
             toggle_field(MADO_FIELD_STATUS);
             break;
         case 'g':
