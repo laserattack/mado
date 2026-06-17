@@ -110,8 +110,7 @@ NEWLINE            \n
                               {"allof",    TOKEN_ALLOF},
                               {"anyof",    TOKEN_ANYOF},
                           };
-                          static const int n_keywords =
-                              sizeof(keywords) / sizeof(keywords[0]);
+                          static const int n_keywords = sizeof(keywords) / sizeof(keywords[0]);
 
                           int matches_count = 0, matched_token = 0;
 

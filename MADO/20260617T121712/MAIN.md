@@ -1,0 +1,4 @@
+- NAME: add info about sorting in readme
+- PRIORITY: 10
+- TAGS: sort, sorting, readme, docs, feat
+- STATUS: opened

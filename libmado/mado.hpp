@@ -10,7 +10,7 @@ extern "C" {
 #include "ast.h"
 }
 
-// ================ ENUMS
+// ================ TYPES
 
 typedef enum {
     MADO_FMT_UNIX,
@@ -32,6 +32,16 @@ typedef enum {
                      MADO_FIELD_PATH
 } Mado_Entry_Field;
 
+typedef enum {
+    MADO_SORT_ASC,
+    MADO_SORT_DESC,
+} Mado_Sort_Order;
+
+struct Mado_Sort_Criterion {
+    Mado_Entry_Field field;
+    Mado_Sort_Order order;
+};
+
 // ================ CONFIG
 
 struct Mado_Config {
@@ -42,6 +52,7 @@ struct Mado_Config {
     int max_header_lines;
     bool abs_paths;
     Mado_Entry_Field hide_fields;
+    std::vector<Mado_Sort_Criterion> sort_criteria;
 };
 
 // ================ ENTRY
@@ -71,6 +82,8 @@ class Mado_Entries {
     static Mado_Entries get_all(const Mado_Config *cfg, const char *main_dir);
 
     Mado_Entries &filter(const ASTNode *filter);
+    Mado_Entries &sort(const Mado_Config *cfg);
+
     void print(const Mado_Config *cfg, Mado_Output_Format fmt) const;
     void remove() const;
     size_t size() const { return entries_.size(); }
@@ -94,5 +107,6 @@ int mado_print_repo_info(const Mado_Config *cfg);
 // ================ UTILS
 
 int mado_parse_format(const char *format_str, Mado_Output_Format *fmt);
+int mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *criteria);
 
 #endif

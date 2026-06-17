@@ -152,6 +152,7 @@ static cmd::Command commands[] = {
      "List entries with optional filtering",
      "mado list [COMMAND OPTIONS] [QUERY]",
      (cmd::My_Option[]){
+         {"sort", required_argument, NULL, 'S', "Sort entries (+field,-field,field,...)"},
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
          {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
@@ -267,6 +268,12 @@ static int cmd_list(int argc, char **argv) {
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
         switch (opt) {
+        case 'S':
+            if (!mado_parse_sort(optarg, &g_mado_config.sort_criteria)) {
+                std::cerr << "Error: invalid sort format\n";
+                return -1;
+            }
+            break;
         case 'f':
             if (!mado_parse_format(optarg, &fmt))
                 return -1;
@@ -322,6 +329,7 @@ static int cmd_list(int argc, char **argv) {
 
     Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
         .filter(filter)
+        .sort(&g_mado_config)
         .print(&g_mado_config, fmt);
 
     ast_free(filter);

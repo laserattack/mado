@@ -1,4 +1,4 @@
-- NAME: Implement recursive downward search for TASKS directories
+- NAME: implement recursive downward search for TASKS directories
 - PRIORITY:
 - TAGS: feature, feat, filesystem, fs
 - STATUS: opened

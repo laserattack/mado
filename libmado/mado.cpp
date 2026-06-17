@@ -48,6 +48,7 @@ static void mado_init_config(Mado_Config *cfg) {
     cfg->max_header_lines = 30;
     cfg->hide_fields = MADO_FIELD_NONE;
     cfg->abs_paths = false;
+    cfg->sort_criteria.clear();
 }
 
 // ================ REGEX
@@ -435,6 +436,134 @@ Mado_Entries &Mado_Entries::filter(const ASTNode *filter) {
             it = entries_.erase(it);
     }
     return *this;
+}
+
+Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
+    if (cfg->sort_criteria.empty())
+        return *this;
+
+    auto compare_strings = [](const std::string &x, const std::string &y,
+                              bool &less, bool &greater) {
+        if (x < y)
+            less = true;
+        else if (x > y)
+            greater = true;
+    };
+
+    auto comparator = [&](const std::unique_ptr<Mado_Entry> &a,
+                          const std::unique_ptr<Mado_Entry> &b) -> bool {
+        for (const auto &criterion : cfg->sort_criteria) {
+            bool less = false, greater = false;
+
+            switch (criterion.field) {
+            case MADO_FIELD_TIME:
+                compare_strings(a->time, b->time, less, greater);
+                break;
+            case MADO_FIELD_NAME:
+                compare_strings(a->name, b->name, less, greater);
+                break;
+            case MADO_FIELD_PRIORITY:
+                if (a->priority < b->priority)
+                    less = true;
+                else if (a->priority > b->priority)
+                    greater = true;
+                break;
+            case MADO_FIELD_DEADLINE:
+                compare_strings(a->deadline, b->deadline, less, greater);
+                break;
+            case MADO_FIELD_STATUS:
+                compare_strings(a->status, b->status, less, greater);
+                break;
+            case MADO_FIELD_TAGS: {
+                std::string tags_a, tags_b;
+                for (const auto &tag : a->tags)
+                    tags_a += tag;
+                for (const auto &tag : b->tags)
+                    tags_b += tag;
+                compare_strings(tags_a, tags_b, less, greater);
+                break;
+            }
+            default:
+                break;
+            }
+
+            if (less)
+                return criterion.order == MADO_SORT_ASC;
+            if (greater)
+                return criterion.order == MADO_SORT_DESC;
+        }
+        return false;
+    };
+
+    std::stable_sort(entries_.begin(), entries_.end(), comparator);
+    return *this;
+}
+
+int mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *criteria) {
+    if (!sort_str || !*sort_str)
+        return 0;
+
+    std::string input(sort_str);
+    std::stringstream ss(input);
+    std::string token;
+
+    static const struct {
+        const char *name;
+        Mado_Entry_Field field;
+    } fields_for_parse_sort[] = {
+        {"time", MADO_FIELD_TIME},
+        {"name", MADO_FIELD_NAME},
+        {"priority", MADO_FIELD_PRIORITY},
+        {"deadline", MADO_FIELD_DEADLINE},
+        {"status", MADO_FIELD_STATUS},
+        {"tags", MADO_FIELD_TAGS},
+    };
+    static const int n_fields_for_parse_sort =
+        sizeof(fields_for_parse_sort) / sizeof(fields_for_parse_sort[0]);
+
+    while (std::getline(ss, token, ',')) {
+        size_t start = token.find_first_not_of(" \t");
+        if (start == std::string::npos)
+            continue;
+        size_t end = token.find_last_not_of(" \t");
+        token = token.substr(start, end - start + 1);
+
+        Mado_Sort_Criterion c;
+
+        if (token[0] == '+') {
+            c.order = MADO_SORT_ASC;
+            token = token.substr(1);
+        } else if (token[0] == '-') {
+            c.order = MADO_SORT_DESC;
+            token = token.substr(1);
+        } else {
+            c.order = MADO_SORT_ASC;
+        }
+
+        int matches_count = 0;
+        Mado_Entry_Field matched_field;
+        for (int i = 0; i < n_fields_for_parse_sort; i++) {
+            int field_len = (int)strlen(fields_for_parse_sort[i].name);
+            if ((int)token.size() <= field_len &&
+                strncmp(token.c_str(), fields_for_parse_sort[i].name, token.size()) == 0) {
+                matched_field = fields_for_parse_sort[i].field;
+                if ((int)token.size() == field_len) {
+                    matches_count = 1;
+                    break;
+                }
+                matches_count++;
+            }
+        }
+
+        if (matches_count == 1)
+            c.field = matched_field;
+        else
+            return 0;
+
+        criteria->push_back(c);
+    }
+
+    return 1;
 }
 
 void Mado_Entries::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
