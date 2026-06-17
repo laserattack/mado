@@ -53,6 +53,7 @@ struct Mado_Config {
     bool abs_paths;
     Mado_Entry_Field hide_fields;
     std::vector<Mado_Sort_Criterion> sort_criteria;
+    Mado_Output_Format fmt;
 };
 
 // ================ ENTRY
@@ -68,7 +69,7 @@ class Mado_Entry {
     std::string deadline;
 
     static std::unique_ptr<Mado_Entry> parse(const Mado_Config *cfg, const char *entry_dir);
-    void print(const Mado_Config *cfg, Mado_Output_Format fmt) const;
+    void print(const Mado_Config *cfg) const;
 
   private:
     bool matches_condition(const ASTNode *node) const;
@@ -84,7 +85,7 @@ class Mado_Entries {
     Mado_Entries &filter(const ASTNode *filter);
     Mado_Entries &sort(const Mado_Config *cfg);
 
-    void print(const Mado_Config *cfg, Mado_Output_Format fmt) const;
+    void print(const Mado_Config *cfg) const;
     void remove() const;
     size_t size() const { return entries_.size(); }
 

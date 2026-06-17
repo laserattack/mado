@@ -49,6 +49,7 @@ static void mado_init_config(Mado_Config *cfg) {
     cfg->hide_fields = MADO_FIELD_NONE;
     cfg->abs_paths = false;
     cfg->sort_criteria.clear();
+    cfg->fmt = MADO_FMT_UNIX;
 }
 
 // ================ REGEX
@@ -168,9 +169,10 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
     return entry;
 }
 
-void Mado_Entry::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
+void Mado_Entry::print(const Mado_Config *cfg) const {
     Mado_Entry_Field hidden = cfg->hide_fields;
     Mado_Entry_Field shown = (Mado_Entry_Field)(MADO_FIELD_ALL & ~hidden);
+    Mado_Output_Format fmt = cfg->fmt;
 
     if (fmt == MADO_FMT_ONLY_PATH) {
         std::cout << path << "/" << cfg->entry_file_name << ".md\n";
@@ -566,9 +568,9 @@ int mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *crit
     return 1;
 }
 
-void Mado_Entries::print(const Mado_Config *cfg, Mado_Output_Format fmt) const {
+void Mado_Entries::print(const Mado_Config *cfg) const {
     for (auto &e : entries_)
-        e->print(cfg, fmt);
+        e->print(cfg);
 }
 
 void Mado_Entries::remove() const {
@@ -704,7 +706,10 @@ int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir) {
     if (mado_entry_create(cfg, entry_path.c_str(), cfg->template_name.c_str()) != 0)
         return -1;
 
-    std::cout << (cfg->abs_paths ? entry_path.string() : std::filesystem::relative(entry_path).string()) << "\n";
+    auto entry = Mado_Entry::parse(cfg, entry_path.c_str());
+    if (entry)
+        entry->print(cfg);
+
     return 0;
 }
 

@@ -145,6 +145,7 @@ static cmd::Command commands[] = {
      (cmd::My_Option[]){
          {"template", required_argument, NULL, 't', "Template to use"},
          {"abs-path", no_argument, NULL, 'a', "Show absolute path to created entry"},
+         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_new},
 
@@ -231,6 +232,9 @@ static int cmd_new(int argc, char **argv) {
         case 'a':
             g_mado_config.abs_paths = true;
             break;
+        case 'f':
+            mado_parse_format(optarg, &g_mado_config.fmt);
+            break;
         default:
             return -1;
         }
@@ -245,7 +249,7 @@ static int cmd_new(int argc, char **argv) {
 
 static int cmd_list(int argc, char **argv) {
     char *query = nullptr;
-    Mado_Output_Format fmt = MADO_FMT_UNIX;
+    Mado_Output_Format *fmt = &g_mado_config.fmt;
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int only = 0, opt;
@@ -275,7 +279,7 @@ static int cmd_list(int argc, char **argv) {
             }
             break;
         case 'f':
-            if (!mado_parse_format(optarg, &fmt))
+            if (!mado_parse_format(optarg, fmt))
                 return -1;
             break;
         case 'a':
@@ -330,7 +334,7 @@ static int cmd_list(int argc, char **argv) {
     Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
         .filter(filter)
         .sort(&g_mado_config)
-        .print(&g_mado_config, fmt);
+        .print(&g_mado_config);
 
     ast_free(filter);
     return 0;
