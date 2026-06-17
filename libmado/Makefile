@@ -1,43 +1,24 @@
 CC = cc
 CXX = c++
-CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L -MMD
-CXXFLAGS = -Wall -Wextra -O2 -std=c++17 -MMD
+CFLAGS = -Wall -Wextra -O2 -std=c99 -D_POSIX_C_SOURCE=200809L
+CXXFLAGS = -Wall -Wextra -O2 -std=c++17
 AR = ar
 FLEX = flex
 BISON = bison
 
 LIB = libmado.a
-LIB_OBJ = mado.o ast.o
-LEXER = lexer.l
-LEX_OUT = lex.yy.c
-LEX_OBJ = lex.yy.o
-PARSER = parser.y
-PARSER_OUT = parser.tab.c
-PARSER_HEADER = parser.tab.h
-PARSER_OBJ = parser.tab.o
+OBJS = mado.o ast.o lex.yy.o parser.tab.o
 
-DEPS = $(LIB_OBJ:.o=.d) $(LEX_OBJ:.o=.d) $(PARSER_OBJ:.o=.d)
-
-all: $(LIB)
-
-$(PARSER_OUT) $(PARSER_HEADER): $(PARSER)
-	$(BISON) -d $(PARSER)
-
-$(LEX_OUT): $(LEXER) $(PARSER_HEADER)
-	$(FLEX) $(LEXER)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-
-mado.o: mado.cpp
+all:
+	bison -d parser.y
+	flex lexer.l
+	$(CC) $(CFLAGS) -c lex.yy.c -o lex.yy.o
+	$(CC) $(CFLAGS) -c parser.tab.c -o parser.tab.o
+	$(CC) $(CFLAGS) -c ast.c -o ast.o
 	$(CXX) $(CXXFLAGS) -c mado.cpp -o mado.o
-
-$(LIB): $(LEX_OBJ) $(PARSER_OBJ) $(LIB_OBJ)
-	$(AR) rcs $@ $^
-
--include $(DEPS)
+	$(AR) rcs $(LIB) $(OBJS)
 
 clean:
-	rm -f $(LEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(LIB) *.o *.d
+	rm -f lex.yy.c parser.tab.c parser.tab.h $(LIB) *.o
 
 .PHONY: all clean
