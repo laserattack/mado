@@ -668,6 +668,9 @@ Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force) {
 
 Mado_Error mado_print_repo_info(const Mado_Config *cfg) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
+    if (!cfg->abs_paths) {
+        main_dir = std::filesystem::relative(std::filesystem::path(main_dir));
+    }
     if (main_dir.empty()) {
         std::cout << "No mado repository here\n";
         return MADO_ERR_NOT_FOUND;

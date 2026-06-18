@@ -178,7 +178,9 @@ static cmd::Command commands[] = {
     {"info",
      "Show repository information",
      "mado info",
-     NULL,
+     (cmd::Option[]){
+         {"abs-path", no_argument, NULL, 'a', "Show absolute path to main directory"},
+         {NULL, 0, NULL, 0, NULL}},
      cmd_info},
 
     {"help",
@@ -413,6 +415,19 @@ static int cmd_remove(int argc, char **argv) {
 }
 
 static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
+    const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
+    auto [gopts, short_str] = cmd::to_getopt(cmd->options);
+    int opt;
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+        switch (opt) {
+        case 'a':
+            g_mado_config.abs_paths = true;
+            break;
+        default:
+            return -1;
+        }
+    }
+
     Mado_Error err = mado_print_repo_info(&g_mado_config);
     if (err != MADO_ERR_OK)
         return mado_print_error(err, "getting repository info");
