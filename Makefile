@@ -10,8 +10,11 @@ all:
 	$(MAKE) -C $(LIB_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(MAIN_SRC) -L$(LIB_DIR) -lmado -o $(TARGET)
 
+etags:
+	find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\)$$' | etags -
+
 clean:
 	$(MAKE) -C $(LIB_DIR) clean
-	rm -f $(TARGET)
+	rm -f $(TARGET) TAGS
 
-.PHONY: all clean
+.PHONY: all clean etags

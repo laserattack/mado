@@ -13,6 +13,18 @@ extern "C" {
 // ================ TYPES
 
 typedef enum {
+    MADO_ERR_OK = 0,
+    MADO_ERR_NOT_FOUND,
+    MADO_ERR_IO,
+    MADO_ERR_PARSE,
+    MADO_ERR_INVALID_FORMAT,
+    MADO_ERR_ALREADY_EXISTS,
+    MADO_ERR_FOUND_ABOVE,
+    MADO_ERR_TEMPLATE,
+    MADO_ERR_INTERNAL,
+} Mado_Error;
+
+typedef enum {
     MADO_FMT_UNIX,
     MADO_FMT_ONLY_PATH,
     MADO_FMT_JSONL,
@@ -68,26 +80,25 @@ class Mado_Entry {
     std::string time;
     std::string deadline;
 
-    static std::unique_ptr<Mado_Entry> parse(const Mado_Config *cfg, const char *entry_dir);
     void print(const Mado_Config *cfg) const;
+    bool matches_condition(const AST_Node *filter) const;
 
-  private:
-    bool matches_condition(const AST_Node *node) const;
-    friend class Mado_Entries;
+    static std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> create(const Mado_Config *cfg, const char *main_dir);
+    static std::unique_ptr<Mado_Entry> parse(const Mado_Config *cfg, const char *entry_dir);
 };
 
 // ================ ENTRIES
 
 class Mado_Entries {
   public:
-    static Mado_Entries get_all(const Mado_Config *cfg, const char *main_dir);
-
     Mado_Entries &filter(const AST_Node *filter);
     Mado_Entries &sort(const Mado_Config *cfg);
 
     void print(const Mado_Config *cfg) const;
-    void remove() const;
+    std::vector<std::string> remove() const;
     size_t size() const { return entries_.size(); }
+
+    static Mado_Entries get_all(const Mado_Config *cfg, const char *main_dir);
 
   private:
     std::vector<std::unique_ptr<Mado_Entry>> entries_;
@@ -95,19 +106,23 @@ class Mado_Entries {
 
 // ================ LIFECYCLE
 
-int mado_init(Mado_Config *cfg);
+Mado_Error mado_init(Mado_Config *cfg);
 void mado_deinit();
 
 // ================ REPO MANAGEMENT
 
-int mado_templates_dir_init(const Mado_Config *cfg);
-int mado_entries_dir_init(const Mado_Config *cfg, int force);
-int mado_entry_create_dir_and_md(const Mado_Config *cfg, const char *main_dir);
-int mado_print_repo_info(const Mado_Config *cfg);
+Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force);
+Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
+Mado_Error mado_print_repo_info(const Mado_Config *cfg);
 
 // ================ UTILS
 
-int mado_parse_format(const char *format_str, Mado_Output_Format *fmt);
-int mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *criteria);
+Mado_Error mado_parse_format(const char *format_str, Mado_Output_Format *fmt);
+Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *criteria);
+
+// ================ ERROR MESSAGE
+
+const char *mado_strerror(Mado_Error err);
+int mado_print_error(Mado_Error err, const char *context);
 
 #endif

@@ -15,7 +15,7 @@
 
 #include "mado.hpp"
 
-std::string find_dir_up(const std::string &dir_name) {
+static std::string find_dir_up(const std::string &dir_name) {
     auto current = std::filesystem::current_path();
     while (true) {
         auto test = current / dir_name;
@@ -29,7 +29,7 @@ std::string find_dir_up(const std::string &dir_name) {
     return {};
 }
 
-char *argv0;
+static char *argv0;
 
 // ================ GLOBAL CONFIG
 
@@ -41,7 +41,7 @@ namespace cmd {
 
 typedef int (*Handler)(int argc, char **argv);
 
-struct My_Option {
+struct Option {
     const char *name;
     int has_arg;
     int *flag;
@@ -53,12 +53,12 @@ struct Command {
     const char *name;
     const char *description;
     const char *usage;
-    const My_Option *options;
+    const Option *options;
     Handler handler;
 };
 
 static std::pair<std::vector<struct option>, std::string>
-to_getopt(const My_Option *opts) {
+to_getopt(const Option *opts) {
     int n = 0;
     while (opts[n].name)
         n++;
@@ -81,7 +81,7 @@ to_getopt(const My_Option *opts) {
     return {gopts, short_str};
 }
 
-static std::string options_help(const My_Option *opts) {
+static std::string options_help(const Option *opts) {
     std::string result;
     for (int i = 0; opts[i].name; i++) {
         if (opts[i].val && isprint(opts[i].val)) {
@@ -134,7 +134,7 @@ static cmd::Command commands[] = {
     {"init",
      "Initialize mado repository in current working directory",
      "mado init [COMMAND OPTIONS]",
-     (cmd::My_Option[]){
+     (cmd::Option[]){
          {"force", no_argument, NULL, 'F', "Force init"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_init},
@@ -142,7 +142,7 @@ static cmd::Command commands[] = {
     {"new",
      "Create new entry",
      "mado new [COMMAND OPTIONS]",
-     (cmd::My_Option[]){
+     (cmd::Option[]){
          {"template", required_argument, NULL, 't', "Template to use"},
          {"abs-path", no_argument, NULL, 'a', "Show absolute path to created entry"},
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
@@ -152,7 +152,7 @@ static cmd::Command commands[] = {
     {"list",
      "List entries with optional filtering",
      "mado list [COMMAND OPTIONS] [QUERY]",
-     (cmd::My_Option[]){
+     (cmd::Option[]){
          {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
          {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
          {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
@@ -170,7 +170,7 @@ static cmd::Command commands[] = {
     {"remove",
      "Remove entries matching query",
      "mado remove <QUERY>",
-     (cmd::My_Option[]){
+     (cmd::Option[]){
          {"abs-path", no_argument, NULL, 'a', "Show absolute path to removed entry"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_remove},
@@ -215,9 +215,24 @@ static int cmd_init(int argc, char **argv) {
         else
             return -1;
     }
-    if (mado_entries_dir_init(&g_mado_config, force) != 0)
+    Mado_Error err = mado_entries_dir_init(&g_mado_config, force);
+    if (err == MADO_ERR_FOUND_ABOVE) {
+        mado_print_error(err, "creating entries directory");
+        std::cerr << "Use -F to try force init here\n";
         return -1;
-    return mado_templates_dir_init(&g_mado_config);
+    }
+    if (err == MADO_ERR_ALREADY_EXISTS) {
+        mado_print_error(err, "creating entries directory");
+        std::cerr << "Already initialized in current directory\n";
+        return -1;
+    }
+    if (err != MADO_ERR_OK)
+        return mado_print_error(err, "creating entries directory");
+
+    err = mado_templates_dir_init(&g_mado_config);
+    if (err != MADO_ERR_OK)
+        return mado_print_error(err, "creating templates");
+    return 0;
 }
 
 static int cmd_new(int argc, char **argv) {
@@ -232,12 +247,12 @@ static int cmd_new(int argc, char **argv) {
         case 'a':
             g_mado_config.abs_paths = true;
             break;
-        case 'f':
-            if (!mado_parse_format(optarg, &g_mado_config.fmt)) {
-                std::cerr << "Error: invalid format '" << optarg << "'\n";
-                return -1;
-            }
+        case 'f': {
+            Mado_Error err = mado_parse_format(optarg, &g_mado_config.fmt);
+            if (err != MADO_ERR_OK)
+                return mado_print_error(err, "parsing output format");
             break;
+        }
         default:
             return -1;
         }
@@ -247,7 +262,12 @@ static int cmd_new(int argc, char **argv) {
         std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
-    return mado_entry_create_dir_and_md(&g_mado_config, main_dir.c_str());
+    auto [entry, err] = Mado_Entry::create(&g_mado_config, main_dir.c_str());
+    if (err != MADO_ERR_OK)
+        return mado_print_error(err, "creating new entry");
+    if (entry)
+        entry->print(&g_mado_config);
+    return 0;
 }
 
 static int cmd_list(int argc, char **argv) {
@@ -275,18 +295,18 @@ static int cmd_list(int argc, char **argv) {
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
         switch (opt) {
-        case 's':
-            if (!mado_parse_sort(optarg, &g_mado_config.sort_criteria)) {
-                std::cerr << "Error: invalid sort format\n";
-                return -1;
-            }
+        case 's': {
+            Mado_Error err = mado_parse_sort(optarg, &g_mado_config.sort_criteria);
+            if (err != MADO_ERR_OK)
+                return mado_print_error(err, "parsing sort option");
             break;
-        case 'f':
-            if (!mado_parse_format(optarg, fmt)) {
-                std::cerr << "Error: invalid format '" << optarg << "'\n";
-                return -1;
-            }
+        }
+        case 'f': {
+            Mado_Error err = mado_parse_format(optarg, fmt);
+            if (err != MADO_ERR_OK)
+                return mado_print_error(err, "parsing output format");
             break;
+        }
         case 'a':
             g_mado_config.abs_paths = true;
             break;
@@ -381,16 +401,22 @@ static int cmd_remove(int argc, char **argv) {
         return -1;
     }
 
-    Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
-        .filter(filter)
-        .remove();
+    auto removed = Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
+                       .filter(filter)
+                       .remove();
+
+    for (const auto &path : removed)
+        std::cout << path << "\n";
 
     ast_free(filter);
     return 0;
 }
 
 static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
-    return mado_print_repo_info(&g_mado_config);
+    Mado_Error err = mado_print_repo_info(&g_mado_config);
+    if (err != MADO_ERR_OK)
+        return mado_print_error(err, "getting repository info");
+    return 0;
 }
 
 static int cmd_help(int argc, char **argv) {
@@ -446,8 +472,10 @@ static int handle_global_options(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     argv0 = argv[0];
-    if (mado_init(&g_mado_config) != 0)
+    if (mado_init(&g_mado_config) != MADO_ERR_OK) {
+        mado_print_error(MADO_ERR_INTERNAL, "initializing mado");
         return 1;
+    }
     atexit(mado_deinit);
 
     if (argc < 2) {
