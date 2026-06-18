@@ -103,6 +103,10 @@ mado list '(priority > 5 and tag = urgent) or status = reopened'
 mado list 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
 mado list 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
 mado list 'tag = allof(bug, critical)' # Entry has BOTH "bug" AND "critical" tags
+
+# Sort results
+mado list -s +priority 'tag = bug' # bugs sorted by priority
+mado list -s -priority,+time 'all' # highest priority first, newest first
 ```
 
 ## Customizing Templates
@@ -132,6 +136,29 @@ You can create entries with custom templates:
 mado new -t bug
 # The template must exist at: MADO/.templates/bug.md
 ```
+
+## Sorting Entries
+
+The `-s` / `--sort` flag allows you to sort entries by one or more fields:
+
+``` bash
+# Sort by priority (ascending by default)
+mado list -s priority 'all'
+
+# Sort by priority descending
+mado list -s -priority 'all'
+
+# Sort by multiple fields (priority ascending, then time descending)
+mado list -s +priority,-time 'all'
+
+# Sort by status, then name
+mado list -s status,name 'all'
+```
+
+Sort order:
+
+- `+field` or `field` — ascending order (default)
+- `-field` — descending order
 
 ## Output Formats
 
