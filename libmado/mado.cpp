@@ -76,21 +76,21 @@ const char *mado_strerror(Mado_Error err) {
 
 // ================ PRINT HELPERS
 
-static void print_json_string(const std::string &str) {
-    std::cout << '"';
+static void print_json_string(const std::string &str, std::ostream &os) {
+    os << '"';
     for (char c : str) {
         switch (c) {
         case '"':
-            std::cout << "\\\"";
+            os << "\\\"";
             break;
         case '\\':
-            std::cout << "\\\\";
+            os << "\\\\";
             break;
         default:
-            std::cout << c;
+            os << c;
         }
     }
-    std::cout << '"';
+    os << '"';
 }
 
 // ================ ENTRY
@@ -201,97 +201,97 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
     return entry;
 }
 
-void Mado_Entry::print(const Mado_Config *cfg) const {
+void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
     Mado_Entry_Field hidden = cfg->hide_fields;
     Mado_Entry_Field shown = (Mado_Entry_Field)(MADO_FIELD_ALL & ~hidden);
     Mado_Output_Format fmt = cfg->fmt;
 
     if (fmt == MADO_FMT_ONLY_PATH) {
-        std::cout << path << "/" << cfg->entry_file_name << ".md\n";
+        os << path << "/" << cfg->entry_file_name << ".md\n";
         return;
     }
 
     if (fmt == MADO_FMT_JSONL) {
-        std::cout << "{";
+        os << "{";
         bool has_any = false;
         auto sep = [&]() {
             if (has_any)
-                std::cout << ",";
+                os << ",";
             has_any = true;
         };
 
         if (shown & MADO_FIELD_TIME) {
             sep();
-            std::cout << "\"time\":";
-            print_json_string(time);
+            os << "\"time\":";
+            print_json_string(time, os);
         }
         if (shown & MADO_FIELD_NAME) {
             sep();
-            std::cout << "\"name\":";
-            print_json_string(name);
+            os << "\"name\":";
+            print_json_string(name, os);
         }
         if (shown & MADO_FIELD_PRIORITY) {
             sep();
-            std::cout << "\"priority\":" << priority;
+            os << "\"priority\":" << priority;
         }
         if (shown & MADO_FIELD_DEADLINE) {
             sep();
-            std::cout << "\"deadline\":";
-            print_json_string(deadline);
+            os << "\"deadline\":";
+            print_json_string(deadline, os);
         }
         if (shown & MADO_FIELD_STATUS) {
             sep();
-            std::cout << "\"status\":";
-            print_json_string(status);
+            os << "\"status\":";
+            print_json_string(status, os);
         }
         if (shown & MADO_FIELD_TAGS) {
             sep();
-            std::cout << "\"tags\":[";
+            os << "\"tags\":[";
             bool first_tag = true;
             for (const auto &tag : tags) {
                 if (tag.empty())
                     continue;
                 if (!first_tag)
-                    std::cout << ",";
-                print_json_string(tag);
+                    os << ",";
+                print_json_string(tag, os);
                 first_tag = false;
             }
-            std::cout << "]";
+            os << "]";
         }
         if (shown & MADO_FIELD_PATH) {
             sep();
-            std::cout << "\"path\":\"" << path << "/" << cfg->entry_file_name << ".md\"";
+            os << "\"path\":\"" << path << "/" << cfg->entry_file_name << ".md\"";
         }
-        std::cout << "}\n";
+        os << "}\n";
         return;
     }
 
     // MADO_FMT_UNIX
-    std::cout << path << "/" << cfg->entry_file_name << ".md:1:";
+    os << path << "/" << cfg->entry_file_name << ".md:1:";
     if (shown & MADO_FIELD_TIME)
-        std::cout << " TIME:[" << time << "]";
+        os << " TIME:[" << time << "]";
     if (shown & MADO_FIELD_NAME)
-        std::cout << " NAME:[" << name << "]";
+        os << " NAME:[" << name << "]";
     if (shown & MADO_FIELD_PRIORITY)
-        std::cout << " PRIORITY:[" << priority << "]";
+        os << " PRIORITY:[" << priority << "]";
     if (shown & MADO_FIELD_DEADLINE)
-        std::cout << " DEADLINE:[" << deadline << "]";
+        os << " DEADLINE:[" << deadline << "]";
     if (shown & MADO_FIELD_STATUS)
-        std::cout << " STATUS:[" << status << "]";
+        os << " STATUS:[" << status << "]";
     if (shown & MADO_FIELD_TAGS) {
-        std::cout << " TAGS:[";
+        os << " TAGS:[";
         bool first = true;
         for (const auto &tag : tags) {
             if (tag.empty())
                 continue;
             if (!first)
-                std::cout << ",";
-            std::cout << tag;
+                os << ",";
+            os << tag;
             first = false;
         }
-        std::cout << "]";
+        os << "]";
     }
-    std::cout << "\n";
+    os << "\n";
 }
 
 bool Mado_Entry::matches_condition(const AST_Node *filter) const {
@@ -595,9 +595,9 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
     return MADO_ERR_OK;
 }
 
-void Mado_Entries::print(const Mado_Config *cfg) const {
+void Mado_Entries::print(const Mado_Config *cfg, std::ostream &os) const {
     for (auto &e : entries_)
-        e->print(cfg);
+        e->print(cfg, os);
 }
 
 std::vector<std::string> Mado_Entries::remove() const {
@@ -666,18 +666,18 @@ Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force) {
     return MADO_ERR_OK;
 }
 
-Mado_Error mado_print_repo_info(const Mado_Config *cfg) {
+Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (!cfg->abs_paths) {
         main_dir = std::filesystem::relative(std::filesystem::path(main_dir));
     }
     if (main_dir.empty()) {
-        std::cout << "No mado repository here\n";
+        os << "No mado repository here\n";
         return MADO_ERR_NOT_FOUND;
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());
-    std::cout << "Main directory: " << main_dir << "\n";
-    std::cout << "Entries count:  " << entries.size() << "\n";
+    os << "Main directory: " << main_dir << "\n";
+    os << "Entries count:  " << entries.size() << "\n";
     return MADO_ERR_OK;
 }
 
@@ -693,9 +693,9 @@ Mado_Error mado_parse_format(const char *format_str, Mado_Output_Format *fmt) {
     return MADO_ERR_OK;
 }
 
-int mado_print_error(Mado_Error err, const char *context) {
+int mado_print_error(Mado_Error err, const char *context, std::ostream &os) {
     if (err != MADO_ERR_OK) {
-        std::cerr << "Mado error (" << context << "): " << mado_strerror(err) << "\n";
+        os << "Mado error (" << context << "): " << mado_strerror(err) << "\n";
         return -1;
     }
     return 0;

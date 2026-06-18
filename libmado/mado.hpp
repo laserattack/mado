@@ -80,7 +80,7 @@ class Mado_Entry {
     std::string time;
     std::string deadline;
 
-    void print(const Mado_Config *cfg) const;
+    void print(const Mado_Config *cfg, std::ostream &os = std::cout) const;
     bool matches_condition(const AST_Node *filter) const;
 
     static std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> create(const Mado_Config *cfg, const char *main_dir);
@@ -94,7 +94,7 @@ class Mado_Entries {
     Mado_Entries &filter(const AST_Node *filter);
     Mado_Entries &sort(const Mado_Config *cfg);
 
-    void print(const Mado_Config *cfg) const;
+    void print(const Mado_Config *cfg, std::ostream &os = std::cout) const;
     std::vector<std::string> remove() const;
     size_t size() const { return entries_.size(); }
 
@@ -113,7 +113,7 @@ void mado_deinit();
 
 Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force);
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
-Mado_Error mado_print_repo_info(const Mado_Config *cfg);
+Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::cout);
 
 // ================ UTILS
 
@@ -123,6 +123,6 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
 // ================ ERROR MESSAGE
 
 const char *mado_strerror(Mado_Error err);
-int mado_print_error(Mado_Error err, const char *context);
+int mado_print_error(Mado_Error err, const char *context, std::ostream &os = std::cerr);
 
 #endif
