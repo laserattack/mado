@@ -16,11 +16,13 @@ typedef enum {
     MADO_ERR_OK = 0,
     MADO_ERR_NOT_FOUND,
     MADO_ERR_IO,
+    MADO_ERR_PERM,
     MADO_ERR_PARSE,
     MADO_ERR_INVALID_FORMAT,
     MADO_ERR_ALREADY_EXISTS,
     MADO_ERR_FOUND_ABOVE,
     MADO_ERR_TEMPLATE,
+    MADO_ERR_HOOK,
     MADO_ERR_INTERNAL,
 } Mado_Error;
 
@@ -59,6 +61,7 @@ struct Mado_Sort_Criterion {
 struct Mado_Config {
     std::string main_dir_name;
     std::string templates_dir_name;
+    std::string hooks_dir_name;
     std::string entry_file_name;
     std::string template_name;
     int max_header_lines;
@@ -113,7 +116,12 @@ void mado_deinit();
 
 Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force);
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
+Mado_Error mado_hooks_dir_init(const Mado_Config *cfg);
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::cout);
+
+// ================ HOOKS
+
+Mado_Error mado_run_hook(const Mado_Config *cfg, const char *hook_name);
 
 // ================ UTILS
 

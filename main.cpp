@@ -221,19 +221,22 @@ static int cmd_init(int argc, char **argv) {
     if (err == MADO_ERR_FOUND_ABOVE) {
         mado_print_error(err, "creating entries directory");
         std::cerr << "Use -F to try force init here\n";
-        return -1;
     }
     if (err == MADO_ERR_ALREADY_EXISTS) {
         mado_print_error(err, "creating entries directory");
         std::cerr << "Already initialized in current directory\n";
-        return -1;
     }
     if (err != MADO_ERR_OK)
-        return mado_print_error(err, "creating entries directory");
+        mado_print_error(err, "creating entries directory");
 
     err = mado_templates_dir_init(&g_mado_config);
     if (err != MADO_ERR_OK)
-        return mado_print_error(err, "creating templates");
+        mado_print_error(err, "creating templates directory");
+
+    err = mado_hooks_dir_init(&g_mado_config);
+    if (err != MADO_ERR_OK)
+        mado_print_error(err, "creating hooks directory");
+
     return 0;
 }
 
@@ -264,11 +267,25 @@ static int cmd_new(int argc, char **argv) {
         std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
+
+    // pre hook
+    Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-new");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running pre-new hook");
+
     auto [entry, err] = Mado_Entry::create(&g_mado_config, main_dir.c_str());
-    if (err != MADO_ERR_OK)
+    if (err != MADO_ERR_OK) {
         return mado_print_error(err, "creating new entry");
-    if (entry)
+    }
+    if (entry) {
         entry->print(&g_mado_config);
+
+        // post hook
+        hook_err = mado_run_hook(&g_mado_config, "post-new");
+        if (hook_err != MADO_ERR_OK)
+            mado_print_error(hook_err, "running post-new hook");
+    }
+
     return 0;
 }
 
@@ -358,12 +375,20 @@ static int cmd_list(int argc, char **argv) {
         return -1;
     }
 
+    Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-list");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running pre-list hook");
+
     Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
         .filter(filter)
         .sort(&g_mado_config)
         .print(&g_mado_config);
-
     ast_free(filter);
+
+    hook_err = mado_run_hook(&g_mado_config, "post-list");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running post-list hook");
+
     return 0;
 }
 
@@ -403,14 +428,22 @@ static int cmd_remove(int argc, char **argv) {
         return -1;
     }
 
+    Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-remove");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running pre-remove hook");
+
     auto removed = Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
                        .filter(filter)
                        .remove();
+    ast_free(filter);
 
     for (const auto &path : removed)
         std::cout << path << "\n";
 
-    ast_free(filter);
+    hook_err = mado_run_hook(&g_mado_config, "post-remove");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running post-remove hook");
+
     return 0;
 }
 
@@ -428,9 +461,19 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
         }
     }
 
+    Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-info");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running pre-info hook");
+
     Mado_Error err = mado_print_repo_info(&g_mado_config);
-    if (err != MADO_ERR_OK)
+    if (err != MADO_ERR_OK) {
         return mado_print_error(err, "getting repository info");
+    }
+
+    hook_err = mado_run_hook(&g_mado_config, "post-info");
+    if (hook_err != MADO_ERR_OK)
+        mado_print_error(hook_err, "running post-info hook");
+
     return 0;
 }
 

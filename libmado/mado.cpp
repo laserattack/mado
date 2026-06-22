@@ -8,6 +8,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 #include "mado.hpp"
@@ -38,6 +39,7 @@ static void trim(std::string &s) {
 static void mado_init_config(Mado_Config *cfg) {
     cfg->main_dir_name = "MADO";
     cfg->templates_dir_name = ".templates";
+    cfg->hooks_dir_name = ".hooks";
     cfg->entry_file_name = "MAIN";
     cfg->template_name = "task";
     cfg->max_header_lines = 30;
@@ -69,6 +71,10 @@ const char *mado_strerror(Mado_Error err) {
         return "template error";
     case MADO_ERR_INTERNAL:
         return "internal error";
+    case MADO_ERR_PERM:
+        return "permission denied";
+    case MADO_ERR_HOOK:
+        return "hook error";
     default:
         return "unknown error";
     }
@@ -141,8 +147,8 @@ std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> Mado_Entry::create(const Mado
 }
 
 std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char *entry_dir) {
-    static std::regex g_priority_value_regex("^[0-9]{1,3}$");
-    static std::regex g_deadline_value_regex("^([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)$");
+    static std::regex priority_value_regex("^[0-9]{1,3}$");
+    static std::regex deadline_value_regex("^([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)$");
 
     std::filesystem::path dir_path(entry_dir);
     std::string dir_name = dir_path.filename().string();
@@ -171,7 +177,7 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
         } else if (line.rfind("- PRIORITY:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
-            if (std::regex_match(val, g_priority_value_regex))
+            if (std::regex_match(val, priority_value_regex))
                 entry->priority = std::stoi(val);
         } else if (line.rfind("- TAGS:", 0) == 0) {
             std::string tags_str = line.substr(7);
@@ -191,7 +197,7 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
         } else if (line.rfind("- DEADLINE:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
-            if (std::regex_match(val, g_deadline_value_regex))
+            if (std::regex_match(val, deadline_value_regex))
                 entry->deadline = val;
         }
     }
@@ -435,7 +441,7 @@ bool Mado_Entry::matches_condition(const AST_Node *filter) const {
 // ================ ENTRIES
 
 Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir) {
-    static std::regex g_entry_dir_regex("^[0-9]{8}T[0-9]{6}$");
+    static std::regex entry_dir_regex("^[0-9]{8}T[0-9]{6}$");
     Mado_Entries result;
     std::filesystem::path dir_path(main_dir);
 
@@ -446,7 +452,7 @@ Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir)
         if (!dirent.is_directory())
             continue;
         std::string dir_name = dirent.path().filename().string();
-        if (!std::regex_match(dir_name, g_entry_dir_regex))
+        if (!std::regex_match(dir_name, entry_dir_regex))
             continue;
         auto entry_file = dirent.path() / (cfg->entry_file_name + ".md");
         if (!std::filesystem::exists(entry_file))
@@ -609,7 +615,67 @@ std::vector<std::string> Mado_Entries::remove() const {
     return removed;
 }
 
+// ================ HOOKS
+
+Mado_Error mado_run_hook(const Mado_Config *cfg, const char *hook_name) {
+    std::string main_dir = find_dir_up(cfg->main_dir_name);
+    if (main_dir.empty())
+        return MADO_ERR_NOT_FOUND;
+
+    std::filesystem::path hook_path = std::filesystem::path(main_dir) / cfg->hooks_dir_name / hook_name;
+
+    if (access(hook_path.c_str(), F_OK) != 0) // file exists?
+        return MADO_ERR_OK;
+
+    if (std::filesystem::file_size(hook_path) == 0) // file empty?
+        return MADO_ERR_OK;
+
+    if (access(hook_path.c_str(), X_OK) != 0) // can run?
+        return MADO_ERR_PERM;
+
+    int ret = system(hook_path.c_str());
+    if (ret != 0)
+        return MADO_ERR_HOOK;
+
+    return MADO_ERR_OK;
+}
+
 // ================ INIT
+
+Mado_Error mado_hooks_dir_init(const Mado_Config *cfg) {
+    std::string main_dir = find_dir_up(cfg->main_dir_name);
+    if (main_dir.empty())
+        return MADO_ERR_NOT_FOUND;
+
+    std::filesystem::path hooks_dir = std::filesystem::path(main_dir) / cfg->hooks_dir_name;
+
+    if (!std::filesystem::exists(hooks_dir)) {
+        if (!std::filesystem::create_directory(hooks_dir))
+            return MADO_ERR_IO;
+    }
+
+    static const char *hook_names[] = {
+        "pre-new",
+        "post-new",
+        "pre-list",
+        "post-list",
+        "pre-remove",
+        "post-remove",
+        "pre-info",
+        "post-info",
+        NULL};
+
+    for (int i = 0; hook_names[i]; i++) {
+        auto path = hooks_dir / hook_names[i];
+        if (!std::filesystem::exists(path)) {
+            std::ofstream f(path);
+            if (!f)
+                return MADO_ERR_IO;
+        }
+    }
+
+    return MADO_ERR_OK;
+}
 
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
