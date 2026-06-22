@@ -36,7 +36,7 @@ static void trim(std::string &s) {
 
 // ================ CONFIG
 
-static void mado_init_config(Mado_Config *cfg) {
+void mado_init_config(Mado_Config *cfg) {
     cfg->main_dir_name = "MADO";
     cfg->templates_dir_name = ".templates";
     cfg->hooks_dir_name = ".hooks";
@@ -793,12 +793,4 @@ int mado_print_error(Mado_Error err, const char *context, std::ostream &os) {
         return -1;
     }
     return 0;
-}
-
-Mado_Error mado_init(Mado_Config *cfg) {
-    mado_init_config(cfg);
-    return MADO_ERR_OK;
-}
-
-void mado_deinit() {
 }

@@ -56,6 +56,11 @@ struct Mado_Sort_Criterion {
     Mado_Sort_Order order;
 };
 
+struct Mado_AST_Deleter {
+    AST_Node *node;
+    ~Mado_AST_Deleter() { ast_free(node); }
+};
+
 // ================ CONFIG
 
 struct Mado_Config {
@@ -115,8 +120,7 @@ class Mado_Entries {
 
 // ================ LIFECYCLE
 
-Mado_Error mado_init(Mado_Config *cfg);
-void mado_deinit();
+void mado_init_config(Mado_Config *cfg);
 
 // ================ REPO MANAGEMENT
 

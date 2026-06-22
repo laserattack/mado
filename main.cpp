@@ -270,8 +270,10 @@ static int cmd_new(int argc, char **argv) {
 
     // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-new");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running pre-new hook");
+        return -1;
+    }
 
     auto [entry, err] = Mado_Entry::create(&g_mado_config, main_dir.c_str());
     if (err != MADO_ERR_OK) {
@@ -282,8 +284,10 @@ static int cmd_new(int argc, char **argv) {
 
         // post hook
         hook_err = mado_run_hook(&g_mado_config, "post-new");
-        if (hook_err != MADO_ERR_OK)
+        if (hook_err != MADO_ERR_OK) {
             mado_print_error(hook_err, "running post-new hook");
+            return -1;
+        }
     }
 
     return 0;
@@ -360,6 +364,7 @@ static int cmd_list(int argc, char **argv) {
         query = argv[optind];
 
     AST_Node *filter = nullptr;
+    Mado_AST_Deleter filter_guard{filter};
     if (query) {
         filter = parse(query);
         if (!filter) {
@@ -370,24 +375,28 @@ static int cmd_list(int argc, char **argv) {
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        ast_free(filter);
         std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
+    // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-list");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running pre-list hook");
+        return -1;
+    }
 
     Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
         .filter(filter)
         .sort(&g_mado_config)
         .print(&g_mado_config);
-    ast_free(filter);
 
+    // post hook
     hook_err = mado_run_hook(&g_mado_config, "post-list");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running post-list hook");
+        return -1;
+    }
 
     return 0;
 }
@@ -410,6 +419,7 @@ static int cmd_remove(int argc, char **argv) {
         query = argv[optind];
 
     AST_Node *filter = nullptr;
+    Mado_AST_Deleter filter_guard{filter};
     if (query) {
         filter = parse(query);
         if (!filter) {
@@ -423,26 +433,30 @@ static int cmd_remove(int argc, char **argv) {
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        ast_free(filter);
         std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
+    // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-remove");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running pre-remove hook");
+        return -1;
+    }
 
     auto removed = Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
                        .filter(filter)
                        .remove();
-    ast_free(filter);
 
     for (const auto &path : removed)
         std::cout << path << "\n";
 
+    // post hook
     hook_err = mado_run_hook(&g_mado_config, "post-remove");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running post-remove hook");
+        return -1;
+    }
 
     return 0;
 }
@@ -461,18 +475,24 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
         }
     }
 
+    // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-info");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running pre-info hook");
+        return -1;
+    }
 
     Mado_Error err = mado_print_repo_info(&g_mado_config);
     if (err != MADO_ERR_OK) {
         return mado_print_error(err, "getting repository info");
     }
 
+    // post hook
     hook_err = mado_run_hook(&g_mado_config, "post-info");
-    if (hook_err != MADO_ERR_OK)
+    if (hook_err != MADO_ERR_OK) {
         mado_print_error(hook_err, "running post-info hook");
+        return -1;
+    }
 
     return 0;
 }
@@ -530,11 +550,7 @@ static int handle_global_options(int argc, char **argv) {
 
 int main(int argc, char **argv) {
     argv0 = argv[0];
-    if (mado_init(&g_mado_config) != MADO_ERR_OK) {
-        mado_print_error(MADO_ERR_INTERNAL, "initializing mado");
-        return 1;
-    }
-    atexit(mado_deinit);
+    mado_init_config(&g_mado_config);
 
     if (argc < 2) {
         print_usage();
