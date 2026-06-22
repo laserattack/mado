@@ -101,6 +101,12 @@ class Mado_Entries {
     std::vector<std::string> remove() const;
     size_t size() const { return entries_.size(); }
 
+    // iterators
+    auto begin() { return entries_.begin(); }
+    auto end() { return entries_.end(); }
+    auto begin() const { return entries_.begin(); }
+    auto end() const { return entries_.end(); }
+
     static Mado_Entries get_all(const Mado_Config *cfg, const char *main_dir);
 
   private:

@@ -602,13 +602,13 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
 }
 
 void Mado_Entries::print(const Mado_Config *cfg, std::ostream &os) const {
-    for (auto &e : entries_)
+    for (auto &e : *this)
         e->print(cfg, os);
 }
 
 std::vector<std::string> Mado_Entries::remove() const {
     std::vector<std::string> removed;
-    for (auto &e : entries_) {
+    for (auto &e : *this) {
         std::filesystem::remove_all(e->path);
         removed.push_back(e->path);
     }
@@ -742,8 +742,36 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
         return MADO_ERR_NOT_FOUND;
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());
-    os << "Main directory: " << main_dir << "\n";
-    os << "Entries count:  " << entries.size() << "\n";
+
+    fprintf(stdout, "%-22s %s\n", "Main directory:", main_dir.c_str());
+    fprintf(stdout, "%-22s %zu\n", "Entries count:", entries.size());
+
+    std::map<std::string, int> status_counts;
+    std::map<std::string, int> tag_counts;
+
+    for (auto &e : entries) {
+        if (!e->status.empty())
+            status_counts[e->status]++;
+        for (auto &tag : e->tags) {
+            if (!tag.empty())
+                tag_counts[tag]++;
+        }
+    }
+
+    if (!status_counts.empty()) {
+        os << "Statuses:\n";
+        for (auto &[status, count] : status_counts) {
+            fprintf(stdout, "  %-20s %d\n", status.c_str(), count);
+        }
+    }
+
+    if (!tag_counts.empty()) {
+        os << "Tags:\n";
+        for (auto &[tag, count] : tag_counts) {
+            fprintf(stdout, "  %-20s %d\n", tag.c_str(), count);
+        }
+    }
+
     return MADO_ERR_OK;
 }
 
