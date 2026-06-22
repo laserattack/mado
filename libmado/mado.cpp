@@ -743,8 +743,8 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());
 
-    fprintf(stdout, "%-22s %s\n", "Main directory:", main_dir.c_str());
-    fprintf(stdout, "%-22s %zu\n", "Entries count:", entries.size());
+    os << "Main directory: " << main_dir << "\n";
+    os << "Entries count: " << entries.size() << "\n";
 
     std::map<std::string, int> status_counts;
     std::map<std::string, int> tag_counts;
@@ -760,16 +760,14 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
 
     if (!status_counts.empty()) {
         os << "Statuses:\n";
-        for (auto &[status, count] : status_counts) {
-            fprintf(stdout, "  %-20s %d\n", status.c_str(), count);
-        }
+        for (auto &[status, count] : status_counts)
+            os << "  " << status << ": " << count << "\n";
     }
 
     if (!tag_counts.empty()) {
         os << "Tags:\n";
-        for (auto &[tag, count] : tag_counts) {
-            fprintf(stdout, "  %-20s %d\n", tag.c_str(), count);
-        }
+        for (auto &[tag, count] : tag_counts)
+            os << "  " << tag << ": " << count << "\n";
     }
 
     return MADO_ERR_OK;
