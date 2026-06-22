@@ -364,7 +364,6 @@ static int cmd_list(int argc, char **argv) {
         query = argv[optind];
 
     AST_Node *filter = nullptr;
-    Mado_AST_Deleter filter_guard{filter};
     if (query) {
         filter = parse(query);
         if (!filter) {
@@ -372,6 +371,7 @@ static int cmd_list(int argc, char **argv) {
             return -1;
         }
     }
+    Mado_AST_Deleter filter_guard{filter};
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
@@ -418,18 +418,17 @@ static int cmd_remove(int argc, char **argv) {
     if (optind < argc)
         query = argv[optind];
 
-    AST_Node *filter = nullptr;
-    Mado_AST_Deleter filter_guard{filter};
-    if (query) {
-        filter = parse(query);
-        if (!filter) {
-            std::cerr << "Error: failed to parse query\n";
-            return -1;
-        }
-    } else {
+    if (!query) {
         std::cerr << "Error: remove requires a query argument\n";
         return -1;
     }
+
+    AST_Node *filter = parse(query);
+    if (!filter) {
+        std::cerr << "Error: failed to parse query\n";
+        return -1;
+    }
+    Mado_AST_Deleter filter_guard{filter};
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
