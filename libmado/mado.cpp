@@ -43,37 +43,37 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->entry_file_name = "MAIN";
     cfg->template_name = "task";
     cfg->max_header_lines = 30;
-    cfg->hide_fields = MADO_FIELD_NONE;
+    cfg->hide_fields = Mado_Entry_Field::NONE;
     cfg->abs_paths = false;
     cfg->sort_criteria.clear();
-    cfg->fmt = MADO_FMT_UNIX;
+    cfg->fmt = Mado_Output_Format::UNIX;
 }
 
 // ================ ERROR MESSAGE
 
 const char *mado_strerror(Mado_Error err) {
     switch (err) {
-    case MADO_ERR_OK:
+    case Mado_Error::OK:
         return "success";
-    case MADO_ERR_NOT_FOUND:
+    case Mado_Error::NOT_FOUND:
         return "not found";
-    case MADO_ERR_IO:
+    case Mado_Error::IO:
         return "I/O error";
-    case MADO_ERR_PARSE:
+    case Mado_Error::PARSE:
         return "parse error";
-    case MADO_ERR_INVALID_FORMAT:
+    case Mado_Error::INVALID_FORMAT:
         return "invalid format";
-    case MADO_ERR_ALREADY_EXISTS:
+    case Mado_Error::ALREADY_EXISTS:
         return "already exists";
-    case MADO_ERR_FOUND_ABOVE:
+    case Mado_Error::FOUND_ABOVE:
         return "found above or here";
-    case MADO_ERR_TEMPLATE:
+    case Mado_Error::TEMPLATE:
         return "template error";
-    case MADO_ERR_INTERNAL:
+    case Mado_Error::INTERNAL:
         return "internal error";
-    case MADO_ERR_PERM:
+    case Mado_Error::PERM:
         return "permission denied";
-    case MADO_ERR_HOOK:
+    case Mado_Error::HOOK:
         return "hook error";
     default:
         return "unknown error";
@@ -107,7 +107,7 @@ static Mado_Error mado_entry_create(const Mado_Config *cfg, const char *entry_pa
     if (template_name) {
         std::string main_dir = find_dir_up(cfg->main_dir_name);
         if (main_dir.empty())
-            return MADO_ERR_NOT_FOUND;
+            return Mado_Error::NOT_FOUND;
 
         std::filesystem::path template_file = std::filesystem::path(main_dir) /
                                               cfg->templates_dir_name /
@@ -115,15 +115,15 @@ static Mado_Error mado_entry_create(const Mado_Config *cfg, const char *entry_pa
 
         if (std::filesystem::exists(template_file)) {
             std::filesystem::copy_file(template_file, entry_md, std::filesystem::copy_options::overwrite_existing);
-            return MADO_ERR_OK;
+            return Mado_Error::OK;
         }
-        return MADO_ERR_TEMPLATE;
+        return Mado_Error::TEMPLATE;
     }
 
     std::ofstream f(entry_md);
     if (!f)
-        return MADO_ERR_IO;
-    return MADO_ERR_OK;
+        return Mado_Error::IO;
+    return Mado_Error::OK;
 }
 
 std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> Mado_Entry::create(const Mado_Config *cfg, const char *main_dir) {
@@ -135,15 +135,15 @@ std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> Mado_Entry::create(const Mado
     std::filesystem::path entry_path = std::filesystem::path(main_dir) / dir_name;
 
     if (std::filesystem::exists(entry_path))
-        return {nullptr, MADO_ERR_ALREADY_EXISTS};
+        return {nullptr, Mado_Error::ALREADY_EXISTS};
     if (!std::filesystem::create_directory(entry_path))
-        return {nullptr, MADO_ERR_IO};
+        return {nullptr, Mado_Error::IO};
 
     Mado_Error err = mado_entry_create(cfg, entry_path.c_str(), cfg->template_name.c_str());
-    if (err != MADO_ERR_OK)
+    if (err != Mado_Error::OK)
         return {nullptr, err};
 
-    return {parse(cfg, entry_path.c_str()), MADO_ERR_OK};
+    return {parse(cfg, entry_path.c_str()), Mado_Error::OK};
 }
 
 std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char *entry_dir) {
@@ -209,15 +209,15 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
 
 void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
     Mado_Entry_Field hidden = cfg->hide_fields;
-    Mado_Entry_Field shown = (Mado_Entry_Field)(MADO_FIELD_ALL & ~hidden);
+    Mado_Entry_Field shown = (Mado_Entry_Field)(Mado_Entry_Field::ALL & ~hidden);
     Mado_Output_Format fmt = cfg->fmt;
 
-    if (fmt == MADO_FMT_ONLY_PATH) {
+    if (fmt == Mado_Output_Format::ONLY_PATH) {
         os << path << "/" << cfg->entry_file_name << ".md\n";
         return;
     }
 
-    if (fmt == MADO_FMT_JSONL) {
+    if (fmt == Mado_Output_Format::JSONL) {
         os << "{";
         bool has_any = false;
         auto sep = [&]() {
@@ -226,31 +226,31 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
             has_any = true;
         };
 
-        if (shown & MADO_FIELD_TIME) {
+        if (has_flag(shown, Mado_Entry_Field::TIME)) {
             sep();
             os << "\"time\":";
             print_json_string(time, os);
         }
-        if (shown & MADO_FIELD_NAME) {
+        if (has_flag(shown, Mado_Entry_Field::NAME)) {
             sep();
             os << "\"name\":";
             print_json_string(name, os);
         }
-        if (shown & MADO_FIELD_PRIORITY) {
+        if (has_flag(shown, Mado_Entry_Field::PRIORITY)) {
             sep();
             os << "\"priority\":" << priority;
         }
-        if (shown & MADO_FIELD_DEADLINE) {
+        if (has_flag(shown, Mado_Entry_Field::DEADLINE)) {
             sep();
             os << "\"deadline\":";
             print_json_string(deadline, os);
         }
-        if (shown & MADO_FIELD_STATUS) {
+        if (has_flag(shown, Mado_Entry_Field::STATUS)) {
             sep();
             os << "\"status\":";
             print_json_string(status, os);
         }
-        if (shown & MADO_FIELD_TAGS) {
+        if (has_flag(shown, Mado_Entry_Field::TAGS)) {
             sep();
             os << "\"tags\":[";
             bool first_tag = true;
@@ -264,7 +264,7 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
             }
             os << "]";
         }
-        if (shown & MADO_FIELD_PATH) {
+        if (has_flag(shown, Mado_Entry_Field::PATH)) {
             sep();
             os << "\"path\":\"" << path << "/" << cfg->entry_file_name << ".md\"";
         }
@@ -272,19 +272,19 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
         return;
     }
 
-    // MADO_FMT_UNIX
+    // Mado_Output_Format::UNIX
     os << path << "/" << cfg->entry_file_name << ".md:1:";
-    if (shown & MADO_FIELD_TIME)
+    if (has_flag(shown, Mado_Entry_Field::TIME))
         os << " TIME:[" << time << "]";
-    if (shown & MADO_FIELD_NAME)
+    if (has_flag(shown, Mado_Entry_Field::NAME))
         os << " NAME:[" << name << "]";
-    if (shown & MADO_FIELD_PRIORITY)
+    if (has_flag(shown, Mado_Entry_Field::PRIORITY))
         os << " PRIORITY:[" << priority << "]";
-    if (shown & MADO_FIELD_DEADLINE)
+    if (has_flag(shown, Mado_Entry_Field::DEADLINE))
         os << " DEADLINE:[" << deadline << "]";
-    if (shown & MADO_FIELD_STATUS)
+    if (has_flag(shown, Mado_Entry_Field::STATUS))
         os << " STATUS:[" << status << "]";
-    if (shown & MADO_FIELD_TAGS) {
+    if (has_flag(shown, Mado_Entry_Field::TAGS)) {
         os << " TAGS:[";
         bool first = true;
         for (const auto &tag : tags) {
@@ -494,25 +494,25 @@ Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
         for (const auto &criterion : cfg->sort_criteria) {
             bool less = false, greater = false;
             switch (criterion.field) {
-            case MADO_FIELD_TIME:
+            case Mado_Entry_Field::TIME:
                 compare_strings(a->time, b->time, less, greater);
                 break;
-            case MADO_FIELD_NAME:
+            case Mado_Entry_Field::NAME:
                 compare_strings(a->name, b->name, less, greater);
                 break;
-            case MADO_FIELD_PRIORITY:
+            case Mado_Entry_Field::PRIORITY:
                 if (a->priority < b->priority)
                     less = true;
                 else if (a->priority > b->priority)
                     greater = true;
                 break;
-            case MADO_FIELD_DEADLINE:
+            case Mado_Entry_Field::DEADLINE:
                 compare_strings(a->deadline, b->deadline, less, greater);
                 break;
-            case MADO_FIELD_STATUS:
+            case Mado_Entry_Field::STATUS:
                 compare_strings(a->status, b->status, less, greater);
                 break;
-            case MADO_FIELD_TAGS: {
+            case Mado_Entry_Field::TAGS: {
                 std::string tags_a, tags_b;
                 for (const auto &tag : a->tags)
                     tags_a += tag;
@@ -525,9 +525,9 @@ Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
                 break;
             }
             if (less)
-                return criterion.order == MADO_SORT_ASC;
+                return criterion.order == Mado_Sort_Order::ASC;
             if (greater)
-                return criterion.order == MADO_SORT_DESC;
+                return criterion.order == Mado_Sort_Order::DESC;
         }
         return false;
     };
@@ -538,7 +538,7 @@ Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
 
 Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *criteria) {
     if (!sort_str || !*sort_str)
-        return MADO_ERR_INVALID_FORMAT;
+        return Mado_Error::INVALID_FORMAT;
 
     std::string input(sort_str);
     std::stringstream ss(input);
@@ -548,12 +548,12 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
         const char *name;
         Mado_Entry_Field field;
     } fields_for_parse_sort[] = {
-        {"time", MADO_FIELD_TIME},
-        {"name", MADO_FIELD_NAME},
-        {"priority", MADO_FIELD_PRIORITY},
-        {"deadline", MADO_FIELD_DEADLINE},
-        {"status", MADO_FIELD_STATUS},
-        {"tags", MADO_FIELD_TAGS},
+        {"time", Mado_Entry_Field::TIME},
+        {"name", Mado_Entry_Field::NAME},
+        {"priority", Mado_Entry_Field::PRIORITY},
+        {"deadline", Mado_Entry_Field::DEADLINE},
+        {"status", Mado_Entry_Field::STATUS},
+        {"tags", Mado_Entry_Field::TAGS},
     };
     static const int n_fields = sizeof(fields_for_parse_sort) / sizeof(fields_for_parse_sort[0]);
 
@@ -567,13 +567,13 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
         Mado_Sort_Criterion c;
 
         if (token[0] == '+') {
-            c.order = MADO_SORT_ASC;
+            c.order = Mado_Sort_Order::ASC;
             token = token.substr(1);
         } else if (token[0] == '-') {
-            c.order = MADO_SORT_DESC;
+            c.order = Mado_Sort_Order::DESC;
             token = token.substr(1);
         } else {
-            c.order = MADO_SORT_ASC;
+            c.order = Mado_Sort_Order::ASC;
         }
 
         int matches_count = 0;
@@ -594,11 +594,11 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
         if (matches_count == 1)
             c.field = matched_field;
         else
-            return MADO_ERR_PARSE;
+            return Mado_Error::PARSE;
 
         criteria->push_back(c);
     }
-    return MADO_ERR_OK;
+    return Mado_Error::OK;
 }
 
 void Mado_Entries::print(const Mado_Config *cfg, std::ostream &os) const {
@@ -620,24 +620,24 @@ std::vector<std::string> Mado_Entries::remove() const {
 Mado_Error mado_run_hook(const Mado_Config *cfg, const char *hook_name) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (main_dir.empty())
-        return MADO_ERR_NOT_FOUND;
+        return Mado_Error::NOT_FOUND;
 
     std::filesystem::path hook_path = std::filesystem::path(main_dir) / cfg->hooks_dir_name / hook_name;
 
     if (access(hook_path.c_str(), F_OK) != 0) // file exists?
-        return MADO_ERR_OK;
+        return Mado_Error::OK;
 
     if (std::filesystem::file_size(hook_path) == 0) // file empty?
-        return MADO_ERR_OK;
+        return Mado_Error::OK;
 
     if (access(hook_path.c_str(), X_OK) != 0) // can run?
-        return MADO_ERR_PERM;
+        return Mado_Error::PERM;
 
     int ret = system(hook_path.c_str());
     if (ret != 0)
-        return MADO_ERR_HOOK;
+        return Mado_Error::HOOK;
 
-    return MADO_ERR_OK;
+    return Mado_Error::OK;
 }
 
 // ================ INIT
@@ -645,13 +645,13 @@ Mado_Error mado_run_hook(const Mado_Config *cfg, const char *hook_name) {
 Mado_Error mado_hooks_dir_init(const Mado_Config *cfg) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (main_dir.empty())
-        return MADO_ERR_NOT_FOUND;
+        return Mado_Error::NOT_FOUND;
 
     std::filesystem::path hooks_dir = std::filesystem::path(main_dir) / cfg->hooks_dir_name;
 
     if (!std::filesystem::exists(hooks_dir)) {
         if (!std::filesystem::create_directory(hooks_dir))
-            return MADO_ERR_IO;
+            return Mado_Error::IO;
     }
 
     static const char *hook_names[] = {
@@ -670,23 +670,23 @@ Mado_Error mado_hooks_dir_init(const Mado_Config *cfg) {
         if (!std::filesystem::exists(path)) {
             std::ofstream f(path);
             if (!f)
-                return MADO_ERR_IO;
+                return Mado_Error::IO;
         }
     }
 
-    return MADO_ERR_OK;
+    return Mado_Error::OK;
 }
 
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg) {
     std::string main_dir = find_dir_up(cfg->main_dir_name);
     if (main_dir.empty())
-        return MADO_ERR_NOT_FOUND;
+        return Mado_Error::NOT_FOUND;
 
     std::filesystem::path templates_dir = std::filesystem::path(main_dir) / cfg->templates_dir_name;
 
     if (!std::filesystem::exists(templates_dir)) {
         if (!std::filesystem::create_directory(templates_dir))
-            return MADO_ERR_IO;
+            return Mado_Error::IO;
     }
 
     auto create_template = [&](const std::string &name, const std::string &content) -> Mado_Error {
@@ -694,21 +694,21 @@ Mado_Error mado_templates_dir_init(const Mado_Config *cfg) {
         if (!std::filesystem::exists(path)) {
             std::ofstream f(path);
             if (!f)
-                return MADO_ERR_IO;
+                return Mado_Error::IO;
             f << content;
         }
-        return MADO_ERR_OK;
+        return Mado_Error::OK;
     };
 
     Mado_Error err;
     err = create_template("task", "- NAME:\n- PRIORITY:\n- TAGS:\n- STATUS:\n- DEADLINE:\n");
-    if (err != MADO_ERR_OK)
+    if (err != Mado_Error::OK)
         return err;
     err = create_template("note", "- NAME:\n- TAGS:\n");
-    if (err != MADO_ERR_OK)
+    if (err != Mado_Error::OK)
         return err;
 
-    return MADO_ERR_OK;
+    return Mado_Error::OK;
 }
 
 Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force) {
@@ -719,17 +719,17 @@ Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force) {
         std::string existing = find_dir_up(cfg->main_dir_name);
         if (!existing.empty())
             // found somewhere at the top of the tree and there is no force flag
-            return MADO_ERR_FOUND_ABOVE;
+            return Mado_Error::FOUND_ABOVE;
     }
 
     if (std::filesystem::exists(entries_dir))
         // exists directly in cwd, cannot be created even with force
-        return MADO_ERR_ALREADY_EXISTS;
+        return Mado_Error::ALREADY_EXISTS;
 
     if (!std::filesystem::create_directory(entries_dir))
-        return MADO_ERR_IO;
+        return Mado_Error::IO;
 
-    return MADO_ERR_OK;
+    return Mado_Error::OK;
 }
 
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
@@ -739,7 +739,7 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     }
     if (main_dir.empty()) {
         os << "No mado repository here\n";
-        return MADO_ERR_NOT_FOUND;
+        return Mado_Error::NOT_FOUND;
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());
 
@@ -770,23 +770,23 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
             os << "  " << tag << ": " << count << "\n";
     }
 
-    return MADO_ERR_OK;
+    return Mado_Error::OK;
 }
 
 Mado_Error mado_parse_format(const char *format_str, Mado_Output_Format *fmt) {
     if (strcmp(format_str, "path") == 0)
-        *fmt = MADO_FMT_ONLY_PATH;
+        *fmt = Mado_Output_Format::ONLY_PATH;
     else if (strcmp(format_str, "unix") == 0)
-        *fmt = MADO_FMT_UNIX;
+        *fmt = Mado_Output_Format::UNIX;
     else if (strcmp(format_str, "jsonl") == 0)
-        *fmt = MADO_FMT_JSONL;
+        *fmt = Mado_Output_Format::JSONL;
     else
-        return MADO_ERR_INVALID_FORMAT;
-    return MADO_ERR_OK;
+        return Mado_Error::INVALID_FORMAT;
+    return Mado_Error::OK;
 }
 
 int mado_print_error(Mado_Error err, const char *context, std::ostream &os) {
-    if (err != MADO_ERR_OK) {
+    if (err != Mado_Error::OK) {
         os << "Mado error (" << context << "): " << mado_strerror(err) << "\n";
         return -1;
     }

@@ -12,44 +12,66 @@ extern "C" {
 
 // ================ TYPES
 
-typedef enum {
-    MADO_ERR_OK = 0,
-    MADO_ERR_NOT_FOUND,
-    MADO_ERR_IO,
-    MADO_ERR_PERM,
-    MADO_ERR_PARSE,
-    MADO_ERR_INVALID_FORMAT,
-    MADO_ERR_ALREADY_EXISTS,
-    MADO_ERR_FOUND_ABOVE,
-    MADO_ERR_TEMPLATE,
-    MADO_ERR_HOOK,
-    MADO_ERR_INTERNAL,
-} Mado_Error;
+enum class Mado_Error {
+    OK = 0,
+    NOT_FOUND,
+    IO,
+    PERM,
+    PARSE,
+    INVALID_FORMAT,
+    ALREADY_EXISTS,
+    FOUND_ABOVE,
+    TEMPLATE,
+    HOOK,
+    INTERNAL,
+};
 
-typedef enum {
-    MADO_FMT_UNIX,
-    MADO_FMT_ONLY_PATH,
-    MADO_FMT_JSONL,
-} Mado_Output_Format;
+enum class Mado_Output_Format {
+    UNIX,
+    ONLY_PATH,
+    JSONL,
+};
 
-typedef enum {
-    MADO_FIELD_NONE = 0,
-    MADO_FIELD_NAME = 1 << 0,
-    MADO_FIELD_TIME = 1 << 1,
-    MADO_FIELD_DEADLINE = 1 << 2,
-    MADO_FIELD_PRIORITY = 1 << 3,
-    MADO_FIELD_STATUS = 1 << 4,
-    MADO_FIELD_TAGS = 1 << 5,
-    MADO_FIELD_PATH = 1 << 6,
-    MADO_FIELD_ALL = MADO_FIELD_NAME | MADO_FIELD_TIME | MADO_FIELD_DEADLINE |
-                     MADO_FIELD_PRIORITY | MADO_FIELD_STATUS | MADO_FIELD_TAGS |
-                     MADO_FIELD_PATH
-} Mado_Entry_Field;
+enum class Mado_Entry_Field {
+    NONE = 0,
+    NAME = 1 << 0,
+    TIME = 1 << 1,
+    DEADLINE = 1 << 2,
+    PRIORITY = 1 << 3,
+    STATUS = 1 << 4,
+    TAGS = 1 << 5,
+    PATH = 1 << 6,
+    ALL = NAME | TIME | DEADLINE | PRIORITY | STATUS | TAGS | PATH
+};
 
-typedef enum {
-    MADO_SORT_ASC,
-    MADO_SORT_DESC,
-} Mado_Sort_Order;
+constexpr Mado_Entry_Field operator|(Mado_Entry_Field a, Mado_Entry_Field b) {
+    return static_cast<Mado_Entry_Field>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+constexpr Mado_Entry_Field operator&(Mado_Entry_Field a, Mado_Entry_Field b) {
+    return static_cast<Mado_Entry_Field>(static_cast<int>(a) & static_cast<int>(b));
+}
+
+constexpr Mado_Entry_Field operator~(Mado_Entry_Field a) {
+    return static_cast<Mado_Entry_Field>(~static_cast<int>(a));
+}
+
+constexpr bool has_flag(Mado_Entry_Field value, Mado_Entry_Field flag) {
+    return (static_cast<int>(value) & static_cast<int>(flag)) != 0;
+}
+
+constexpr Mado_Entry_Field &operator|=(Mado_Entry_Field &a, Mado_Entry_Field b) {
+    return a = a | b;
+}
+
+constexpr Mado_Entry_Field &operator&=(Mado_Entry_Field &a, Mado_Entry_Field b) {
+    return a = a & b;
+}
+
+enum class Mado_Sort_Order {
+    ASC,
+    DESC,
+};
 
 struct Mado_Sort_Criterion {
     Mado_Entry_Field field;

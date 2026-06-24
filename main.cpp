@@ -218,23 +218,23 @@ static int cmd_init(int argc, char **argv) {
             return -1;
     }
     Mado_Error err = mado_entries_dir_init(&g_mado_config, force);
-    if (err == MADO_ERR_FOUND_ABOVE) {
+    if (err == Mado_Error::FOUND_ABOVE) {
         mado_print_error(err, "creating entries directory");
         std::cerr << "Use -F to try force init here\n";
     }
-    if (err == MADO_ERR_ALREADY_EXISTS) {
+    if (err == Mado_Error::ALREADY_EXISTS) {
         mado_print_error(err, "creating entries directory");
         std::cerr << "Already initialized in current directory\n";
     }
-    if (err != MADO_ERR_OK)
+    if (err != Mado_Error::OK)
         mado_print_error(err, "creating entries directory");
 
     err = mado_templates_dir_init(&g_mado_config);
-    if (err != MADO_ERR_OK)
+    if (err != Mado_Error::OK)
         mado_print_error(err, "creating templates directory");
 
     err = mado_hooks_dir_init(&g_mado_config);
-    if (err != MADO_ERR_OK)
+    if (err != Mado_Error::OK)
         mado_print_error(err, "creating hooks directory");
 
     return 0;
@@ -254,7 +254,7 @@ static int cmd_new(int argc, char **argv) {
             break;
         case 'f': {
             Mado_Error err = mado_parse_format(optarg, &g_mado_config.fmt);
-            if (err != MADO_ERR_OK)
+            if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing output format");
             break;
         }
@@ -270,13 +270,13 @@ static int cmd_new(int argc, char **argv) {
 
     // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-new");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running pre-new hook");
         return -1;
     }
 
     auto [entry, err] = Mado_Entry::create(&g_mado_config, main_dir.c_str());
-    if (err != MADO_ERR_OK) {
+    if (err != Mado_Error::OK) {
         return mado_print_error(err, "creating new entry");
     }
     if (entry) {
@@ -284,7 +284,7 @@ static int cmd_new(int argc, char **argv) {
 
         // post hook
         hook_err = mado_run_hook(&g_mado_config, "post-new");
-        if (hook_err != MADO_ERR_OK) {
+        if (hook_err != Mado_Error::OK) {
             mado_print_error(hook_err, "running post-new hook");
             return -1;
         }
@@ -304,29 +304,29 @@ static int cmd_list(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1)
         if (opt == 'o') {
             only = 1;
-            g_mado_config.hide_fields = MADO_FIELD_ALL;
+            g_mado_config.hide_fields = Mado_Entry_Field::ALL;
         }
     optind = 1;
     opterr = 1;
 
     auto toggle_field = [&](Mado_Entry_Field field) {
         if (only)
-            g_mado_config.hide_fields = (Mado_Entry_Field)(g_mado_config.hide_fields & ~field);
+            g_mado_config.hide_fields &= ~field;
         else
-            g_mado_config.hide_fields = (Mado_Entry_Field)(g_mado_config.hide_fields | field);
+            g_mado_config.hide_fields |= field;
     };
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
         switch (opt) {
         case 's': {
             Mado_Error err = mado_parse_sort(optarg, &g_mado_config.sort_criteria);
-            if (err != MADO_ERR_OK)
+            if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing sort option");
             break;
         }
         case 'f': {
             Mado_Error err = mado_parse_format(optarg, fmt);
-            if (err != MADO_ERR_OK)
+            if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing output format");
             break;
         }
@@ -336,25 +336,25 @@ static int cmd_list(int argc, char **argv) {
         case 'o':
             break;
         case 'n':
-            toggle_field(MADO_FIELD_NAME);
+            toggle_field(Mado_Entry_Field::NAME);
             break;
         case 't':
-            toggle_field(MADO_FIELD_TIME);
+            toggle_field(Mado_Entry_Field::TIME);
             break;
         case 'd':
-            toggle_field(MADO_FIELD_DEADLINE);
+            toggle_field(Mado_Entry_Field::DEADLINE);
             break;
         case 'p':
-            toggle_field(MADO_FIELD_PRIORITY);
+            toggle_field(Mado_Entry_Field::PRIORITY);
             break;
         case 'u':
-            toggle_field(MADO_FIELD_STATUS);
+            toggle_field(Mado_Entry_Field::STATUS);
             break;
         case 'g':
-            toggle_field(MADO_FIELD_TAGS);
+            toggle_field(Mado_Entry_Field::TAGS);
             break;
         case 'h':
-            toggle_field(MADO_FIELD_PATH);
+            toggle_field(Mado_Entry_Field::PATH);
             break;
         default:
             return -1;
@@ -381,7 +381,7 @@ static int cmd_list(int argc, char **argv) {
 
     // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-list");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running pre-list hook");
         return -1;
     }
@@ -393,7 +393,7 @@ static int cmd_list(int argc, char **argv) {
 
     // post hook
     hook_err = mado_run_hook(&g_mado_config, "post-list");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running post-list hook");
         return -1;
     }
@@ -438,7 +438,7 @@ static int cmd_remove(int argc, char **argv) {
 
     // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-remove");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running pre-remove hook");
         return -1;
     }
@@ -452,7 +452,7 @@ static int cmd_remove(int argc, char **argv) {
 
     // post hook
     hook_err = mado_run_hook(&g_mado_config, "post-remove");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running post-remove hook");
         return -1;
     }
@@ -476,19 +476,19 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 
     // pre hook
     Mado_Error hook_err = mado_run_hook(&g_mado_config, "pre-info");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running pre-info hook");
         return -1;
     }
 
     Mado_Error err = mado_print_repo_info(&g_mado_config);
-    if (err != MADO_ERR_OK) {
+    if (err != Mado_Error::OK) {
         return mado_print_error(err, "getting repository info");
     }
 
     // post hook
     hook_err = mado_run_hook(&g_mado_config, "post-info");
-    if (hook_err != MADO_ERR_OK) {
+    if (hook_err != Mado_Error::OK) {
         mado_print_error(hook_err, "running post-info hook");
         return -1;
     }

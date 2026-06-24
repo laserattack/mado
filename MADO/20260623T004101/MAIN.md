@@ -1,0 +1,3 @@
+- NAME: NULL -> nullptr in cpp
+- TAGS: refactor, cpp, codestyle
+- STATUS: opened
