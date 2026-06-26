@@ -4,8 +4,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <unistd.h>
@@ -147,8 +147,39 @@ std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> Mado_Entry::create(const Mado
 }
 
 std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char *entry_dir) {
-    static std::regex priority_value_regex("^[0-9]{1,3}$");
-    static std::regex deadline_value_regex("^([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)$");
+    auto is_valid_priority = [](const std::string &s) {
+        return !s.empty() && s.size() <= 3 && std::all_of(s.begin(), s.end(), ::isdigit);
+    };
+    auto is_valid_deadline = [](const std::string &s) {
+        if (s.empty() || s.size() > 15)
+            return false;
+
+        // date part
+        size_t pos = 0;
+        while (pos < s.size() && ::isdigit(s[pos]) && pos < 8)
+            ++pos;
+
+        if (pos != 4 && pos != 6 && pos != 8)
+            return false;
+
+        if (pos == s.size())
+            return true;
+
+        // time part
+        if (s[pos] != 'T')
+            return false;
+        ++pos;
+
+        if (pos == s.size())
+            return true;
+
+        size_t time_digits = 0;
+        while (pos < s.size() && ::isdigit(s[pos]) && time_digits < 6) {
+            ++pos;
+            ++time_digits;
+        }
+        return pos == s.size() && (time_digits == 2 || time_digits == 4 || time_digits == 6);
+    };
 
     std::filesystem::path dir_path(entry_dir);
     std::string dir_name = dir_path.filename().string();
@@ -177,7 +208,7 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
         } else if (line.rfind("- PRIORITY:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
-            if (std::regex_match(val, priority_value_regex))
+            if (is_valid_priority(val))
                 entry->priority = std::stoi(val);
         } else if (line.rfind("- TAGS:", 0) == 0) {
             std::string tags_str = line.substr(7);
@@ -197,7 +228,7 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
         } else if (line.rfind("- DEADLINE:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
-            if (std::regex_match(val, deadline_value_regex))
+            if (is_valid_deadline(val))
                 entry->deadline = val;
         }
     }
@@ -209,7 +240,7 @@ std::unique_ptr<Mado_Entry> Mado_Entry::parse(const Mado_Config *cfg, const char
 
 void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
     Mado_Entry_Field hidden = cfg->hide_fields;
-    Mado_Entry_Field shown = (Mado_Entry_Field)(Mado_Entry_Field::ALL & ~hidden);
+    Mado_Entry_Field shown = Mado_Entry_Field::ALL & ~hidden;
     Mado_Output_Format fmt = cfg->fmt;
 
     if (fmt == Mado_Output_Format::ONLY_PATH) {
@@ -441,7 +472,13 @@ bool Mado_Entry::matches_condition(const AST_Node *filter) const {
 // ================ ENTRIES
 
 Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir) {
-    static std::regex entry_dir_regex("^[0-9]{8}T[0-9]{6}$");
+    auto is_entry_dir = [](const std::string &s) {
+        return s.size() == 15 &&
+               std::all_of(s.begin(), s.begin() + 8, ::isdigit) &&
+               s[8] == 'T' &&
+               std::all_of(s.begin() + 9, s.end(), ::isdigit);
+    };
+
     Mado_Entries result;
     std::filesystem::path dir_path(main_dir);
 
@@ -452,7 +489,7 @@ Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir)
         if (!dirent.is_directory())
             continue;
         std::string dir_name = dirent.path().filename().string();
-        if (!std::regex_match(dir_name, entry_dir_regex))
+        if (!is_entry_dir(dir_name))
             continue;
         auto entry_file = dirent.path() / (cfg->entry_file_name + ".md");
         if (!std::filesystem::exists(entry_file))
