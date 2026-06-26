@@ -363,15 +363,14 @@ static int cmd_list(int argc, char **argv) {
     if (optind < argc)
         query = argv[optind];
 
-    AST_Node *filter = nullptr;
+    auto filter = make_ast_ptr(nullptr);
     if (query) {
-        filter = parse(query);
+        filter = make_ast_ptr(parse(query));
         if (!filter) {
             std::cerr << "Error: failed to parse query\n";
             return -1;
         }
     }
-    Mado_AST_Deleter filter_guard{filter};
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
@@ -387,7 +386,7 @@ static int cmd_list(int argc, char **argv) {
     }
 
     Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
-        .filter(filter)
+        .filter(filter.get())
         .sort(&g_mado_config)
         .print(&g_mado_config);
 
@@ -423,12 +422,11 @@ static int cmd_remove(int argc, char **argv) {
         return -1;
     }
 
-    AST_Node *filter = parse(query);
+    auto filter = make_ast_ptr(parse(query));
     if (!filter) {
         std::cerr << "Error: failed to parse query\n";
         return -1;
     }
-    Mado_AST_Deleter filter_guard{filter};
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
@@ -444,7 +442,7 @@ static int cmd_remove(int argc, char **argv) {
     }
 
     auto removed = Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
-                       .filter(filter)
+                       .filter(filter.get())
                        .remove();
 
     for (const auto &path : removed)

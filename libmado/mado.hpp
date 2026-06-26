@@ -10,6 +10,11 @@ extern "C" {
 #include "ast.h"
 }
 
+// make auto-free ast ptr
+inline auto make_ast_ptr(AST_Node *node) {
+    return std::unique_ptr<AST_Node, decltype(&ast_free)>(node, ast_free);
+}
+
 // ================ TYPES
 
 enum class Mado_Error {
@@ -76,11 +81,6 @@ enum class Mado_Sort_Order {
 struct Mado_Sort_Criterion {
     Mado_Entry_Field field;
     Mado_Sort_Order order;
-};
-
-struct Mado_AST_Deleter {
-    AST_Node *node;
-    ~Mado_AST_Deleter() { ast_free(node); }
 };
 
 // ================ CONFIG
