@@ -1,6 +1,5 @@
 #include <cctype>
 #include <cerrno>
-#include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -130,6 +129,28 @@ static int cmd_remove(int argc, char **argv);
 static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
 
+static const cmd::Option LIST_OPTIONS[] = {
+    {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
+    {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+    {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
+    {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
+    {"hide-name", no_argument, NULL, 'n', "Hide name field"},
+    {"hide-time", no_argument, NULL, 't', "Hide time field"},
+    {"hide-deadline", no_argument, NULL, 'd', "Hide deadline field"},
+    {"hide-priority", no_argument, NULL, 'p', "Hide priority field"},
+    {"hide-status", no_argument, NULL, 'u', "Hide status field"},
+    {"hide-tags", no_argument, NULL, 'g', "Hide tags field"},
+    {"hide-path", no_argument, NULL, 'h', "Hide path field"},
+    {NULL, 0, NULL, 0, NULL}};
+
+static const cmd::Option REMOVE_OPTIONS[] = {
+    {"abs-path", no_argument, NULL, 'a', "Show absolute path to removed entry"},
+    {NULL, 0, NULL, 0, NULL}};
+
+static const cmd::Option INFO_OPTIONS[] = {
+    {"abs-path", no_argument, NULL, 'a', "Show absolute path to main directory"},
+    {NULL, 0, NULL, 0, NULL}};
+
 static cmd::Command commands[] = {
     {"init",
      "Initialize mado repository in current working directory",
@@ -152,35 +173,37 @@ static cmd::Command commands[] = {
     {"list",
      "List entries with optional filtering",
      "mado list [COMMAND OPTIONS] [QUERY]",
-     (cmd::Option[]){
-         {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
-         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
-         {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
-         {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
-         {"hide-name", no_argument, NULL, 'n', "Hide name field"},
-         {"hide-time", no_argument, NULL, 't', "Hide time field"},
-         {"hide-deadline", no_argument, NULL, 'd', "Hide deadline field"},
-         {"hide-priority", no_argument, NULL, 'p', "Hide priority field"},
-         {"hide-status", no_argument, NULL, 'u', "Hide status field"},
-         {"hide-tags", no_argument, NULL, 'g', "Hide tags field"},
-         {"hide-path", no_argument, NULL, 'h', "Hide path field"},
-         {NULL, 0, NULL, 0, NULL}},
+     LIST_OPTIONS,
+     cmd_list},
+
+    {"ls",
+     "Alias for 'list' option",
+     "mado ls [COMMAND OPTIONS] [QUERY]",
+     LIST_OPTIONS,
      cmd_list},
 
     {"remove",
      "Remove entries matching query",
      "mado remove <QUERY>",
-     (cmd::Option[]){
-         {"abs-path", no_argument, NULL, 'a', "Show absolute path to removed entry"},
-         {NULL, 0, NULL, 0, NULL}},
+     REMOVE_OPTIONS,
+     cmd_remove},
+
+    {"rm",
+     "Alias for 'remove' option",
+     "mado rm <QUERY>",
+     REMOVE_OPTIONS,
      cmd_remove},
 
     {"info",
      "Show repository information",
      "mado info",
-     (cmd::Option[]){
-         {"abs-path", no_argument, NULL, 'a', "Show absolute path to main directory"},
-         {NULL, 0, NULL, 0, NULL}},
+     INFO_OPTIONS,
+     cmd_info},
+
+    {"repo",
+     "Alias for 'info' option",
+     "mado repo",
+     INFO_OPTIONS,
      cmd_info},
 
     {"help",
