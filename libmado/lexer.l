@@ -2,6 +2,7 @@
 
 #include <stdarg.h>
 #include <strings.h>
+#include <time.h>
 
 #include "parser.tab.h"
 
@@ -44,6 +45,114 @@ void lexerror(const char *fmt, ...) {
     va_end(args);
 }
 
+struct keyword_entry {
+    const char *word;
+    int token;
+};
+
+static int lookup_keyword(const char *word,
+                          const struct keyword_entry *keywords,
+                          int n_keywords) {
+    int word_len = (int)strlen(word);
+    int matches_count = 0, matched_token = 0;
+
+    for (int i = 0; i < n_keywords; i++) {
+        int cur_word_len = (int)strlen(keywords[i].word);
+        if (word_len <= cur_word_len &&
+            strncasecmp(word, keywords[i].word, word_len) == 0) {
+            matched_token = keywords[i].token;
+            if (word_len == cur_word_len)
+                return matched_token;
+            matches_count++;
+        }
+    }
+
+    return (matches_count == 1) ? matched_token : 0;
+}
+
+static char *resolve_time_var(const char *varname) {
+    static const struct keyword_entry time_vars[] = {
+        {"now",   1},
+        {"today", 2},
+        {"week",  3},
+        {"month", 4},
+        {"year",  5},
+    };
+    static const int n = sizeof(time_vars) / sizeof(time_vars[0]);
+
+    char clean[64];
+    int j = 0;
+    for (int i = 0; varname[i]; i++)
+        if (varname[i] != ' ' && varname[i] != '\t')
+            clean[j++] = varname[i];
+    clean[j] = '\0';
+
+    time_t now = time(NULL);
+    struct tm *tm = localtime(&now);
+    char buf[64];
+    char base[32];
+    int offset = 0;
+
+    const char *plus = strchr(clean, '+');
+    const char *minus = strchr(clean, '-');
+    const char *sign = plus ? plus : minus;
+
+    if (sign) {
+        size_t base_len = sign - clean;
+        memcpy(base, clean, base_len);
+        base[base_len] = '\0';
+        offset = atoi(sign + 1);
+        if (*sign == '-') offset = -offset;
+    } else {
+        strcpy(base, clean);
+    }
+
+    int var_type = lookup_keyword(base, time_vars, n);
+    if (!var_type)
+        return NULL;
+
+    switch (var_type) {
+    case 1: // now
+        {
+            time_t t = now + offset * 86400;
+            struct tm *ttm = localtime(&t);
+            strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", ttm);
+        }
+        break;
+    case 2: // today
+        {
+            time_t t = now + offset * 86400;
+            struct tm *ttm = localtime(&t);
+            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+        }
+        break;
+    case 3: // week
+        {
+            int days_since_monday = (tm->tm_wday + 6) % 7;
+            time_t t = now - days_since_monday * 86400 + offset * 7 * 86400;
+            struct tm *ttm = localtime(&t);
+            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+        }
+        break;
+    case 4: // month
+        {
+            int total_months = (tm->tm_year + 1900) * 12 + tm->tm_mon + offset;
+            int year = total_months / 12;
+            int month = total_months % 12 + 1;
+            snprintf(buf, sizeof(buf), "%04d%02d", year, month);
+        }
+        break;
+    case 5: // year
+        {
+            int year = tm->tm_year + 1900 + offset;
+            snprintf(buf, sizeof(buf), "%04d", year);
+        }
+        break;
+    }
+
+    return strdup(buf);
+}
+
 %}
 
 NUMBER             [0-9]{1,3}
@@ -52,6 +161,7 @@ TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 STRING             \"[^\"]*\"|\'[^\']*\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
+TIME_VARIABLE      @{IDENT}([[:space:]]*[+-][[:space:]]*[0-9]{1,6})?
 NEWLINE            \n
 
 %%
@@ -92,11 +202,7 @@ NEWLINE            \n
                       }
 
 {IDENT}               {
-                          // trying to guess the token
-                          static const struct {
-                              const char *word;
-                              int token;
-                          } keywords[] = {
+                          static const struct keyword_entry keywords[] = {
                               {"deadline", TOKEN_DEADLINE},
                               {"priority", TOKEN_PRIORITY},
                               {"status",   TOKEN_STATUS},
@@ -112,30 +218,30 @@ NEWLINE            \n
                           };
                           static const int n_keywords = sizeof(keywords) / sizeof(keywords[0]);
 
-                          int matches_count = 0, matched_token = 0;
-
-                          for (int i = 0; i < n_keywords; i++) {
-                              int cur_word_len = (int)strlen(keywords[i].word);
-                              if (yyleng <= cur_word_len &&
-                                  strncasecmp(yytext, keywords[i].word, yyleng) == 0) {
-                                  matched_token = keywords[i].token;
-                                  if (yyleng == cur_word_len) {
-                                      matches_count = 1;
-                                      break;
-                                  }
-                                  matches_count++;
-                              }
-                          }
-
-                          if (matches_count == 1) {
+                          int token = lookup_keyword(yytext, keywords, n_keywords);
+                          if (token > 0) {
                               yycolno += yyleng;
-                              return matched_token;
+                              return token;
                           }
 
-                          // couldn't guess the token => default string
+                          // default string
                           yylval.str = strdup(yytext);
                           yycolno += yyleng;
                           return TOKEN_STRING;
+                      }
+
+{TIME_VARIABLE}       {
+                          char *resolved = resolve_time_var(yytext + 1);
+
+                          if (resolved) {
+                              yylval.str = resolved;
+                              yycolno += yyleng;
+                              return TOKEN_TIMESTAMP;
+                          } else {
+                              yylval.str = strdup(yytext);
+                              yycolno += yyleng;
+                              return TOKEN_STRING;
+                          }
                       }
 
 {STRING}              {

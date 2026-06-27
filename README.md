@@ -92,10 +92,10 @@ mado list 'name ~ "fix login"' # multiple words — quotes required
 # Filter by creation time
 mado list 'time ~ 20260516' # Entries created on 2026-05-16
 mado list 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
-mado list 'time >= 2023 and time <= 2025' # Entries created between 2023 and 2025 (inclusive)
+mado list 'time > 2023 and time < @year+1' # Entries created between 2023 and current year (inclusive)
 
 # Find entries with complex conditions
-mado list '(tag = bug or tag = critical) and status = opened and deadline < 20260602'
+mado list '(tag = bug or tag = critical) and status = opened and deadline < @now'
 mado list 'not (priority < 3 or status = closed)'
 mado list '(priority > 5 and tag = urgent) or status = reopened'
 
@@ -237,6 +237,34 @@ keywords
 > Examples:
 > - `status = anyof(opened, reopened)` is equivalent to `status = opened or status = reopened`
 > - `tag ~ allof(bug, crit, fix)` is equivalent to `tag ~ bug and tag ~ crit and tag ~ fix`
+
+### Macros
+
+Query language supports macros that expand to values at execution
+time. Macros start with `@`
+
+#### Time Macros
+
+Resolve to timestamps. Accept optional offsets with `+`/`-`
+
+| Macro | Resolution | Offset unit |
+|-------|-----------|-------------|
+| `@now` | Current timestamp | days |
+| `@today` | Start of today | days |
+| `@week` | Start of current week (Monday) | weeks |
+| `@month` | Start of current month | months |
+| `@year` | Start of current year | years |
+
+Examples:
+
+```
+mado list 'deadline > @week'
+mado list 'deadline > @year'
+mado list 'time > @today-4'
+mado list 'time >= @week-1'
+mado list 'deadline < @today+30'
+mado list 'time ~ @month-2'
+```
 
 ## Installation
 
