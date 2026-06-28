@@ -32,13 +32,13 @@ enum class Mado_Error {
 };
 
 enum class Mado_Output_Format {
-    UNIX,
+    UNIX = 1,
     ONLY_PATH,
     JSONL,
 };
 
 enum class Mado_Entry_Field {
-    NONE = 0,
+    NONE,
     NAME = 1 << 0,
     TIME = 1 << 1,
     DEADLINE = 1 << 2,

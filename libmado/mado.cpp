@@ -13,6 +13,10 @@
 
 #include "mado.hpp"
 
+extern "C" {
+#include "utils.h" // impl in lexer.l
+}
+
 // ================ HELPERS
 
 static std::string find_dir_up(const std::string &dir_name) {
@@ -581,57 +585,37 @@ Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion
     std::stringstream ss(input);
     std::string token;
 
-    static const struct {
-        const char *name;
-        Mado_Entry_Field field;
-    } fields_for_parse_sort[] = {
-        {"time", Mado_Entry_Field::TIME},
-        {"name", Mado_Entry_Field::NAME},
-        {"priority", Mado_Entry_Field::PRIORITY},
-        {"deadline", Mado_Entry_Field::DEADLINE},
-        {"status", Mado_Entry_Field::STATUS},
-        {"tags", Mado_Entry_Field::TAGS},
+    static const struct keyword_entry fields_for_parse_sort[] = {
+        {"time", static_cast<int>(Mado_Entry_Field::TIME)},
+        {"name", static_cast<int>(Mado_Entry_Field::NAME)},
+        {"priority", static_cast<int>(Mado_Entry_Field::PRIORITY)},
+        {"deadline", static_cast<int>(Mado_Entry_Field::DEADLINE)},
+        {"status", static_cast<int>(Mado_Entry_Field::STATUS)},
+        {"tags", static_cast<int>(Mado_Entry_Field::TAGS)},
     };
     static const int n_fields = sizeof(fields_for_parse_sort) / sizeof(fields_for_parse_sort[0]);
 
     while (std::getline(ss, token, ',')) {
-        size_t start = token.find_first_not_of(" \t");
-        if (start == std::string::npos)
+        // strip whitespace
+        token.erase(std::remove_if(token.begin(), token.end(), is_whitespace), token.end());
+        if (token.empty())
             continue;
-        size_t end = token.find_last_not_of(" \t");
-        token = token.substr(start, end - start + 1);
 
         Mado_Sort_Criterion c;
+        c.order = Mado_Sort_Order::ASC;
 
-        if (token[0] == '+') {
-            c.order = Mado_Sort_Order::ASC;
-            token = token.substr(1);
-        } else if (token[0] == '-') {
-            c.order = Mado_Sort_Order::DESC;
-            token = token.substr(1);
+        if (token[0] == '+' || token[0] == '-') {
+            if (token[0] == '-')
+                c.order = Mado_Sort_Order::DESC;
+            token.erase(0, 1);
+        }
+
+        int field_token = lookup_keyword(token.c_str(), fields_for_parse_sort, n_fields);
+        if (field_token > 0) {
+            c.field = static_cast<Mado_Entry_Field>(field_token);
         } else {
-            c.order = Mado_Sort_Order::ASC;
-        }
-
-        int matches_count = 0;
-        Mado_Entry_Field matched_field;
-        for (int i = 0; i < n_fields; i++) {
-            int field_len = (int)strlen(fields_for_parse_sort[i].name);
-            if ((int)token.size() <= field_len &&
-                strncmp(token.c_str(), fields_for_parse_sort[i].name, token.size()) == 0) {
-                matched_field = fields_for_parse_sort[i].field;
-                if ((int)token.size() == field_len) {
-                    matches_count = 1;
-                    break;
-                }
-                matches_count++;
-            }
-        }
-
-        if (matches_count == 1)
-            c.field = matched_field;
-        else
             return Mado_Error::PARSE;
+        }
 
         criteria->push_back(c);
     }
@@ -811,15 +795,23 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
 }
 
 Mado_Error mado_parse_format(const char *format_str, Mado_Output_Format *fmt) {
-    if (strcmp(format_str, "path") == 0)
-        *fmt = Mado_Output_Format::ONLY_PATH;
-    else if (strcmp(format_str, "unix") == 0)
-        *fmt = Mado_Output_Format::UNIX;
-    else if (strcmp(format_str, "jsonl") == 0)
-        *fmt = Mado_Output_Format::JSONL;
-    else
-        return Mado_Error::INVALID_FORMAT;
-    return Mado_Error::OK;
+    static const struct keyword_entry formats[] = {
+        {"path", static_cast<int>(Mado_Output_Format::ONLY_PATH)},
+        {"unix", static_cast<int>(Mado_Output_Format::UNIX)},
+        {"jsonl", static_cast<int>(Mado_Output_Format::JSONL)},
+    };
+    static const int n = sizeof(formats) / sizeof(formats[0]);
+
+    // strip whitespace
+    std::string cleaned(format_str);
+    cleaned.erase(std::remove_if(cleaned.begin(), cleaned.end(), is_whitespace), cleaned.end());
+
+    int token = lookup_keyword(cleaned.c_str(), formats, n);
+    if (token > 0) {
+        *fmt = static_cast<Mado_Output_Format>(token);
+        return Mado_Error::OK;
+    }
+    return Mado_Error::INVALID_FORMAT;
 }
 
 int mado_print_error(Mado_Error err, const char *context, std::ostream &os) {

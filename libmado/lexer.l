@@ -4,6 +4,9 @@
 #include <strings.h>
 #include <time.h>
 
+#define MADO_UTILS_IMPL
+#include "utils.h"
+
 #include "parser.tab.h"
 
 static const char *g_current_query = NULL;
@@ -45,31 +48,6 @@ void lexerror(const char *fmt, ...) {
     va_end(args);
 }
 
-struct keyword_entry {
-    const char *word;
-    int token;
-};
-
-static int lookup_keyword(const char *word,
-                          const struct keyword_entry *keywords,
-                          int n_keywords) {
-    int word_len = (int)strlen(word);
-    int matches_count = 0, matched_token = 0;
-
-    for (int i = 0; i < n_keywords; i++) {
-        int cur_word_len = (int)strlen(keywords[i].word);
-        if (word_len <= cur_word_len &&
-            strncasecmp(word, keywords[i].word, word_len) == 0) {
-            matched_token = keywords[i].token;
-            if (word_len == cur_word_len)
-                return matched_token;
-            matches_count++;
-        }
-    }
-
-    return (matches_count == 1) ? matched_token : 0;
-}
-
 static char *resolve_time_var(const char *varname) {
     static const struct keyword_entry time_vars[] = {
         {"now",   1},
@@ -83,7 +61,7 @@ static char *resolve_time_var(const char *varname) {
     char clean[64];
     int j = 0;
     for (int i = 0; varname[i]; i++)
-        if (varname[i] != ' ' && varname[i] != '\t')
+        if (!is_whitespace(varname[i]))
             clean[j++] = varname[i];
     clean[j] = '\0';
 
@@ -156,12 +134,13 @@ static char *resolve_time_var(const char *varname) {
 %}
 
 NUMBER             [0-9]{1,3}
+/* static char is_whitespace(char c) */
 WHITESPACE         [ \t\r]
 TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
 QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 STRING             \"[^\"]*\"|\'[^\']*\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
-TIME_VARIABLE      @{IDENT}([[:space:]]*[+-][[:space:]]*[0-9]{1,6})?
+TIME_VARIABLE      @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 NEWLINE            \n
 
 %%
