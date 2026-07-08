@@ -8,7 +8,6 @@
 #include <memory>
 #include <sstream>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #include "mado.hpp"
@@ -43,7 +42,6 @@ static void trim(std::string &s) {
 void mado_init_config(Mado_Config *cfg) {
     cfg->main_dir_name = "MADO";
     cfg->templates_dir_name = ".templates";
-    cfg->hooks_dir_name = ".hooks";
     cfg->entry_file_name = "MAIN";
     cfg->template_name = "task";
     cfg->max_header_lines = 30;
@@ -75,10 +73,6 @@ const char *mado_strerror(Mado_Error err) {
         return "template error";
     case Mado_Error::INTERNAL:
         return "internal error";
-    case Mado_Error::PERM:
-        return "permission denied";
-    case Mado_Error::HOOK:
-        return "hook error";
     default:
         return "unknown error";
     }
@@ -634,68 +628,6 @@ std::vector<std::string> Mado_Entries::remove() const {
         removed.push_back(e->path);
     }
     return removed;
-}
-
-// ================ HOOKS
-
-Mado_Error mado_run_hook(const Mado_Config *cfg, const char *hook_name) {
-    std::string main_dir = find_dir_up(cfg->main_dir_name);
-    if (main_dir.empty())
-        return Mado_Error::NOT_FOUND;
-
-    std::filesystem::path hook_path = std::filesystem::path(main_dir) / cfg->hooks_dir_name / hook_name;
-
-    if (access(hook_path.c_str(), F_OK) != 0) // file exists?
-        return Mado_Error::OK;
-
-    if (std::filesystem::file_size(hook_path) == 0) // file empty?
-        return Mado_Error::OK;
-
-    if (access(hook_path.c_str(), X_OK) != 0) // can run?
-        return Mado_Error::PERM;
-
-    int ret = system(hook_path.c_str());
-    if (ret != 0)
-        return Mado_Error::HOOK;
-
-    return Mado_Error::OK;
-}
-
-// ================ INIT
-
-Mado_Error mado_hooks_dir_init(const Mado_Config *cfg) {
-    std::string main_dir = find_dir_up(cfg->main_dir_name);
-    if (main_dir.empty())
-        return Mado_Error::NOT_FOUND;
-
-    std::filesystem::path hooks_dir = std::filesystem::path(main_dir) / cfg->hooks_dir_name;
-
-    if (!std::filesystem::exists(hooks_dir)) {
-        if (!std::filesystem::create_directory(hooks_dir))
-            return Mado_Error::IO;
-    }
-
-    static const char *hook_names[] = {
-        "pre-new",
-        "post-new",
-        "pre-list",
-        "post-list",
-        "pre-remove",
-        "post-remove",
-        "pre-info",
-        "post-info",
-        NULL};
-
-    for (int i = 0; hook_names[i]; i++) {
-        auto path = hooks_dir / hook_names[i];
-        if (!std::filesystem::exists(path)) {
-            std::ofstream f(path);
-            if (!f)
-                return Mado_Error::IO;
-        }
-    }
-
-    return Mado_Error::OK;
 }
 
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg) {

@@ -21,13 +21,11 @@ enum class Mado_Error {
     OK = 0,
     NOT_FOUND,
     IO,
-    PERM,
     PARSE,
     INVALID_FORMAT,
     ALREADY_EXISTS,
     FOUND_ABOVE,
     TEMPLATE,
-    HOOK,
     INTERNAL,
 };
 
@@ -88,7 +86,6 @@ struct Mado_Sort_Criterion {
 struct Mado_Config {
     std::string main_dir_name;
     std::string templates_dir_name;
-    std::string hooks_dir_name;
     std::string entry_file_name;
     std::string template_name;
     int max_header_lines;
@@ -148,12 +145,7 @@ void mado_init_config(Mado_Config *cfg);
 
 Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force);
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
-Mado_Error mado_hooks_dir_init(const Mado_Config *cfg);
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::cout);
-
-// ================ HOOKS
-
-Mado_Error mado_run_hook(const Mado_Config *cfg, const char *hook_name);
 
 // ================ UTILS
 
