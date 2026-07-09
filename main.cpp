@@ -133,6 +133,7 @@ static const cmd::Option LIST_OPTIONS[] = {
     {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
     {"format", required_argument, NULL, 'f', "Output format (default, path, jsonl)"},
     {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
+    {"ignore-case", no_argument, NULL, 'i', "Case-insensitive search"},
     {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
     {"hide-name", no_argument, NULL, 'n', "Hide name field"},
     {"hide-time", no_argument, NULL, 't', "Hide time field"},
@@ -145,6 +146,7 @@ static const cmd::Option LIST_OPTIONS[] = {
 
 static const cmd::Option REMOVE_OPTIONS[] = {
     {"abs-path", no_argument, NULL, 'a', "Show absolute path to removed entry"},
+    {"ignore-case", no_argument, NULL, 'i', "Case-insensitive search"},
     {NULL, 0, NULL, 0, NULL}};
 
 static const cmd::Option INFO_OPTIONS[] = {
@@ -339,6 +341,9 @@ static int cmd_list(int argc, char **argv) {
         case 'a':
             g_mado_config.abs_paths = true;
             break;
+        case 'i':
+            g_mado_config.case_insensitive_search = true;
+            break;
         case 'o':
             break;
         case 'n':
@@ -385,7 +390,7 @@ static int cmd_list(int argc, char **argv) {
     }
 
     Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
-        .filter(filter.get())
+        .filter(&g_mado_config, filter.get())
         .sort(&g_mado_config)
         .print(&g_mado_config);
 
@@ -401,6 +406,9 @@ static int cmd_remove(int argc, char **argv) {
         switch (opt) {
         case 'a':
             g_mado_config.abs_paths = true;
+            break;
+        case 'i':
+            g_mado_config.case_insensitive_search = true;
             break;
         default:
             return -1;
@@ -427,7 +435,7 @@ static int cmd_remove(int argc, char **argv) {
     }
 
     auto removed = Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
-                       .filter(filter.get())
+                       .filter(&g_mado_config, filter.get())
                        .remove();
 
     for (const auto &path : removed)

@@ -90,6 +90,7 @@ struct Mado_Config {
     std::string template_name;
     int max_header_lines;
     bool abs_paths;
+    bool case_insensitive_search;
     Mado_Entry_Field hide_fields;
     std::vector<Mado_Sort_Criterion> sort_criteria;
     Mado_Output_Format fmt;
@@ -108,7 +109,7 @@ class Mado_Entry {
     std::string deadline;
 
     void print(const Mado_Config *cfg, std::ostream &os = std::cout) const;
-    bool matches_condition(const AST_Node *filter) const;
+    bool matches_condition(const Mado_Config *cfg, const AST_Node *filter) const;
 
     static std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> create(const Mado_Config *cfg, const char *main_dir);
     static std::unique_ptr<Mado_Entry> parse(const Mado_Config *cfg, const char *entry_dir);
@@ -118,7 +119,7 @@ class Mado_Entry {
 
 class Mado_Entries {
   public:
-    Mado_Entries &filter(const AST_Node *filter);
+    Mado_Entries &filter(const Mado_Config *cfg, const AST_Node *filter);
     Mado_Entries &sort(const Mado_Config *cfg);
 
     void print(const Mado_Config *cfg, std::ostream &os = std::cout) const;

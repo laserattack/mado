@@ -1,4 +1,4 @@
 - NAME: case-independent search using special flag
 - PRIORITY: 10
 - TAGS: search, feat
-- STATUS: opened
+- STATUS: closed

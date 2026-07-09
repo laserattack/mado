@@ -47,6 +47,7 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->max_header_lines = 30;
     cfg->hide_fields = Mado_Entry_Field::NONE;
     cfg->abs_paths = false;
+    cfg->case_insensitive_search = false;
     cfg->sort_criteria.clear();
     cfg->fmt = Mado_Output_Format::DEFAULT;
 }
@@ -329,24 +330,34 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
     os << "\n";
 }
 
-bool Mado_Entry::matches_condition(const AST_Node *filter) const {
+// interpreter
+bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filter) const {
     if (!filter)
         return true;
+
+    auto normalize_string_field = [cfg](const std::string &s) -> std::string {
+        if (!cfg->case_insensitive_search)
+            return s;
+        std::string result = s;
+        std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+        return result;
+    };
+
     switch (filter->type) {
     case NODE_ALL:
         return true;
     case NODE_BINARY_OP:
         switch (filter->binary.op) {
         case OP_AND:
-            return matches_condition(filter->binary.left) && matches_condition(filter->binary.right);
+            return matches_condition(cfg, filter->binary.left) && matches_condition(cfg, filter->binary.right);
         case OP_OR:
-            return matches_condition(filter->binary.left) || matches_condition(filter->binary.right);
+            return matches_condition(cfg, filter->binary.left) || matches_condition(cfg, filter->binary.right);
         default:
             return false;
         }
     case NODE_UNARY_OP:
         if (filter->unary.op == OP_NOT)
-            return !matches_condition(filter->unary.expr);
+            return !matches_condition(cfg, filter->unary.expr);
         return false;
     case NODE_COMPARISON: {
         switch (filter->comparison.field) {
@@ -372,39 +383,42 @@ bool Mado_Entry::matches_condition(const AST_Node *filter) const {
             }
         }
         case CMP_TAG: {
-            const char *ct = filter->comparison.value.str_value;
+            const std::string ct = normalize_string_field(filter->comparison.value.str_value);
+
             for (const auto &tag : tags) {
+                const std::string tag_normalized = normalize_string_field(tag);
+
                 switch (filter->comparison.cmp) {
                 case CMP_EQ:
-                    if (tag == ct)
+                    if (tag_normalized == ct)
                         return true;
                     break;
                 case CMP_NE:
-                    if (tag == ct)
+                    if (tag_normalized == ct)
                         return false;
                     break;
                 case CMP_TILDE:
-                    if (tag.find(ct) != std::string::npos)
+                    if (tag_normalized.find(ct) != std::string::npos)
                         return true;
                     break;
                 case CMP_NTILDE:
-                    if (tag.find(ct) != std::string::npos)
+                    if (tag_normalized.find(ct) != std::string::npos)
                         return false;
                     break;
                 case CMP_GT:
-                    if (tag > ct)
+                    if (tag_normalized > ct)
                         return true;
                     break;
                 case CMP_LT:
-                    if (tag < ct)
+                    if (tag_normalized < ct)
                         return true;
                     break;
                 case CMP_GE:
-                    if (tag >= ct)
+                    if (tag_normalized >= ct)
                         return true;
                     break;
                 case CMP_LE:
-                    if (tag <= ct)
+                    if (tag_normalized <= ct)
                         return true;
                     break;
                 default:
@@ -434,26 +448,29 @@ bool Mado_Entry::matches_condition(const AST_Node *filter) const {
             default:
                 return false;
             }
-            const char *c = filter->comparison.value.str_value;
-            if (field->empty())
+
+            const std::string c = normalize_string_field(filter->comparison.value.str_value);
+            const std::string field_normalized = normalize_string_field(*field);
+
+            if (field_normalized.empty())
                 return false;
             switch (filter->comparison.cmp) {
             case CMP_EQ:
-                return *field == c;
+                return field_normalized == c;
             case CMP_NE:
-                return *field != c;
+                return field_normalized != c;
             case CMP_TILDE:
-                return field->find(c) != std::string::npos;
+                return field_normalized.find(c) != std::string::npos;
             case CMP_NTILDE:
-                return field->find(c) == std::string::npos;
+                return field_normalized.find(c) == std::string::npos;
             case CMP_GT:
-                return *field > c;
+                return field_normalized > c;
             case CMP_LT:
-                return *field < c;
+                return field_normalized < c;
             case CMP_GE:
-                return *field >= c;
+                return field_normalized >= c;
             case CMP_LE:
-                return *field <= c;
+                return field_normalized <= c;
             default:
                 return false;
             }
@@ -499,12 +516,12 @@ Mado_Entries Mado_Entries::get_all(const Mado_Config *cfg, const char *main_dir)
     return result;
 }
 
-Mado_Entries &Mado_Entries::filter(const AST_Node *filter) {
+Mado_Entries &Mado_Entries::filter(const Mado_Config *cfg, const AST_Node *filter) {
     if (!filter)
         return *this;
     auto it = entries_.begin();
     while (it != entries_.end()) {
-        if ((*it)->matches_condition(filter))
+        if ((*it)->matches_condition(cfg, filter))
             ++it;
         else
             it = entries_.erase(it);
