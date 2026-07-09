@@ -131,7 +131,7 @@ static int cmd_help(int argc, char **argv);
 
 static const cmd::Option LIST_OPTIONS[] = {
     {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
-    {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+    {"format", required_argument, NULL, 'f', "Output format (default, path, jsonl)"},
     {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
     {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
     {"hide-name", no_argument, NULL, 'n', "Hide name field"},
@@ -149,6 +149,7 @@ static const cmd::Option REMOVE_OPTIONS[] = {
 
 static const cmd::Option INFO_OPTIONS[] = {
     {"abs-path", no_argument, NULL, 'a', "Show absolute path to main directory"},
+    {"format", required_argument, NULL, 'f', "Output format (default, jsonl)"},
     {NULL, 0, NULL, 0, NULL}};
 
 static cmd::Command commands[] = {
@@ -166,7 +167,7 @@ static cmd::Command commands[] = {
      (cmd::Option[]){
          {"template", required_argument, NULL, 't', "Template to use"},
          {"abs-path", no_argument, NULL, 'a', "Show absolute path to created entry"},
-         {"format", required_argument, NULL, 'f', "Output format (unix, path, jsonl)"},
+         {"format", required_argument, NULL, 'f', "Output format (default, path, jsonl)"},
          {NULL, 0, NULL, 0, NULL}},
      cmd_new},
 
@@ -444,6 +445,19 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
         case 'a':
             g_mado_config.abs_paths = true;
             break;
+        case 'f': {
+            Mado_Error err = mado_parse_format(optarg, &g_mado_config.fmt);
+            // invalid formats
+            if (err != Mado_Error::OK)
+                return mado_print_error(err, "parsing output format");
+
+            // invalid formats for this command
+            if (g_mado_config.fmt == Mado_Output_Format::ONLY_PATH) {
+                err = Mado_Error::INVALID_FORMAT;
+                return mado_print_error(err, "parsing output format");
+            }
+            break;
+        }
         default:
             return -1;
         }

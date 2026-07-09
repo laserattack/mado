@@ -1,3 +1,3 @@
 - NAME: jsonl format for mado info
 - TAGS: ux, format, json, jsonl, info, feat
-- STATUS: opened
+- STATUS: closed

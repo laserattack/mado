@@ -48,7 +48,7 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->hide_fields = Mado_Entry_Field::NONE;
     cfg->abs_paths = false;
     cfg->sort_criteria.clear();
-    cfg->fmt = Mado_Output_Format::UNIX;
+    cfg->fmt = Mado_Output_Format::DEFAULT;
 }
 
 // ================ ERROR MESSAGE
@@ -301,7 +301,7 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
         return;
     }
 
-    // Mado_Output_Format::UNIX
+    // Mado_Output_Format::DEFAULT
     os << path << "/" << cfg->entry_file_name << ".md:1:";
     if (has_flag(shown, Mado_Entry_Field::TIME))
         os << " TIME:[" << time << "]";
@@ -696,6 +696,48 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());
 
+    if (cfg->fmt == Mado_Output_Format::JSONL) {
+        std::map<std::string, int> status_counts;
+        std::map<std::string, int> tag_counts;
+
+        for (auto &e : entries) {
+            if (!e->status.empty())
+                status_counts[e->status]++;
+            for (auto &tag : e->tags) {
+                if (!tag.empty())
+                    tag_counts[tag]++;
+            }
+        }
+
+        os << "{\"main_dir\":";
+        print_json_string(main_dir, os);
+        os << ",\"entries_count\":" << entries.size() << ",\"statuses\":{";
+
+        bool first_status = true;
+        for (auto &[status, count] : status_counts) {
+            if (!first_status)
+                os << ",";
+            print_json_string(status, os);
+            os << ":" << count;
+            first_status = false;
+        }
+
+        os << "},\"tags\":{";
+
+        bool first_tag = true;
+        for (auto &[tag, count] : tag_counts) {
+            if (!first_tag)
+                os << ",";
+            print_json_string(tag, os);
+            os << ":" << count;
+            first_tag = false;
+        }
+
+        os << "}}\n";
+        return Mado_Error::OK;
+    }
+
+    // Mado_Output_Format::DEFAULT
     os << "Main directory: " << main_dir << "\n";
     os << "Entries count: " << entries.size() << "\n";
 
@@ -711,14 +753,14 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
         }
     }
 
+    os << "Statuses:\n";
     if (!status_counts.empty()) {
-        os << "Statuses:\n";
         for (auto &[status, count] : status_counts)
             os << "  " << status << ": " << count << "\n";
     }
 
+    os << "Tags:\n";
     if (!tag_counts.empty()) {
-        os << "Tags:\n";
         for (auto &[tag, count] : tag_counts)
             os << "  " << tag << ": " << count << "\n";
     }
@@ -729,7 +771,7 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
 Mado_Error mado_parse_format(const char *format_str, Mado_Output_Format *fmt) {
     static const struct keyword_entry formats[] = {
         {"path", static_cast<int>(Mado_Output_Format::ONLY_PATH)},
-        {"unix", static_cast<int>(Mado_Output_Format::UNIX)},
+        {"default", static_cast<int>(Mado_Output_Format::DEFAULT)},
         {"jsonl", static_cast<int>(Mado_Output_Format::JSONL)},
     };
     static const int n = sizeof(formats) / sizeof(formats[0]);

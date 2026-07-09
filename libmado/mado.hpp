@@ -30,7 +30,7 @@ enum class Mado_Error {
 };
 
 enum class Mado_Output_Format {
-    UNIX = 1,
+    DEFAULT = 1,
     ONLY_PATH,
     JSONL,
 };
