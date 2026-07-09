@@ -187,25 +187,25 @@ static cmd::Command commands[] = {
 
     {"remove",
      "Remove entries matching query",
-     "mado remove <QUERY>",
+     "mado remove [COMMAND OPTIONS] <QUERY>",
      REMOVE_OPTIONS,
      cmd_remove},
 
     {"rm",
      "Alias for 'remove' option",
-     "mado rm <QUERY>",
+     "mado rm [COMMAND OPTIONS] <QUERY>",
      REMOVE_OPTIONS,
      cmd_remove},
 
     {"info",
      "Show repository information",
-     "mado info",
+     "mado info [COMMAND OPTIONS]",
      INFO_OPTIONS,
      cmd_info},
 
     {"repo",
      "Alias for 'info' option",
-     "mado repo",
+     "mado repo [COMMAND OPTIONS]",
      INFO_OPTIONS,
      cmd_info},
 
