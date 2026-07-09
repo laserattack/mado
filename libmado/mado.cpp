@@ -126,7 +126,7 @@ static Mado_Error mado_entry_create(const Mado_Config *cfg, const char *entry_pa
 }
 
 std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> Mado_Entry::create(const Mado_Config *cfg, const char *main_dir) {
-    time_t t = ::time(NULL);
+    time_t t = ::time(nullptr);
     struct tm *tm = localtime(&t);
     char dir_name[16];
     strftime(dir_name, sizeof(dir_name), "%Y%m%dT%H%M%S", tm);

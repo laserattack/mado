@@ -115,7 +115,7 @@ static Command *find_by_name(const char *name, Command *commands) {
     for (int i = 0; commands[i].name; i++)
         if (strcmp(commands[i].name, name) == 0)
             return &commands[i];
-    return NULL;
+    return nullptr;
 }
 
 } // namespace cmd
@@ -130,47 +130,47 @@ static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
 
 static const cmd::Option LIST_OPTIONS[] = {
-    {"sort", required_argument, NULL, 's', "Sort entries (+field,-field,field,...)"},
-    {"format", required_argument, NULL, 'f', "Output format (default, path, jsonl)"},
-    {"abs-paths", no_argument, NULL, 'a', "Show absolute paths to entries"},
-    {"ignore-case", no_argument, NULL, 'i', "Case-insensitive search"},
-    {"only-hidden", no_argument, NULL, 'o', "Show only hidden fields"},
-    {"hide-name", no_argument, NULL, 'n', "Hide name field"},
-    {"hide-time", no_argument, NULL, 't', "Hide time field"},
-    {"hide-deadline", no_argument, NULL, 'd', "Hide deadline field"},
-    {"hide-priority", no_argument, NULL, 'p', "Hide priority field"},
-    {"hide-status", no_argument, NULL, 'u', "Hide status field"},
-    {"hide-tags", no_argument, NULL, 'g', "Hide tags field"},
-    {"hide-path", no_argument, NULL, 'h', "Hide path field"},
-    {NULL, 0, NULL, 0, NULL}};
+    {"sort", required_argument, nullptr, 's', "Sort entries (+field,-field,field,...)"},
+    {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
+    {"abs-paths", no_argument, nullptr, 'a', "Show absolute paths to entries"},
+    {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
+    {"only-hidden", no_argument, nullptr, 'o', "Show only hidden fields"},
+    {"hide-name", no_argument, nullptr, 'n', "Hide name field"},
+    {"hide-time", no_argument, nullptr, 't', "Hide time field"},
+    {"hide-deadline", no_argument, nullptr, 'd', "Hide deadline field"},
+    {"hide-priority", no_argument, nullptr, 'p', "Hide priority field"},
+    {"hide-status", no_argument, nullptr, 'u', "Hide status field"},
+    {"hide-tags", no_argument, nullptr, 'g', "Hide tags field"},
+    {"hide-path", no_argument, nullptr, 'h', "Hide path field"},
+    {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option REMOVE_OPTIONS[] = {
-    {"abs-path", no_argument, NULL, 'a', "Show absolute path to removed entry"},
-    {"ignore-case", no_argument, NULL, 'i', "Case-insensitive search"},
-    {NULL, 0, NULL, 0, NULL}};
+    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to removed entry"},
+    {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
+    {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option INFO_OPTIONS[] = {
-    {"abs-path", no_argument, NULL, 'a', "Show absolute path to main directory"},
-    {"format", required_argument, NULL, 'f', "Output format (default, jsonl)"},
-    {NULL, 0, NULL, 0, NULL}};
+    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to main directory"},
+    {"format", required_argument, nullptr, 'f', "Output format (default, jsonl)"},
+    {nullptr, 0, nullptr, 0, nullptr}};
 
 static cmd::Command commands[] = {
     {"init",
      "Initialize mado repository in current working directory",
      "mado init [COMMAND OPTIONS]",
      (cmd::Option[]){
-         {"force", no_argument, NULL, 'F', "Force init"},
-         {NULL, 0, NULL, 0, NULL}},
+         {"force", no_argument, nullptr, 'F', "Force init"},
+         {nullptr, 0, nullptr, 0, nullptr}},
      cmd_init},
 
     {"new",
      "Create new entry",
      "mado new [COMMAND OPTIONS]",
      (cmd::Option[]){
-         {"template", required_argument, NULL, 't', "Template to use"},
-         {"abs-path", no_argument, NULL, 'a', "Show absolute path to created entry"},
-         {"format", required_argument, NULL, 'f', "Output format (default, path, jsonl)"},
-         {NULL, 0, NULL, 0, NULL}},
+         {"template", required_argument, nullptr, 't', "Template to use"},
+         {"abs-path", no_argument, nullptr, 'a', "Show absolute path to created entry"},
+         {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
+         {nullptr, 0, nullptr, 0, nullptr}},
      cmd_new},
 
     {"list",
@@ -212,10 +212,10 @@ static cmd::Command commands[] = {
     {"help",
      "Show help for commands",
      "mado help [COMMAND]",
-     NULL,
+     nullptr,
      cmd_help},
 
-    {NULL, NULL, NULL, NULL, NULL}};
+    {nullptr, nullptr, nullptr, nullptr, nullptr}};
 
 static void print_usage() {
     std::cout << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
@@ -237,7 +237,7 @@ static int cmd_init(int argc, char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
-    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         if (opt == 'F')
             force = 1;
         else
@@ -266,7 +266,7 @@ static int cmd_new(int argc, char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
-    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 't':
             g_mado_config.template_name = optarg;
@@ -309,7 +309,7 @@ static int cmd_list(int argc, char **argv) {
     int only = 0, opt;
 
     opterr = 0;
-    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1)
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1)
         if (opt == 'o') {
             only = 1;
             g_mado_config.hide_fields = Mado_Entry_Field::ALL;
@@ -324,7 +324,7 @@ static int cmd_list(int argc, char **argv) {
             g_mado_config.hide_fields |= field;
     };
 
-    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 's': {
             Mado_Error err = mado_parse_sort(optarg, &g_mado_config.sort_criteria);
@@ -402,7 +402,7 @@ static int cmd_remove(int argc, char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
-    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 'a':
             g_mado_config.abs_paths = true;
@@ -448,7 +448,7 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
-    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 'a':
             g_mado_config.abs_paths = true;
@@ -504,7 +504,7 @@ static int handle_global_options(int argc, char **argv) {
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}};
     int opt;
-    while ((opt = getopt_long(argc, argv, "+C:D:E:h", global_options, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "+C:D:E:h", global_options, nullptr)) != -1) {
         switch (opt) {
         case 'C':
             if (chdir(optarg) != 0) {
