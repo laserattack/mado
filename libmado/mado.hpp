@@ -144,7 +144,7 @@ void mado_init_config(Mado_Config *cfg);
 
 // ================ REPO MANAGEMENT
 
-Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force);
+std::pair<std::string, Mado_Error> mado_main_dir_init(const Mado_Config *cfg, int force);
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::cout);
 

@@ -681,7 +681,7 @@ Mado_Error mado_templates_dir_init(const Mado_Config *cfg) {
     return Mado_Error::OK;
 }
 
-Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force) {
+std::pair<std::string, Mado_Error> mado_main_dir_init(const Mado_Config *cfg, int force) {
     std::filesystem::path cwd = std::filesystem::current_path();
     std::filesystem::path entries_dir = cwd / cfg->main_dir_name;
 
@@ -689,17 +689,17 @@ Mado_Error mado_entries_dir_init(const Mado_Config *cfg, int force) {
         std::string existing = find_dir_up(cfg->main_dir_name);
         if (!existing.empty())
             // found somewhere at the top of the tree and there is no force flag
-            return Mado_Error::FOUND_ABOVE;
+            return {existing, Mado_Error::FOUND_ABOVE};
     }
 
     if (std::filesystem::exists(entries_dir))
         // exists directly in cwd, cannot be created even with force
-        return Mado_Error::ALREADY_EXISTS;
+        return {entries_dir.string(), Mado_Error::ALREADY_EXISTS};
 
     if (!std::filesystem::create_directory(entries_dir))
-        return Mado_Error::IO;
+        return {"", Mado_Error::IO};
 
-    return Mado_Error::OK;
+    return {entries_dir.string(), Mado_Error::OK};
 }
 
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
@@ -708,7 +708,6 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
         main_dir = std::filesystem::relative(std::filesystem::path(main_dir));
     }
     if (main_dir.empty()) {
-        os << "No mado repository here\n";
         return Mado_Error::NOT_FOUND;
     }
     auto entries = Mado_Entries::get_all(cfg, main_dir.c_str());

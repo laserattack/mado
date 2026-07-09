@@ -104,11 +104,11 @@ static std::string options_help(const Option *opts) {
 }
 
 static void print_help(const Command *cmd) {
-    std::cout << "Usage: " << cmd->usage << "\n\n";
-    std::cout << cmd->description << "\n";
+    std::cerr << "Usage: " << cmd->usage << "\n\n";
+    std::cerr << cmd->description << "\n";
     if (cmd->options) {
-        std::cout << "\nCommand options:\n";
-        std::cout << options_help(cmd->options);
+        std::cerr << "\nCommand options:\n";
+        std::cerr << options_help(cmd->options);
     }
 }
 
@@ -163,6 +163,7 @@ static const cmd::Option COMMAND_NEW_OPTIONS[] = {
 
 static const cmd::Option COMMAND_INIT_OPTIONS[] = {
     {"force", no_argument, nullptr, 'F', "Force init"},
+    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to created directory"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_HELP_OPTIONS[] = {
@@ -381,19 +382,19 @@ static cmd::Command commands[] = {
     {nullptr, nullptr, nullptr, nullptr, nullptr, false}};
 
 static void print_usage(bool show_aliases) {
-    std::cout << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
-    std::cout << "Global options:\n";
-    std::cout << "  -C, --working-dir <DIR>   Change working directory\n";
-    std::cout << "  -D, --main-dir <NAME>     Custom main directory name\n";
-    std::cout << "  -E, --entry-file <NAME>   Custom entry file name\n";
-    std::cout << "  -h, --help                Show this help\n";
-    std::cout << "\nCommands:\n";
+    std::cerr << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
+    std::cerr << "Global options:\n";
+    std::cerr << "  -C, --working-dir <DIR>   Change working directory\n";
+    std::cerr << "  -D, --main-dir <NAME>     Custom main directory name\n";
+    std::cerr << "  -E, --entry-file <NAME>   Custom entry file name\n";
+    std::cerr << "  -h, --help                Show this help\n";
+    std::cerr << "\nCommands:\n";
     for (int i = 0; commands[i].name; i++) {
         if (commands[i].is_alias and !show_aliases)
             continue;
-        fprintf(stdout, "  %-12s %s\n", commands[i].name, commands[i].description);
+        fprintf(stderr, "  %-12s %s\n", commands[i].name, commands[i].description);
     }
-    std::cout << "\nRun '" << argv0 << " help <command>' for more information on a command\n";
+    std::cerr << "\nRun '" << argv0 << " help <command>' for more information on a command\n";
 }
 
 // ================ COMMAND HANDLERS
@@ -404,22 +405,41 @@ static int cmd_init(int argc, char **argv) {
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
-        if (opt == 'F')
+        switch (opt) {
+        case 'F':
             force = 1;
-        else
+            break;
+        case 'a':
+            g_mado_config.abs_paths = true;
+            break;
+        default:
             return -1;
+        }
     }
-    Mado_Error err = mado_entries_dir_init(&g_mado_config, force);
+
+    auto [main_dir, err] = mado_main_dir_init(&g_mado_config, force);
+
+    auto print_main_dir_path = [&]() {
+        if (!g_mado_config.abs_paths) {
+            std::cout << std::filesystem::relative(main_dir).string() << "\n";
+        } else {
+            std::cout << main_dir << "\n";
+        }
+    };
+
     if (err == Mado_Error::FOUND_ABOVE) {
-        mado_print_error(err, "creating entries directory");
+        mado_print_error(err, "creating main directory");
         std::cerr << "Use -F to try force init here\n";
-    }
-    if (err == Mado_Error::ALREADY_EXISTS) {
-        mado_print_error(err, "creating entries directory");
+        print_main_dir_path();
+    } else if (err == Mado_Error::ALREADY_EXISTS) {
+        mado_print_error(err, "creating main directory");
         std::cerr << "Already initialized in current directory\n";
+        print_main_dir_path();
+    } else if (err != Mado_Error::OK) {
+        mado_print_error(err, "creating main directory");
+    } else { // err == Mado_Error::OK
+        print_main_dir_path();
     }
-    if (err != Mado_Error::OK)
-        mado_print_error(err, "creating entries directory");
 
     err = mado_templates_dir_init(&g_mado_config);
     if (err != Mado_Error::OK)
@@ -452,7 +472,7 @@ static int cmd_new(int argc, char **argv) {
     }
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
+        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
@@ -551,7 +571,7 @@ static int cmd_list(int argc, char **argv) {
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
+        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
@@ -596,7 +616,7 @@ static int cmd_remove(int argc, char **argv) {
 
     std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
     if (main_dir.empty()) {
-        std::cerr << "Error: entries directory '" << g_mado_config.main_dir_name << "' not found\n";
+        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
     }
 
@@ -638,7 +658,10 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     }
 
     Mado_Error err = mado_print_repo_info(&g_mado_config);
-    if (err != Mado_Error::OK) {
+    if (err == Mado_Error::NOT_FOUND) {
+        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
+        return -1;
+    } else if (err != Mado_Error::OK) {
         return mado_print_error(err, "getting repository info");
     }
 
