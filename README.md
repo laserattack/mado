@@ -257,7 +257,7 @@ Resolve to timestamps. Accept optional offsets with `+`/`-`
 
 Examples:
 
-```
+``` bash
 mado list 'deadline > @week'
 mado list 'deadline > @year'
 mado list 'time > @today-4'
@@ -270,7 +270,7 @@ mado list 'time ~ @month-2'
 
 Clone the repository and build:
 
-```
+``` bash
 make
 ```
 
