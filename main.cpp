@@ -54,6 +54,7 @@ struct Command {
     const char *usage;
     const Option *options;
     Handler handler;
+    bool is_alias;
 };
 
 static std::pair<std::vector<struct option>, std::string>
@@ -129,7 +130,7 @@ static int cmd_remove(int argc, char **argv);
 static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
 
-static const cmd::Option LIST_OPTIONS[] = {
+static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {"sort", required_argument, nullptr, 's', "Sort entries (+field,-field,field,...)"},
     {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
     {"abs-paths", no_argument, nullptr, 'a', "Show absolute paths to entries"},
@@ -144,80 +145,242 @@ static const cmd::Option LIST_OPTIONS[] = {
     {"hide-path", no_argument, nullptr, 'h', "Hide path field"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
-static const cmd::Option REMOVE_OPTIONS[] = {
+static const cmd::Option COMMAND_REMOVE_OPTIONS[] = {
     {"abs-path", no_argument, nullptr, 'a', "Show absolute path to removed entry"},
     {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
-static const cmd::Option INFO_OPTIONS[] = {
+static const cmd::Option COMMAND_INFO_OPTIONS[] = {
     {"abs-path", no_argument, nullptr, 'a', "Show absolute path to main directory"},
     {"format", required_argument, nullptr, 'f', "Output format (default, jsonl)"},
+    {nullptr, 0, nullptr, 0, nullptr}};
+
+static const cmd::Option COMMAND_NEW_OPTIONS[] = {
+    {"template", required_argument, nullptr, 't', "Template to use"},
+    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to created entry"},
+    {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
+    {nullptr, 0, nullptr, 0, nullptr}};
+
+static const cmd::Option COMMAND_INIT_OPTIONS[] = {
+    {"force", no_argument, nullptr, 'F', "Force init"},
+    {nullptr, 0, nullptr, 0, nullptr}};
+
+static const cmd::Option COMMAND_HELP_OPTIONS[] = {
+    {"show-aliases", no_argument, nullptr, 'a', "Show all command aliases"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static cmd::Command commands[] = {
     {"init",
      "Initialize mado repository in current working directory",
      "mado init [COMMAND OPTIONS]",
-     (cmd::Option[]){
-         {"force", no_argument, nullptr, 'F', "Force init"},
-         {nullptr, 0, nullptr, 0, nullptr}},
-     cmd_init},
+     COMMAND_INIT_OPTIONS,
+     cmd_init,
+     false},
 
     {"new",
      "Create new entry",
      "mado new [COMMAND OPTIONS]",
-     (cmd::Option[]){
-         {"template", required_argument, nullptr, 't', "Template to use"},
-         {"abs-path", no_argument, nullptr, 'a', "Show absolute path to created entry"},
-         {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
-         {nullptr, 0, nullptr, 0, nullptr}},
-     cmd_new},
+     COMMAND_NEW_OPTIONS,
+     cmd_new,
+     false},
 
     {"list",
      "List entries with optional filtering",
      "mado list [COMMAND OPTIONS] [QUERY]",
-     LIST_OPTIONS,
-     cmd_list},
-
-    {"ls",
-     "Alias for 'list' option",
-     "mado ls [COMMAND OPTIONS] [QUERY]",
-     LIST_OPTIONS,
-     cmd_list},
+     COMMAND_LIST_OPTIONS,
+     cmd_list,
+     false},
 
     {"remove",
      "Remove entries matching query",
      "mado remove [COMMAND OPTIONS] <QUERY>",
-     REMOVE_OPTIONS,
-     cmd_remove},
-
-    {"rm",
-     "Alias for 'remove' option",
-     "mado rm [COMMAND OPTIONS] <QUERY>",
-     REMOVE_OPTIONS,
-     cmd_remove},
+     COMMAND_REMOVE_OPTIONS,
+     cmd_remove,
+     false},
 
     {"info",
      "Show repository information",
      "mado info [COMMAND OPTIONS]",
-     INFO_OPTIONS,
-     cmd_info},
+     COMMAND_INFO_OPTIONS,
+     cmd_info,
+     false},
+
+    {"help",
+     "Show help for commands",
+     "mado help [COMMAND OPTIONS] [COMMAND]",
+     COMMAND_HELP_OPTIONS,
+     cmd_help,
+     false},
+
+    // help aliases
+
+    {"usage",
+     "Alias for 'help' option",
+     "mado usage [COMMAND OPTIONS] [COMMAND]",
+     COMMAND_HELP_OPTIONS,
+     cmd_help,
+     true},
+
+    {"?",
+     "Alias for 'help' option",
+     "mado ? [COMMAND OPTIONS] [COMMAND]",
+     COMMAND_HELP_OPTIONS,
+     cmd_help,
+     true},
+
+    // init aliases
+
+    {"setup",
+     "Alias for 'init' option",
+     "mado setup [COMMAND OPTIONS]",
+     COMMAND_INIT_OPTIONS,
+     cmd_init,
+     true},
+
+    {"start",
+     "Alias for 'init' option",
+     "mado start [COMMAND OPTIONS]",
+     COMMAND_INIT_OPTIONS,
+     cmd_init,
+     true},
+
+    {"install",
+     "Alias for 'init' option",
+     "mado install [COMMAND OPTIONS]",
+     COMMAND_INIT_OPTIONS,
+     cmd_init,
+     true},
+
+    // list aliases
+
+    {"ls",
+     "Alias for 'list' option",
+     "mado ls [COMMAND OPTIONS] [QUERY]",
+     COMMAND_LIST_OPTIONS,
+     cmd_list,
+     true},
+
+    {"show",
+     "Alias for 'list' option",
+     "mado show [COMMAND OPTIONS] [QUERY]",
+     COMMAND_LIST_OPTIONS,
+     cmd_list,
+     true},
+
+    {"search",
+     "Alias for 'list' option",
+     "mado search [COMMAND OPTIONS] [QUERY]",
+     COMMAND_LIST_OPTIONS,
+     cmd_list,
+     true},
+
+    {"find",
+     "Alias for 'list' option",
+     "mado find [COMMAND OPTIONS] [QUERY]",
+     COMMAND_LIST_OPTIONS,
+     cmd_list,
+     true},
+
+    {"view",
+     "Alias for 'list' option",
+     "mado view [COMMAND OPTIONS] [QUERY]",
+     COMMAND_LIST_OPTIONS,
+     cmd_list,
+     true},
+
+    // new aliases
+
+    {"add",
+     "Alias for 'new' option",
+     "mado add [COMMAND OPTIONS] [QUERY]",
+     COMMAND_NEW_OPTIONS,
+     cmd_new,
+     true},
+
+    {"create",
+     "Alias for 'new' option",
+     "mado create [COMMAND OPTIONS] [QUERY]",
+     COMMAND_NEW_OPTIONS,
+     cmd_new,
+     true},
+
+    {"note",
+     "Alias for 'new' option",
+     "mado note [COMMAND OPTIONS] [QUERY]",
+     COMMAND_NEW_OPTIONS,
+     cmd_new,
+     true},
+
+    {"task",
+     "Alias for 'new' option",
+     "mado task [COMMAND OPTIONS] [QUERY]",
+     COMMAND_NEW_OPTIONS,
+     cmd_new,
+     true},
+
+    // remove aliases
+
+    {"rm",
+     "Alias for 'remove' option",
+     "mado rm [COMMAND OPTIONS] <QUERY>",
+     COMMAND_REMOVE_OPTIONS,
+     cmd_remove,
+     true},
+
+    {"delete",
+     "Alias for 'remove' option",
+     "mado delete [COMMAND OPTIONS] <QUERY>",
+     COMMAND_REMOVE_OPTIONS,
+     cmd_remove,
+     true},
+
+    {"clear",
+     "Alias for 'remove' option",
+     "mado clear [COMMAND OPTIONS] <QUERY>",
+     COMMAND_REMOVE_OPTIONS,
+     cmd_remove,
+     true},
+
+    {"trash",
+     "Alias for 'remove' option",
+     "mado trash [COMMAND OPTIONS] <QUERY>",
+     COMMAND_REMOVE_OPTIONS,
+     cmd_remove,
+     true},
+
+    // info aliases
 
     {"repo",
      "Alias for 'info' option",
      "mado repo [COMMAND OPTIONS]",
-     INFO_OPTIONS,
-     cmd_info},
+     COMMAND_INFO_OPTIONS,
+     cmd_info,
+     true},
 
-    {"help",
-     "Show help for commands",
-     "mado help [COMMAND]",
-     nullptr,
-     cmd_help},
+    {"about",
+     "Alias for 'info' option",
+     "mado about [COMMAND OPTIONS]",
+     COMMAND_INFO_OPTIONS,
+     cmd_info,
+     true},
 
-    {nullptr, nullptr, nullptr, nullptr, nullptr}};
+    {"summary",
+     "Alias for 'info' option",
+     "mado summary [COMMAND OPTIONS]",
+     COMMAND_INFO_OPTIONS,
+     cmd_info,
+     true},
 
-static void print_usage() {
+    {"stat",
+     "Alias for 'info' option",
+     "mado stat [COMMAND OPTIONS]",
+     COMMAND_INFO_OPTIONS,
+     cmd_info,
+     true},
+
+    {nullptr, nullptr, nullptr, nullptr, nullptr, false}};
+
+static void print_usage(bool show_aliases) {
     std::cout << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
     std::cout << "Global options:\n";
     std::cout << "  -C, --working-dir <DIR>   Change working directory\n";
@@ -225,8 +388,11 @@ static void print_usage() {
     std::cout << "  -E, --entry-file <NAME>   Custom entry file name\n";
     std::cout << "  -h, --help                Show this help\n";
     std::cout << "\nCommands:\n";
-    for (int i = 0; commands[i].name; i++)
+    for (int i = 0; commands[i].name; i++) {
+        if (commands[i].is_alias and !show_aliases)
+            continue;
         fprintf(stdout, "  %-12s %s\n", commands[i].name, commands[i].description);
+    }
     std::cout << "\nRun '" << argv0 << " help <command>' for more information on a command\n";
 }
 
@@ -480,17 +646,33 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 }
 
 static int cmd_help(int argc, char **argv) {
-    if (argc < 2) {
-        print_usage();
-        return 0;
+    const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
+    auto [gopts, short_str] = cmd::to_getopt(cmd->options);
+    bool show_aliases = false;
+    int opt;
+
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
+        switch (opt) {
+        case 'a':
+            show_aliases = true;
+            break;
+        default:
+            return -1;
+        }
     }
-    cmd::Command *cmd = cmd::find_by_name(argv[1], commands);
-    if (!cmd) {
-        std::cerr << "Unknown command: " << argv[1] << "\n\n";
-        print_usage();
-        return -1;
+
+    if (optind < argc) {
+        cmd::Command *target_cmd = cmd::find_by_name(argv[optind], commands);
+        if (!target_cmd) {
+            std::cerr << "Unknown command: " << argv[optind] << "\n\n";
+            print_usage(show_aliases);
+            return -1;
+        }
+        cmd::print_help(target_cmd);
+    } else {
+        print_usage(show_aliases);
     }
-    cmd::print_help(cmd);
+
     return 0;
 }
 
@@ -519,7 +701,7 @@ static int handle_global_options(int argc, char **argv) {
             g_mado_config.entry_file_name = optarg;
             break;
         case 'h':
-            print_usage();
+            print_usage(false);
             return 1;
         default:
             return -1;
@@ -535,7 +717,7 @@ int main(int argc, char **argv) {
     mado_init_config(&g_mado_config);
 
     if (argc < 2) {
-        print_usage();
+        print_usage(false);
         return 0;
     }
 
@@ -544,7 +726,7 @@ int main(int argc, char **argv) {
         return ret < 0 ? 1 : 0;
 
     if (optind >= argc) {
-        print_usage();
+        print_usage(false);
         return 0;
     }
 
@@ -552,7 +734,7 @@ int main(int argc, char **argv) {
     cmd::Command *cmd = cmd::find_by_name(command_name, commands);
     if (!cmd) {
         std::cerr << "Error: unknown command '" << command_name << "'\n\n";
-        print_usage();
+        print_usage(false);
         return 1;
     }
 
