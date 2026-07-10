@@ -447,9 +447,11 @@ static int cmd_new(int argc, char **argv) {
             g_mado_config.abs_paths = true;
             break;
         case 'f': {
-            Mado_Error err = mado_parse_format(optarg, &g_mado_config.fmt);
+            auto [fmt, err] = mado_parse_format(optarg);
             if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing output format");
+
+            g_mado_config.fmt = fmt;
             break;
         }
         default:
@@ -474,7 +476,6 @@ static int cmd_new(int argc, char **argv) {
 
 static int cmd_list(int argc, char **argv) {
     char *query = nullptr;
-    Mado_Output_Format *fmt = &g_mado_config.fmt;
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int only = 0, opt;
@@ -498,15 +499,19 @@ static int cmd_list(int argc, char **argv) {
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 's': {
-            Mado_Error err = mado_parse_sort(optarg, &g_mado_config.sort_criteria);
+            auto [criteria, err] = mado_parse_sort(optarg);
             if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing sort option");
+
+            g_mado_config.sort_criteria = criteria;
             break;
         }
         case 'f': {
-            Mado_Error err = mado_parse_format(optarg, fmt);
+            auto [fmt, err] = mado_parse_format(optarg);
             if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing output format");
+
+            g_mado_config.fmt = fmt;
             break;
         }
         case 'a':
@@ -542,6 +547,12 @@ static int cmd_list(int argc, char **argv) {
             return -1;
         }
     }
+
+    if ((g_mado_config.fmt == Mado_Output_Format::ONLY_PATH ||
+         g_mado_config.fmt == Mado_Output_Format::DEFAULT) &&
+        has_flag(g_mado_config.hide_fields, Mado_Entry_Field::PATH))
+        std::cerr << "Hint: -h, --hide-path is ignored with the current output format\n";
+
     if (optind < argc)
         query = argv[optind];
 
@@ -620,16 +631,18 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
             g_mado_config.abs_paths = true;
             break;
         case 'f': {
-            Mado_Error err = mado_parse_format(optarg, &g_mado_config.fmt);
-            // invalid formats
+
+            auto [fmt, err] = mado_parse_format(optarg);
             if (err != Mado_Error::OK)
                 return mado_print_error(err, "parsing output format");
 
             // invalid formats for this command
-            if (g_mado_config.fmt == Mado_Output_Format::ONLY_PATH) {
+            if (fmt == Mado_Output_Format::ONLY_PATH) {
                 err = Mado_Error::INVALID_FORMAT;
                 return mado_print_error(err, "parsing output format");
             }
+
+            g_mado_config.fmt = fmt;
             break;
         }
         default:

@@ -155,8 +155,8 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::
 
 // ================ UTILS
 
-Mado_Error mado_parse_format(const std::string &format_str, Mado_Output_Format *fmt);
-Mado_Error mado_parse_sort(const std::string &sort_str, std::vector<Mado_Sort_Criterion> *criteria);
+std::pair<Mado_Output_Format, Mado_Error> mado_parse_format(const std::string &format_str);
+std::pair<std::vector<Mado_Sort_Criterion>, Mado_Error> mado_parse_sort(const std::string &sort_str);
 
 // ================ ERROR MESSAGE
 

@@ -597,15 +597,15 @@ Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
     return *this;
 }
 
-Mado_Error
-mado_parse_sort(const std::string &sort_str,
-                std::vector<Mado_Sort_Criterion> *criteria) {
+std::pair<std::vector<Mado_Sort_Criterion>, Mado_Error>
+mado_parse_sort(const std::string &sort_str) {
 
     if (sort_str.empty())
-        return Mado_Error::INVALID_FORMAT;
+        return {{}, Mado_Error::INVALID_FORMAT};
 
     std::stringstream ss(sort_str);
     std::string token;
+    std::vector<Mado_Sort_Criterion> criteria;
 
     static const struct keyword_entry fields_for_parse_sort[] = {
         {"time", static_cast<int>(Mado_Entry_Field::TIME)},
@@ -618,7 +618,6 @@ mado_parse_sort(const std::string &sort_str,
     static const int n_fields = sizeof(fields_for_parse_sort) / sizeof(fields_for_parse_sort[0]);
 
     while (std::getline(ss, token, ',')) {
-        // strip whitespace
         token.erase(std::remove_if(token.begin(), token.end(), is_whitespace), token.end());
         if (token.empty())
             continue;
@@ -636,12 +635,12 @@ mado_parse_sort(const std::string &sort_str,
         if (field_token > 0) {
             c.field = static_cast<Mado_Entry_Field>(field_token);
         } else {
-            return Mado_Error::PARSE;
+            return {{}, Mado_Error::PARSE};
         }
 
-        criteria->push_back(c);
+        criteria.push_back(c);
     }
-    return Mado_Error::OK;
+    return {criteria, Mado_Error::OK};
 }
 
 void Mado_Entries::print(const Mado_Config *cfg, std::ostream &os) const {
@@ -797,9 +796,8 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     return Mado_Error::OK;
 }
 
-Mado_Error
-mado_parse_format(const std::string &format_str,
-                  Mado_Output_Format *fmt) {
+std::pair<Mado_Output_Format, Mado_Error>
+mado_parse_format(const std::string &format_str) {
 
     static const struct keyword_entry formats[] = {
         {"path", static_cast<int>(Mado_Output_Format::ONLY_PATH)},
@@ -814,10 +812,9 @@ mado_parse_format(const std::string &format_str,
 
     int token = lookup_keyword(cleaned.c_str(), formats, n);
     if (token > 0) {
-        *fmt = static_cast<Mado_Output_Format>(token);
-        return Mado_Error::OK;
+        return {static_cast<Mado_Output_Format>(token), Mado_Error::OK};
     }
-    return Mado_Error::INVALID_FORMAT;
+    return {Mado_Output_Format::DEFAULT, Mado_Error::INVALID_FORMAT};
 }
 
 int mado_print_error(Mado_Error err, const char *context, std::ostream &os) {
