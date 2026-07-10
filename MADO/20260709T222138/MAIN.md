@@ -1,7 +1,9 @@
-- NAME: error refactoring
+- NAME: refactoring
 - PRIORITY: 101
 - TAGS: refactoring, error, chore
-- STATUS: opened
+- STATUS: closed
+
+# [x] 1
 
 вот такого не должно быть, все ошибки только через `mado_print_error`,
 а в cerr напрямую только хинты выводить можно
@@ -11,3 +13,9 @@
         std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
         return -1;
 ```
+
+# [ ] 2
+
+сделай чтобы пропуск пробелов был внутри lookup keyword
+
+хз не надо это наверно

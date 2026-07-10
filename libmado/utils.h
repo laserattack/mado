@@ -23,6 +23,7 @@ char is_whitespace(char c) {
 int lookup_keyword(const char *word,
                    const struct keyword_entry *keywords,
                    int n_keywords) {
+
     int word_len = (int)strlen(word);
     int matches_count = 0, matched_token = 0;
 

@@ -14,20 +14,6 @@
 
 #include "mado.hpp"
 
-static std::string find_dir_up(const std::string &dir_name) {
-    auto current = std::filesystem::current_path();
-    while (true) {
-        auto test = current / dir_name;
-        if (std::filesystem::exists(test))
-            return test.string();
-        auto parent = current.parent_path();
-        if (parent == current)
-            break;
-        current = parent;
-    }
-    return {};
-}
-
 static char *argv0;
 
 // ================ GLOBAL CONFIG
@@ -429,11 +415,11 @@ static int cmd_init(int argc, char **argv) {
 
     if (err == Mado_Error::FOUND_ABOVE) {
         mado_print_error(err, "creating main directory");
-        std::cerr << "Use -F to try force init here\n";
+        std::cerr << "Hint: Use -F to try force init here\n";
         print_main_dir_path();
     } else if (err == Mado_Error::ALREADY_EXISTS) {
         mado_print_error(err, "creating main directory");
-        std::cerr << "Already initialized in current directory\n";
+        std::cerr << "Hint: Already initialized in current directory\n";
         print_main_dir_path();
     } else if (err != Mado_Error::OK) {
         mado_print_error(err, "creating main directory");
@@ -470,13 +456,12 @@ static int cmd_new(int argc, char **argv) {
             return -1;
         }
     }
-    std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
-    if (main_dir.empty()) {
-        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
-        return -1;
+    auto [main_dir, find_main_dir_err] = mado_find_main_dir(&g_mado_config);
+    if (find_main_dir_err != Mado_Error::OK) {
+        return mado_print_error(find_main_dir_err, "finding main directory");
     }
 
-    auto [entry, err] = Mado_Entry::create(&g_mado_config, main_dir.c_str());
+    auto [entry, err] = Mado_Entry::create(&g_mado_config, main_dir);
     if (err != Mado_Error::OK) {
         return mado_print_error(err, "creating new entry");
     }
@@ -564,18 +549,16 @@ static int cmd_list(int argc, char **argv) {
     if (query) {
         filter = make_ast_ptr(parse(query));
         if (!filter) {
-            std::cerr << "Error: failed to parse query\n";
-            return -1;
+            return mado_print_error(Mado_Error::PARSE, "parsing query");
         }
     }
 
-    std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
-    if (main_dir.empty()) {
-        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
-        return -1;
+    auto [main_dir, err] = mado_find_main_dir(&g_mado_config);
+    if (err != Mado_Error::OK) {
+        return mado_print_error(err, "finding main directory");
     }
 
-    Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
+    Mado_Entries::get_all(&g_mado_config, main_dir)
         .filter(&g_mado_config, filter.get())
         .sort(&g_mado_config)
         .print(&g_mado_config);
@@ -604,23 +587,20 @@ static int cmd_remove(int argc, char **argv) {
         query = argv[optind];
 
     if (!query) {
-        std::cerr << "Error: remove requires a query argument\n";
-        return -1;
+        return mado_print_error(Mado_Error::PARSE, "remove requires a query argument");
     }
 
     auto filter = make_ast_ptr(parse(query));
     if (!filter) {
-        std::cerr << "Error: failed to parse query\n";
-        return -1;
+        return mado_print_error(Mado_Error::PARSE, "parsing query");
     }
 
-    std::string main_dir = find_dir_up(g_mado_config.main_dir_name);
-    if (main_dir.empty()) {
-        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
-        return -1;
+    auto [main_dir, err] = mado_find_main_dir(&g_mado_config);
+    if (err != Mado_Error::OK) {
+        return mado_print_error(err, "finding main directory");
     }
 
-    auto removed = Mado_Entries::get_all(&g_mado_config, main_dir.c_str())
+    auto removed = Mado_Entries::get_all(&g_mado_config, main_dir)
                        .filter(&g_mado_config, filter.get())
                        .remove();
 
@@ -659,8 +639,7 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 
     Mado_Error err = mado_print_repo_info(&g_mado_config);
     if (err == Mado_Error::NOT_FOUND) {
-        std::cerr << "Error: main directory '" << g_mado_config.main_dir_name << "' not found\n";
-        return -1;
+        return mado_print_error(err, "finding main directory");
     } else if (err != Mado_Error::OK) {
         return mado_print_error(err, "getting repository info");
     }
@@ -687,7 +666,7 @@ static int cmd_help(int argc, char **argv) {
     if (optind < argc) {
         cmd::Command *target_cmd = cmd::find_by_name(argv[optind], commands);
         if (!target_cmd) {
-            std::cerr << "Unknown command: " << argv[optind] << "\n\n";
+            std::cerr << "Hint: Unknown command: " << argv[optind] << "\n\n";
             print_usage(show_aliases);
             return -1;
         }
@@ -713,7 +692,8 @@ static int handle_global_options(int argc, char **argv) {
         switch (opt) {
         case 'C':
             if (chdir(optarg) != 0) {
-                std::cerr << "Error: failed to change directory to '" << optarg << "': " << strerror(errno) << "\n";
+                mado_print_error(Mado_Error::IO, "changing working directory");
+                std::cerr << "Hint: " << strerror(errno) << "\n";
                 return -1;
             }
             break;
@@ -756,7 +736,8 @@ int main(int argc, char **argv) {
     char *command_name = argv[optind];
     cmd::Command *cmd = cmd::find_by_name(command_name, commands);
     if (!cmd) {
-        std::cerr << "Error: unknown command '" << command_name << "'\n\n";
+        mado_print_error(Mado_Error::NOT_FOUND, "unknown command");
+        std::cerr << "Hint: '" << command_name << "' is not a valid mado command\n\n";
         print_usage(false);
         return 1;
     }

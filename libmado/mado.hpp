@@ -2,6 +2,7 @@
 #define MADO_HPP
 
 #include <cstdint>
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <vector>
@@ -100,7 +101,7 @@ struct Mado_Config {
 
 class Mado_Entry {
   public:
-    std::string path;
+    std::filesystem::path path;
     std::string name;
     uint16_t priority = 0;
     std::vector<std::string> tags;
@@ -111,8 +112,11 @@ class Mado_Entry {
     void print(const Mado_Config *cfg, std::ostream &os = std::cout) const;
     bool matches_condition(const Mado_Config *cfg, const AST_Node *filter) const;
 
-    static std::pair<std::unique_ptr<Mado_Entry>, Mado_Error> create(const Mado_Config *cfg, const char *main_dir);
-    static std::unique_ptr<Mado_Entry> parse(const Mado_Config *cfg, const char *entry_dir);
+    static std::pair<std::unique_ptr<Mado_Entry>, Mado_Error>
+    create(const Mado_Config *cfg, const std::filesystem::path &main_dir);
+
+    static std::unique_ptr<Mado_Entry>
+    parse(const Mado_Config *cfg, const std::filesystem::path &entry_dir);
 };
 
 // ================ ENTRIES
@@ -132,7 +136,7 @@ class Mado_Entries {
     auto begin() const { return entries_.begin(); }
     auto end() const { return entries_.end(); }
 
-    static Mado_Entries get_all(const Mado_Config *cfg, const char *main_dir);
+    static Mado_Entries get_all(const Mado_Config *cfg, const std::filesystem::path &main_dir);
 
   private:
     std::vector<std::unique_ptr<Mado_Entry>> entries_;
@@ -144,14 +148,15 @@ void mado_init_config(Mado_Config *cfg);
 
 // ================ REPO MANAGEMENT
 
-std::pair<std::string, Mado_Error> mado_main_dir_init(const Mado_Config *cfg, int force);
+std::pair<std::filesystem::path, Mado_Error> mado_find_main_dir(const Mado_Config *cfg);
+std::pair<std::filesystem::path, Mado_Error> mado_main_dir_init(const Mado_Config *cfg, int force);
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::cout);
 
 // ================ UTILS
 
-Mado_Error mado_parse_format(const char *format_str, Mado_Output_Format *fmt);
-Mado_Error mado_parse_sort(const char *sort_str, std::vector<Mado_Sort_Criterion> *criteria);
+Mado_Error mado_parse_format(const std::string &format_str, Mado_Output_Format *fmt);
+Mado_Error mado_parse_sort(const std::string &sort_str, std::vector<Mado_Sort_Criterion> *criteria);
 
 // ================ ERROR MESSAGE
 
