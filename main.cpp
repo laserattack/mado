@@ -233,7 +233,10 @@ static void print_usage(bool show_aliases) {
         fprintf(stderr, "  %-12s %s\n", commands[i].name, commands[i].description);
         if (show_aliases && commands[i].aliases && commands[i].aliases[0]) {
             for (int j = 0; commands[i].aliases[j]; j++) {
-                fprintf(stderr, "  %-12s %s\n", commands[i].aliases[j], commands[i].description);
+                fprintf(stderr, "  %-12s %s (alias for '%s')\n",
+                        commands[i].aliases[j],
+                        commands[i].description,
+                        commands[i].name);
             }
         }
     }
