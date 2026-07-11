@@ -216,10 +216,19 @@ static cmd::Command commands[] = {
         "mado help [COMMAND OPTIONS] [COMMAND]",
         COMMAND_HELP_OPTIONS,
         cmd_help,
-        (const char *[]){"usage", "?", nullptr},
+        (const char *[]){"usage", nullptr},
     },
 
     {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}};
+
+static int count_aliases(const cmd::Command *cmd) {
+    if (!cmd->aliases)
+        return 0;
+    int count = 0;
+    while (cmd->aliases[count])
+        count++;
+    return count;
+}
 
 static void print_usage(bool show_aliases) {
     std::cerr << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
@@ -555,17 +564,29 @@ static int cmd_help(int argc, char **argv) {
         cmd::print_help(target_cmd);
 
         if (show_aliases && target_cmd->aliases && target_cmd->aliases[0]) {
+
+            auto print_aliases = [&]() {
+                bool first = true;
+                for (int i = 0; target_cmd->aliases[i]; i++) {
+                    if (strcmp(target_cmd->aliases[i], target_cmd_name) == 0)
+                        continue;
+                    if (!first)
+                        std::cerr << ", ";
+                    std::cerr << target_cmd->aliases[i];
+                    first = false;
+                }
+                std::cerr << "\n";
+            };
+
             if (is_alias) {
-                std::cerr << "\nAll aliases: ";
+                if (count_aliases(target_cmd) > 1) {
+                    std::cerr << "\nOther aliases for '" << target_cmd->name << "': ";
+                    print_aliases();
+                }
             } else {
                 std::cerr << "\nAliases: ";
+                print_aliases();
             }
-            for (int i = 0; target_cmd->aliases[i]; i++) {
-                if (i > 0)
-                    std::cerr << ", ";
-                std::cerr << target_cmd->aliases[i];
-            }
-            std::cerr << "\n";
         }
 
     } else {
