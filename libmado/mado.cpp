@@ -396,16 +396,16 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                         return true;
                     break;
                 case CMP_NE:
-                    if (tag_normalized == ct)
-                        return false;
+                    if (tag_normalized != ct)
+                        return true;
                     break;
                 case CMP_TILDE:
                     if (tag_normalized.find(ct) != std::string::npos)
                         return true;
                     break;
                 case CMP_NTILDE:
-                    if (tag_normalized.find(ct) != std::string::npos)
-                        return false;
+                    if (tag_normalized.find(ct) == std::string::npos)
+                        return true;
                     break;
                 case CMP_GT:
                     if (tag_normalized > ct)
@@ -427,7 +427,7 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                     break;
                 }
             }
-            return (filter->comparison.cmp == CMP_NE || filter->comparison.cmp == CMP_NTILDE);
+            return false;
         }
         case CMP_STATUS:
         case CMP_DEADLINE:
