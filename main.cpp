@@ -139,7 +139,7 @@ static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_REMOVE_OPTIONS[] = {
-    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to removed entry"},
+    {"abs-paths", no_argument, nullptr, 'a', "Show absolute paths of removed entries"},
     {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
@@ -278,7 +278,7 @@ static int cmd_init(int argc, char **argv) {
         if (!g_mado_config.abs_paths) {
             std::cout << std::filesystem::relative(main_dir).string() << "\n";
         } else {
-            std::cout << main_dir << "\n";
+            std::cout << main_dir.string() << "\n";
         }
     };
 
