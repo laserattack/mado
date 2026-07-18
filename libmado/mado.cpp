@@ -224,8 +224,7 @@ Mado_Entry::parse(const Mado_Config *cfg,
                 std::string token;
                 while (std::getline(ss, token, ',')) {
                     trim(token);
-                    if (!token.empty())
-                        entry->tags.push_back(token);
+                    entry->tags.push_back(token);
                 }
             }
         } else if (line.rfind("- STATUS:", 0) == 0) {
@@ -292,8 +291,6 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
             os << "\"tags\":[";
             bool first_tag = true;
             for (const auto &tag : tags) {
-                if (tag.empty())
-                    continue;
                 if (!first_tag)
                     os << ",";
                 print_json_string(tag, os);
@@ -325,8 +322,6 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
         os << " TAGS:[";
         bool first = true;
         for (const auto &tag : tags) {
-            if (tag.empty())
-                continue;
             if (!first)
                 os << ",";
             os << tag;
@@ -459,8 +454,6 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
             const std::string c = normalize_string_field(filter->comparison.value.str_value);
             const std::string field_normalized = normalize_string_field(*field);
 
-            if (field_normalized.empty())
-                return false;
             switch (filter->comparison.cmp) {
             case CMP_EQ:
                 return field_normalized == c;
