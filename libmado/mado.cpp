@@ -717,25 +717,38 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
 
     auto entries = Mado_Entries::get_all(cfg, main_dir_path);
 
-    if (cfg->fmt == Mado_Output_Format::JSONL) {
+    struct EntryCounts {
         std::map<std::string, int> status_counts;
         std::map<std::string, int> tag_counts;
+        std::map<uint16_t, int> priority_counts;
+    };
 
-        for (auto &e : entries) {
+    auto count_entries = [](const Mado_Entries &entries) {
+        EntryCounts counts;
+        for (const auto &e : entries) {
             if (!e->status.empty())
-                status_counts[e->status]++;
-            for (auto &tag : e->tags) {
-                if (!tag.empty())
-                    tag_counts[tag]++;
-            }
-        }
+                counts.status_counts[e->status]++;
 
+            for (const auto &tag : e->tags) {
+                if (!tag.empty())
+                    counts.tag_counts[tag]++;
+            }
+
+            counts.priority_counts[e->priority]++;
+        }
+        return counts;
+    };
+
+    auto counts = count_entries(entries);
+
+    if (cfg->fmt == Mado_Output_Format::JSONL) {
         os << "{\"main_dir\":";
         print_json_string(main_dir_path.string(), os);
-        os << ",\"entries_count\":" << entries.size() << ",\"statuses\":{";
+        os << ",\"entries_count\":" << entries.size()
+           << ",\"statuses\":{";
 
         bool first_status = true;
-        for (auto &[status, count] : status_counts) {
+        for (const auto &[status, count] : counts.status_counts) {
             if (!first_status)
                 os << ",";
             print_json_string(status, os);
@@ -746,12 +759,22 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
         os << "},\"tags\":{";
 
         bool first_tag = true;
-        for (auto &[tag, count] : tag_counts) {
+        for (const auto &[tag, count] : counts.tag_counts) {
             if (!first_tag)
                 os << ",";
             print_json_string(tag, os);
             os << ":" << count;
             first_tag = false;
+        }
+
+        os << "},\"priorities\":{";
+
+        bool first_priority = true;
+        for (const auto &[priority, count] : counts.priority_counts) {
+            if (!first_priority)
+                os << ",";
+            os << "\"" << priority << "\":" << count;
+            first_priority = false;
         }
 
         os << "}}\n";
@@ -762,28 +785,22 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     os << "Main directory: " << main_dir_path.string() << "\n";
     os << "Entries count: " << entries.size() << "\n";
 
-    std::map<std::string, int> status_counts;
-    std::map<std::string, int> tag_counts;
-
-    for (auto &e : entries) {
-        if (!e->status.empty())
-            status_counts[e->status]++;
-        for (auto &tag : e->tags) {
-            if (!tag.empty())
-                tag_counts[tag]++;
-        }
-    }
-
     os << "Statuses:\n";
-    if (!status_counts.empty()) {
-        for (auto &[status, count] : status_counts)
+    if (!counts.status_counts.empty()) {
+        for (const auto &[status, count] : counts.status_counts)
             os << "  " << status << ": " << count << "\n";
     }
 
     os << "Tags:\n";
-    if (!tag_counts.empty()) {
-        for (auto &[tag, count] : tag_counts)
+    if (!counts.tag_counts.empty()) {
+        for (const auto &[tag, count] : counts.tag_counts)
             os << "  " << tag << ": " << count << "\n";
+    }
+
+    os << "Priorities:\n";
+    if (!counts.priority_counts.empty()) {
+        for (const auto &[priority, count] : counts.priority_counts)
+            os << "  " << priority << ": " << count << "\n";
     }
 
     return Mado_Error::OK;
