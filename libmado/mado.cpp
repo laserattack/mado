@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "mado.hpp"
@@ -220,11 +221,14 @@ Mado_Entry::parse(const Mado_Config *cfg,
             std::string tags_str = line.substr(7);
             trim(tags_str);
             if (!tags_str.empty()) {
+                std::unordered_set<std::string> seen;
                 std::stringstream ss(tags_str);
                 std::string token;
                 while (std::getline(ss, token, ',')) {
                     trim(token);
-                    entry->tags.push_back(token);
+                    if (seen.insert(token).second) {
+                        entry->tags.push_back(token);
+                    }
                 }
             }
         } else if (line.rfind("- STATUS:", 0) == 0) {
