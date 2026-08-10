@@ -730,12 +730,10 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     auto count_entries = [](const Mado_Entries &entries) {
         EntryCounts counts;
         for (const auto &e : entries) {
-            if (!e->status.empty())
-                counts.status_counts[e->status]++;
+            counts.status_counts[e->status]++;
 
             for (const auto &tag : e->tags) {
-                if (!tag.empty())
-                    counts.tag_counts[tag]++;
+                counts.tag_counts[tag]++;
             }
 
             counts.priority_counts[e->priority]++;
