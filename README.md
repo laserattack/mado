@@ -240,8 +240,8 @@ keywords
 
 ### Macros
 
-Query language supports macros that expand to values at execution
-time. Macros start with `@`
+Macros start with `@` and are resolved at parse time — the value is
+substituted before the AST is evaluated.
 
 #### Time Macros
 
@@ -278,15 +278,13 @@ This will produce an executable file `./mado`
 
 ## Performance
 
-`mado` is designed to handle large repositories efficiently
-
 | Entries  | Peak memory usage |
 |----------|-------------------|
 | 10,000   | 5.3 MB            |
 | 20,000   | 10.5 MB           |
 | 100,000  | 51.6 MB           |
 
-Time to list `100,043` entries: `3.2s`
+Time to list `100,043` entries with filter query: `~6.5s`
 
 > **Note:** benchmarked on AMD Ryzen 5 5600H (6 cores, 12 threads,
 > 3.30 GHz base) with NVMe SSD
