@@ -69,6 +69,7 @@ The login page returns 500 error when using special characters.
 > - DEADLINE defaults to 99990000T000000
 > - TAGS defaults to a list with one empty element [""]
 > - TIME is a system field, always present and set to the entry's directory name (creation timestamp in YYYYMMDDTHHMMSS format). It cannot be changed or removed — it reflects when the entry was created
+> - MTIME is a system field, automatically set to the modification time of the entry's file (YYYYMMDDTHHMMSS format). It updates whenever the entry file changes and cannot be manually edited
 
 When you have many entries, you'll want to filter them:
 
@@ -228,6 +229,7 @@ keywords
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
+| `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `mtime > 20260505T1230` |
 | `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
@@ -264,6 +266,7 @@ mado list 'time > @today-4'
 mado list 'time >= @week-1'
 mado list 'deadline < @today+30'
 mado list 'time ~ @month-2'
+mado list 'mtime > @now-1'
 ```
 
 ## Installation
@@ -284,7 +287,7 @@ This will produce an executable file `./mado`
 | 20,000   | 10.5 MB           |
 | 100,000  | 51.6 MB           |
 
-Time to list `100,043` entries with filter query: `~6.5s`
+Time to list `100,043` entries with filter query: `~7.2s`
 
 > **Note:** benchmarked on AMD Ryzen 5 5600H (6 cores, 12 threads,
 > 3.30 GHz base) with NVMe SSD
