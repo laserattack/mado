@@ -421,11 +421,6 @@ static int cmd_list(int argc, char **argv) {
         }
     }
 
-    if ((g_mado_config.fmt == Mado_Output_Format::ONLY_PATH ||
-         g_mado_config.fmt == Mado_Output_Format::DEFAULT) &&
-        has_flag(g_mado_config.hide_fields, Mado_Entry_Field::PATH))
-        std::cerr << "Hint: path cannot be hidden with the current output format\n";
-
     if (optind < argc)
         query = argv[optind];
 

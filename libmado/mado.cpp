@@ -331,6 +331,8 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
 
     // Mado_Output_Format::DEFAULT
     os << path.string() << "/" << cfg->entry_file_name << ".md:1:";
+    if (has_flag(shown, Mado_Entry_Field::PATH))
+        os << " PATH:[" << path.string() << "/" << cfg->entry_file_name << ".md" << "]";
     if (has_flag(shown, Mado_Entry_Field::TIME))
         os << " TIME:[" << time << "]";
     if (has_flag(shown, Mado_Entry_Field::MTIME))
