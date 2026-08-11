@@ -8,6 +8,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <unordered_set>
 #include <vector>
 
@@ -203,6 +204,19 @@ Mado_Entry::parse(const Mado_Config *cfg,
     entry->time = dir_name;
     entry->deadline = "99990000T000000";
 
+    // entry->mtime
+    {
+        struct stat st;
+        if (stat(entry_file.c_str(), &st) == 0) {
+            std::tm *tm = std::localtime(&st.st_mtime);
+            char buf[16];
+            std::strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", tm);
+            entry->mtime = buf;
+        } else {
+            return nullptr;
+        }
+    }
+
     std::string line;
     int lines_processed = 0;
 
@@ -271,6 +285,11 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
             os << "\"time\":";
             print_json_string(time, os);
         }
+        if (has_flag(shown, Mado_Entry_Field::MTIME)) {
+            sep();
+            os << "\"mtime\":";
+            print_json_string(mtime, os);
+        }
         if (has_flag(shown, Mado_Entry_Field::NAME)) {
             sep();
             os << "\"name\":";
@@ -314,6 +333,8 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
     os << path.string() << "/" << cfg->entry_file_name << ".md:1:";
     if (has_flag(shown, Mado_Entry_Field::TIME))
         os << " TIME:[" << time << "]";
+    if (has_flag(shown, Mado_Entry_Field::MTIME))
+        os << " MTIME:[" << mtime << "]";
     if (has_flag(shown, Mado_Entry_Field::NAME))
         os << " NAME:[" << name << "]";
     if (has_flag(shown, Mado_Entry_Field::PRIORITY))
@@ -436,6 +457,7 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         case CMP_STATUS:
         case CMP_DEADLINE:
         case CMP_TIME:
+        case CMP_MTIME:
         case CMP_NAME: {
             const std::string *field = nullptr;
             switch (filter->comparison.field) {
@@ -450,6 +472,9 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                 break;
             case CMP_NAME:
                 field = &name;
+                break;
+            case CMP_MTIME:
+                field = &mtime;
                 break;
             default:
                 return false;
@@ -555,6 +580,9 @@ Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
             case Mado_Entry_Field::TIME:
                 compare_strings(a->time, b->time, less, greater);
                 break;
+            case Mado_Entry_Field::MTIME:
+                compare_strings(a->mtime, b->mtime, less, greater);
+                break;
             case Mado_Entry_Field::NAME:
                 compare_strings(a->name, b->name, less, greater);
                 break;
@@ -606,6 +634,7 @@ mado_parse_sort(const std::string &sort_str) {
 
     static const struct keyword_entry fields_for_parse_sort[] = {
         {"time", static_cast<int>(Mado_Entry_Field::TIME)},
+        {"mtime", static_cast<int>(Mado_Entry_Field::MTIME)},
         {"name", static_cast<int>(Mado_Entry_Field::NAME)},
         {"priority", static_cast<int>(Mado_Entry_Field::PRIORITY)},
         {"deadline", static_cast<int>(Mado_Entry_Field::DEADLINE)},

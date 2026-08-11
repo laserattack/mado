@@ -45,7 +45,8 @@ enum class Mado_Entry_Field {
     STATUS = 1 << 4,
     TAGS = 1 << 5,
     PATH = 1 << 6,
-    ALL = NAME | TIME | DEADLINE | PRIORITY | STATUS | TAGS | PATH
+    MTIME = 1 << 7,
+    ALL = NAME | TIME | DEADLINE | PRIORITY | STATUS | TAGS | PATH | MTIME
 };
 
 constexpr Mado_Entry_Field operator|(Mado_Entry_Field a, Mado_Entry_Field b) {
@@ -108,6 +109,7 @@ class Mado_Entry {
     std::string status;
     std::string time;
     std::string deadline;
+    std::string mtime;
 
     void print(const Mado_Config *cfg, std::ostream &os = std::cout) const;
     bool matches_condition(const Mado_Config *cfg, const AST_Node *filter) const;

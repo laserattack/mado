@@ -41,7 +41,8 @@ void ast_free(AST_Node *node) {
             node->comparison.field == CMP_STATUS ||
             node->comparison.field == CMP_NAME ||
             node->comparison.field == CMP_TIME ||
-            node->comparison.field == CMP_DEADLINE) {
+            node->comparison.field == CMP_DEADLINE ||
+            node->comparison.field == CMP_MTIME) {
             free(node->comparison.value.str_value);
         }
         break;

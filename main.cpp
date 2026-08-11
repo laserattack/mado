@@ -131,6 +131,7 @@ static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {"only-hidden", no_argument, nullptr, 'o', "Show only hidden fields"},
     {"hide-name", no_argument, nullptr, 'n', "Hide name field"},
     {"hide-time", no_argument, nullptr, 't', "Hide time field"},
+    {"hide-mtime", no_argument, nullptr, 'm', "Hide mtime field"},
     {"hide-deadline", no_argument, nullptr, 'd', "Hide deadline field"},
     {"hide-priority", no_argument, nullptr, 'p', "Hide priority field"},
     {"hide-status", no_argument, nullptr, 'u', "Hide status field"},
@@ -396,6 +397,9 @@ static int cmd_list(int argc, char **argv) {
             break;
         case 't':
             toggle_field(Mado_Entry_Field::TIME);
+            break;
+        case 'm':
+            toggle_field(Mado_Entry_Field::MTIME);
             break;
         case 'd':
             toggle_field(Mado_Entry_Field::DEADLINE);

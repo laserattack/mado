@@ -186,6 +186,7 @@ NEWLINE            \n
                               {"priority", TOKEN_PRIORITY},
                               {"status",   TOKEN_STATUS},
                               {"time",     TOKEN_TIME},
+                              {"mtime",    TOKEN_MTIME},
                               {"name",     TOKEN_NAME},
                               {"tag",      TOKEN_TAG},
                               {"and",      TOKEN_AND},
