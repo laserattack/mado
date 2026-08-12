@@ -168,18 +168,16 @@ The `-f` flag controls how entries are displayed:
 ``` bash
 # Default format: path:1: fields
 mado list 'all'
-MADO/20260521T204844/MAIN.md:1: TIME:[20260521T204844] NAME:[...] PRIORITY:[10] DEADLINE:[99990000T000000] STATUS:[closed] TAGS:[feat,flag]
 # Compatible with Emacs compile buffer and other tools that parse file:line:
 
 # Paths only — useful for piping to other tools
 mado list -f path 'all'
-# MADO/20260516T161611/MAIN.md
 # Search across entry bodies with grep
 grep 'match' $(mado list -f path 'all')
 
 # Newline-delimited JSON for scripts
 mado list -f jsonl 'all'
-# {"time":"20260521T204844","name":"...","priority":10,"deadline":"99990000T000000","status":"closed","tags":["feat","flag"],"path":"MADO/20260521T204844/MAIN.md"}
+
 # Pipe JSON output to jq for advanced processing
 mado list -f jsonl 'priority > 5' | jq '.name'
 mado list -f jsonl 'all' | jq -s 'group_by(.status)'
