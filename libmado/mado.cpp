@@ -220,18 +220,29 @@ Mado_Entry::parse(const Mado_Config *cfg,
     std::string line;
     int lines_processed = 0;
 
+    bool has_name = false;
+    bool has_priority = false;
+    bool has_tags = false;
+    bool has_status = false;
+    bool has_deadline = false;
+
     while (lines_processed < cfg->max_header_lines && std::getline(f, line)) {
         lines_processed++;
 
-        if (line.rfind("- NAME:", 0) == 0) {
+        if (has_name && has_priority && has_tags && has_status && has_deadline)
+            break;
+
+        if (!has_name && line.rfind("- NAME:", 0) == 0) {
             entry->name = line.substr(7);
             trim(entry->name);
-        } else if (line.rfind("- PRIORITY:", 0) == 0) {
+            has_name = true;
+        } else if (!has_priority && line.rfind("- PRIORITY:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
             if (is_valid_priority(val))
                 entry->priority = std::stoi(val);
-        } else if (line.rfind("- TAGS:", 0) == 0) {
+            has_priority = true;
+        } else if (!has_tags && line.rfind("- TAGS:", 0) == 0) {
             std::string tags_str = line.substr(7);
             trim(tags_str);
             if (!tags_str.empty()) {
@@ -245,19 +256,23 @@ Mado_Entry::parse(const Mado_Config *cfg,
                     }
                 }
             }
-        } else if (line.rfind("- STATUS:", 0) == 0) {
+            has_tags = true;
+        } else if (!has_status && line.rfind("- STATUS:", 0) == 0) {
             entry->status = line.substr(9);
             trim(entry->status);
-        } else if (line.rfind("- DEADLINE:", 0) == 0) {
+            has_status = true;
+        } else if (!has_deadline && line.rfind("- DEADLINE:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
             if (is_valid_deadline(val))
                 entry->deadline = val;
+            has_deadline = true;
         }
     }
 
-    if (entry->tags.empty())
+    if (!has_tags)
         entry->tags.push_back("");
+
     return entry;
 }
 
