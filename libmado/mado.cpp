@@ -220,57 +220,55 @@ Mado_Entry::parse(const Mado_Config *cfg,
     std::string line;
     int lines_processed = 0;
 
-    bool has_name = false;
-    bool has_priority = false;
-    bool has_tags = false;
-    bool has_status = false;
-    bool has_deadline = false;
+    bool has_field_name = false;
+    bool has_field_priority = false;
+    bool has_field_tags = false;
+    bool has_field_status = false;
+    bool has_field_deadline = false;
 
     while (lines_processed < cfg->max_header_lines && std::getline(f, line)) {
         lines_processed++;
 
-        if (has_name && has_priority && has_tags && has_status && has_deadline)
+        if (has_field_name && has_field_priority && has_field_tags && has_field_status && has_field_deadline)
             break;
 
-        if (!has_name && line.rfind("- NAME:", 0) == 0) {
+        if (!has_field_name && line.rfind("- NAME:", 0) == 0) {
             entry->name = line.substr(7);
             trim(entry->name);
-            has_name = true;
-        } else if (!has_priority && line.rfind("- PRIORITY:", 0) == 0) {
+            has_field_name = true;
+        } else if (!has_field_priority && line.rfind("- PRIORITY:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
             if (is_valid_priority(val))
                 entry->priority = std::stoi(val);
-            has_priority = true;
-        } else if (!has_tags && line.rfind("- TAGS:", 0) == 0) {
+            has_field_priority = true;
+        } else if (!has_field_tags && line.rfind("- TAGS:", 0) == 0) {
             std::string tags_str = line.substr(7);
             trim(tags_str);
-            if (!tags_str.empty()) {
-                std::unordered_set<std::string> seen;
-                std::stringstream ss(tags_str);
-                std::string token;
-                while (std::getline(ss, token, ',')) {
-                    trim(token);
-                    if (seen.insert(token).second) {
-                        entry->tags.push_back(token);
-                    }
+            std::unordered_set<std::string> seen;
+            std::stringstream ss(tags_str);
+            std::string token;
+            while (std::getline(ss, token, ',')) {
+                trim(token);
+                if (seen.insert(token).second) {
+                    entry->tags.push_back(token);
                 }
             }
-            has_tags = true;
-        } else if (!has_status && line.rfind("- STATUS:", 0) == 0) {
+            has_field_tags = true;
+        } else if (!has_field_status && line.rfind("- STATUS:", 0) == 0) {
             entry->status = line.substr(9);
             trim(entry->status);
-            has_status = true;
-        } else if (!has_deadline && line.rfind("- DEADLINE:", 0) == 0) {
+            has_field_status = true;
+        } else if (!has_field_deadline && line.rfind("- DEADLINE:", 0) == 0) {
             std::string val = line.substr(11);
             trim(val);
             if (is_valid_deadline(val))
                 entry->deadline = val;
-            has_deadline = true;
+            has_field_deadline = true;
         }
     }
 
-    if (!has_tags)
+    if (entry->tags.empty())
         entry->tags.push_back("");
 
     return entry;
