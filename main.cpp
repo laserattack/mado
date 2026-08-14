@@ -147,6 +147,7 @@ static const cmd::Option COMMAND_REMOVE_OPTIONS[] = {
 static const cmd::Option COMMAND_INFO_OPTIONS[] = {
     {"abs-path", no_argument, nullptr, 'a', "Show absolute path to main directory"},
     {"format", required_argument, nullptr, 'f', "Output format (default, jsonl)"},
+    {"dir", no_argument, nullptr, 'd', "Print main directory path only"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_NEW_OPTIONS[] = {
@@ -493,6 +494,8 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;
+    bool print_main_dir_path_only = false;
+
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 'a':
@@ -513,9 +516,26 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
             g_mado_config.fmt = fmt;
             break;
         }
+        case 'd':
+            print_main_dir_path_only = true;
+            break;
         default:
             return -1;
         }
+    }
+
+    if (print_main_dir_path_only) {
+        auto [main_dir_path, err] = mado_find_main_dir(&g_mado_config);
+        if (err != Mado_Error::OK) {
+            return mado_print_error(err, "finding main directory");
+        }
+
+        main_dir_path = g_mado_config.abs_paths
+                            ? main_dir_path
+                            : std::filesystem::relative(main_dir_path);
+
+        std::cout << main_dir_path.string() << std::endl;
+        return 0;
     }
 
     Mado_Error err = mado_print_repo_info(&g_mado_config);
