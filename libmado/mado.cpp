@@ -32,7 +32,6 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->template_name = "task";
     cfg->max_header_lines = 30;
     cfg->hide_fields = Mado_Entry_Field::NONE;
-    cfg->abs_paths = false;
     cfg->case_insensitive_search = false;
     cfg->sort_criteria.clear();
     cfg->fmt = Mado_Output_Format::DEFAULT;
@@ -156,6 +155,18 @@ std::unique_ptr<Mado_Entry>
 Mado_Entry::parse(const Mado_Config *cfg,
                   const std::filesystem::path &entry_dir) {
 
+    auto should_parse_field = [&cfg](Mado_Entry_Field field) {
+        bool hidden = has_flag(cfg->hide_fields, field);
+        bool used_in_sorting = false;
+        for (const auto &criterion : cfg->sort_criteria) {
+            if (criterion.field == field)
+                used_in_sorting = true;
+        }
+        if (hidden && !used_in_sorting)
+            return false;
+        return true;
+    };
+
     auto is_valid_priority = [](const std::string &s) {
         return !s.empty() && s.size() <= 3 && std::all_of(s.begin(), s.end(), ::isdigit);
     };
@@ -200,12 +211,19 @@ Mado_Entry::parse(const Mado_Config *cfg,
 
     auto entry = std::make_unique<Mado_Entry>();
     entry->priority = 0;
-    entry->path = cfg->abs_paths ? entry_dir : std::filesystem::relative(entry_dir);
     entry->time = dir_name;
+    entry->path = entry_dir;
     entry->deadline = "99990000T000000";
+    entry->mtime = "99990000T000000";
 
-    // entry->mtime
-    {
+    bool need_name = should_parse_field(Mado_Entry_Field::NAME);
+    bool need_priority = should_parse_field(Mado_Entry_Field::PRIORITY);
+    bool need_tags = should_parse_field(Mado_Entry_Field::TAGS);
+    bool need_status = should_parse_field(Mado_Entry_Field::STATUS);
+    bool need_deadline = should_parse_field(Mado_Entry_Field::DEADLINE);
+    bool need_mtime = should_parse_field(Mado_Entry_Field::MTIME);
+
+    if (need_mtime) {
         struct stat st;
         if (stat(entry_file.c_str(), &st) == 0) {
             std::tm *tm = std::localtime(&st.st_mtime);
@@ -220,6 +238,7 @@ Mado_Entry::parse(const Mado_Config *cfg,
     std::string line;
     int lines_processed = 0;
 
+    // If true, it means the title has already been set
     bool has_field_name = false;
     bool has_field_priority = false;
     bool has_field_tags = false;
@@ -229,20 +248,42 @@ Mado_Entry::parse(const Mado_Config *cfg,
     while (lines_processed < cfg->max_header_lines && std::getline(f, line)) {
         lines_processed++;
 
-        if (has_field_name && has_field_priority && has_field_tags && has_field_status && has_field_deadline)
+        bool all_needed_found = true;
+        if (need_name && !has_field_name)
+            all_needed_found = false;
+        if (need_priority && !has_field_priority)
+            all_needed_found = false;
+        if (need_tags && !has_field_tags)
+            all_needed_found = false;
+        if (need_status && !has_field_status)
+            all_needed_found = false;
+        if (need_deadline && !has_field_deadline)
+            all_needed_found = false;
+        if (all_needed_found)
             break;
 
-        if (!has_field_name && line.rfind("- NAME:", 0) == 0) {
+        if (need_name &&
+            !has_field_name &&
+            line.rfind("- NAME:", 0) == 0) {
+
             entry->name = line.substr(7);
             trim(entry->name);
             has_field_name = true;
-        } else if (!has_field_priority && line.rfind("- PRIORITY:", 0) == 0) {
+
+        } else if (need_priority &&
+                   !has_field_priority &&
+                   line.rfind("- PRIORITY:", 0) == 0) {
+
             std::string val = line.substr(11);
             trim(val);
             if (is_valid_priority(val))
                 entry->priority = std::stoi(val);
             has_field_priority = true;
-        } else if (!has_field_tags && line.rfind("- TAGS:", 0) == 0) {
+
+        } else if (need_tags &&
+                   !has_field_tags &&
+                   line.rfind("- TAGS:", 0) == 0) {
+
             std::string tags_str = line.substr(7);
             trim(tags_str);
             std::unordered_set<std::string> seen;
@@ -255,11 +296,19 @@ Mado_Entry::parse(const Mado_Config *cfg,
                 }
             }
             has_field_tags = true;
-        } else if (!has_field_status && line.rfind("- STATUS:", 0) == 0) {
+
+        } else if (need_status &&
+                   !has_field_status &&
+                   line.rfind("- STATUS:", 0) == 0) {
+
             entry->status = line.substr(9);
             trim(entry->status);
             has_field_status = true;
-        } else if (!has_field_deadline && line.rfind("- DEADLINE:", 0) == 0) {
+
+        } else if (need_deadline &&
+                   !has_field_deadline &&
+                   line.rfind("- DEADLINE:", 0) == 0) {
+
             std::string val = line.substr(11);
             trim(val);
             if (is_valid_deadline(val))
@@ -547,15 +596,14 @@ Mado_Entries::get_all(const Mado_Config *cfg,
         return result;
 
     for (const auto &dirent : std::filesystem::directory_iterator(main_dir)) {
-        if (!dirent.is_directory())
-            continue;
-        std::string dir_name = dirent.path().filename().string();
+        auto dir_path = dirent.path();
+        std::string dir_name = dir_path.filename().string();
+
+        // valid dir name
         if (!is_entry_dir(dir_name))
             continue;
-        auto entry_file = dirent.path() / (cfg->entry_file_name + ".md");
-        if (!std::filesystem::exists(entry_file))
-            continue;
-        auto entry = Mado_Entry::parse(cfg, dirent.path());
+
+        auto entry = Mado_Entry::parse(cfg, dir_path);
         if (entry)
             result.entries_.push_back(std::move(entry));
     }
@@ -758,10 +806,6 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     auto [main_dir_path, err] = mado_find_main_dir(cfg);
     if (err != Mado_Error::OK)
         return err;
-
-    main_dir_path = cfg->abs_paths
-                        ? main_dir_path
-                        : std::filesystem::relative(main_dir_path);
 
     auto entries = Mado_Entries::get_all(cfg, main_dir_path);
 

@@ -126,7 +126,6 @@ static int cmd_help(int argc, char **argv);
 static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {"sort", required_argument, nullptr, 's', "Sort entries (+field,-field,field,...)"},
     {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
-    {"abs-paths", no_argument, nullptr, 'a', "Show absolute paths to entries"},
     {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
     {"only-hidden", no_argument, nullptr, 'o', "Show only hidden fields"},
     {"hide-name", no_argument, nullptr, 'n', "Hide name field"},
@@ -140,25 +139,21 @@ static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_REMOVE_OPTIONS[] = {
-    {"abs-paths", no_argument, nullptr, 'a', "Show absolute paths of removed entries"},
     {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_INFO_OPTIONS[] = {
-    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to main directory"},
     {"format", required_argument, nullptr, 'f', "Output format (default, jsonl)"},
     {"dir", no_argument, nullptr, 'd', "Print main directory path only"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_NEW_OPTIONS[] = {
     {"template", required_argument, nullptr, 't', "Template to use"},
-    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to created entry"},
     {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_INIT_OPTIONS[] = {
     {"force", no_argument, nullptr, 'F', "Force init"},
-    {"abs-path", no_argument, nullptr, 'a', "Show absolute path to created directory"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_HELP_OPTIONS[] = {
@@ -266,9 +261,6 @@ static int cmd_init(int argc, char **argv) {
         case 'F':
             force = 1;
             break;
-        case 'a':
-            g_mado_config.abs_paths = true;
-            break;
         default:
             return -1;
         }
@@ -277,11 +269,7 @@ static int cmd_init(int argc, char **argv) {
     auto [main_dir, err] = mado_main_dir_init(&g_mado_config, force);
 
     auto print_main_dir_path = [&]() {
-        if (!g_mado_config.abs_paths) {
-            std::cout << std::filesystem::relative(main_dir).string() << "\n";
-        } else {
-            std::cout << main_dir.string() << "\n";
-        }
+        std::cout << main_dir.string() << "\n";
     };
 
     if (err == Mado_Error::FOUND_ABOVE) {
@@ -313,9 +301,6 @@ static int cmd_new(int argc, char **argv) {
         switch (opt) {
         case 't':
             g_mado_config.template_name = optarg;
-            break;
-        case 'a':
-            g_mado_config.abs_paths = true;
             break;
         case 'f': {
             auto [fmt, err] = mado_parse_format(optarg);
@@ -385,9 +370,6 @@ static int cmd_list(int argc, char **argv) {
             g_mado_config.fmt = fmt;
             break;
         }
-        case 'a':
-            g_mado_config.abs_paths = true;
-            break;
         case 'i':
             g_mado_config.case_insensitive_search = true;
             break;
@@ -453,9 +435,6 @@ static int cmd_remove(int argc, char **argv) {
     int opt;
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
-        case 'a':
-            g_mado_config.abs_paths = true;
-            break;
         case 'i':
             g_mado_config.case_insensitive_search = true;
             break;
@@ -498,9 +477,6 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
-        case 'a':
-            g_mado_config.abs_paths = true;
-            break;
         case 'f': {
 
             auto [fmt, err] = mado_parse_format(optarg);
@@ -529,10 +505,6 @@ static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
         if (err != Mado_Error::OK) {
             return mado_print_error(err, "finding main directory");
         }
-
-        main_dir_path = g_mado_config.abs_paths
-                            ? main_dir_path
-                            : std::filesystem::relative(main_dir_path);
 
         std::cout << main_dir_path.string() << std::endl;
         return 0;

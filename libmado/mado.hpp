@@ -91,7 +91,6 @@ struct Mado_Config {
     std::string entry_file_name;
     std::string template_name;
     int max_header_lines;
-    bool abs_paths;
     bool case_insensitive_search;
     Mado_Entry_Field hide_fields;
     std::vector<Mado_Sort_Criterion> sort_criteria;
