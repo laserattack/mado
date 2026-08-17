@@ -230,6 +230,7 @@ static int count_aliases(const cmd::Command *cmd) {
 static void print_usage(bool show_aliases) {
     std::cerr << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
     std::cerr << "Global options:\n";
+    std::cerr << "  -p, --parallel            Enable parallel parsing\n";
     std::cerr << "  -C, --working-dir <DIR>   Change working directory\n";
     std::cerr << "  -D, --main-dir <NAME>     Custom main directory name\n";
     std::cerr << "  -E, --entry-file <NAME>   Custom entry file name\n";
@@ -591,14 +592,18 @@ static int cmd_help(int argc, char **argv) {
 
 static int handle_global_options(int argc, char **argv) {
     static struct option global_options[] = {
+        {"parallel", no_argument, 0, 'p'},
         {"working-dir", required_argument, 0, 'C'},
         {"main-dir", required_argument, 0, 'D'},
         {"entry-file", required_argument, 0, 'E'},
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}};
     int opt;
-    while ((opt = getopt_long(argc, argv, "+C:D:E:h", global_options, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "+C:D:E:hp", global_options, nullptr)) != -1) {
         switch (opt) {
+        case 'p':
+            g_mado_config.parallel = true;
+            break;
         case 'C':
             if (chdir(optarg) != 0) {
                 mado_print_error(Mado_Error::IO, "changing working directory");

@@ -92,6 +92,7 @@ struct Mado_Config {
     std::string template_name;
     int max_header_lines;
     bool case_insensitive_search;
+    bool parallel;
     Mado_Entry_Field hide_fields;
     std::vector<Mado_Sort_Criterion> sort_criteria;
     Mado_Output_Format fmt;

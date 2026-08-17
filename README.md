@@ -279,7 +279,10 @@ This will produce an executable file `./mado`
 
 ## Performance
 
-Time to list `100,043` entries with filter query: `~5s`
+Time to list `100,043` entries with filter query: `~4s`
+
+Time to list `100,043` entries with filter query and `--parallel`
+mode: `~1.5s`
 
 > **Note:** benchmarked on AMD Ryzen 5 5600H (6 cores, 12 threads,
 > 3.30 GHz base) with NVMe SSD
@@ -287,6 +290,9 @@ Time to list `100,043` entries with filter query: `~5s`
 > **Note 2:** Performance can be improved by hiding unnecessary
 > fields. For example, hiding `mtime` (`--hide-mtime`) eliminates one
 > `stat()` system call per entry file, reducing I/O overhead
+
+Time to list `100,043` entries with filter query, `--parallel` mode
+and `--hide-mtime`: `~1s`
 
 ## Requirements
 
