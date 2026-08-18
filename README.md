@@ -279,10 +279,10 @@ This will produce an executable file `./mado`
 
 ## Performance
 
-Time to list `100,043` entries with filter query: `~4s`
+Time to list `100,043` entries with filter query: `~3.5s`
 
 Time to list `100,043` entries with filter query and `--parallel`
-mode: `~1.5s`
+mode: `~1.3s`
 
 > **Note:** benchmarked on AMD Ryzen 5 5600H (6 cores, 12 threads,
 > 3.30 GHz base) with NVMe SSD

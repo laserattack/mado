@@ -7,6 +7,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -226,11 +227,21 @@ Mado_Entry::parse(const Mado_Config *cfg,
     bool need_mtime = should_parse_field(Mado_Entry_Field::MTIME);
 
     if (need_mtime) {
+
+        // According to POSIX.1, localtime() is required to behave as though
+        // tzset(3) was called, while localtime_r() does not have this
+        // requirement.  For portable code, tzset(3) should be called before
+        // localtime_r()
+        static std::once_flag flag;
+        std::call_once(flag, tzset);
+        //
+
         struct stat st;
         if (stat(entry_file.c_str(), &st) == 0) {
-            std::tm *tm = std::localtime(&st.st_mtime);
+            struct tm tm_result;
+            localtime_r(&st.st_mtime, &tm_result);
             char buf[16];
-            std::strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", tm);
+            std::strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", &tm_result);
             entry->mtime = buf;
         } else {
             return nullptr;
