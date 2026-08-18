@@ -5,6 +5,25 @@ files and supports powerful filtering with a query language
 
 ![](./static/repo_image.jpg)
 
+## Table of Contents
+
+- [Features](#features)
+- [Usage Example](#usage-example)
+- [Customizing Templates](#customizing-templates)
+- [Sorting Entries](#sorting-entries)
+- [Output Formats](#output-formats)
+- [Query Syntax](#query-syntax)
+  - [Operators](#operators)
+  - [Logical Operators](#logical-operators)
+  - [Types](#types)
+  - [Keywords](#keywords)
+  - [Macros](#macros)
+- [Installation](#installation)
+- [Performance](#performance)
+- [Interfaces](#interfaces)
+  - [Emacs interface](#emacs-interface)
+- [Requirements](#requirements)
+
 ## Features
 
 - **Per-project isolation**: Each project has its own `MADO/`
