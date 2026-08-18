@@ -294,6 +294,20 @@ mode: `~1.3s`
 Time to list `100,043` entries with filter query, `--parallel` mode
 and `--hide-mtime`: `~1s`
 
+## Interfaces
+
+`mado` is designed as a backend that can power different
+frontends. The core is a fast C++ engine with a query language, while
+interfaces handle display and interaction
+
+### Emacs interface
+
+[emado](https://github.com/laserattack/emado) provides a pretty Emacs
+interface with transient menus, interactive statistics, outline-mode
+sections, direct deletion from the buffer, etc
+
+![](./static/demo_emado.gif)
+
 ## Requirements
 
 - **Unix system** (Linux, possibly macOS/BSD)
