@@ -295,6 +295,13 @@ Clone the repository and build:
 make
 ```
 
+If your standard library requires TBB for parallel algorithms, build
+with:
+
+```
+make USE_TBB=1
+```
+
 This will produce an executable file `./mado`
 
 ## Performance
@@ -333,7 +340,8 @@ sections, direct deletion from the buffer, etc
 - **Unix system** (Linux, possibly macOS/BSD)
 - **Build dependencies**:
   - C compiler
-  - C++ compiler
+  - C++ compiler (TBB may be required depending on the standard
+    library implementation — see [Installation](#installation))
   - `make`
   - `flex`
   - `bison`
