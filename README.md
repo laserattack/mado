@@ -23,6 +23,7 @@ files and supports powerful filtering with a query language
 - [Interfaces](#interfaces)
   - [Emacs interface](#emacs-interface)
 - [Requirements](#requirements)
+- [Inspiration](#inspiration)
 
 ## Features
 
@@ -336,3 +337,8 @@ sections, direct deletion from the buffer, etc
   - `make`
   - `flex`
   - `bison`
+
+## Inspiration
+
+Inspired by [Tsoding's video on building a query language
+compiler](https://youtu.be/8NdRGmp70Go)
