@@ -3,7 +3,7 @@
 A command-line tool that stores entries (tasks, notes) as markdown
 files and supports powerful filtering with a query language
 
-![](./static/repo_image.jpg)
+![](./static/demo_mado.gif)
 
 ## Table of Contents
 
