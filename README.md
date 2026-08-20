@@ -127,7 +127,7 @@ mado list 'tag = allof(bug, critical)' # Entry has BOTH "bug" AND "critical" tag
 
 # Sort results
 mado list -s +priority 'tag = bug' # bugs sorted by priority
-mado list -s -priority,+time 'all' # highest priority first, newest first
+mado list -s -priority,+time 'all' # highest priority first, oldest first
 ```
 
 ## Customizing Templates
@@ -236,7 +236,7 @@ keywords
 |------|-------------|--------|----------|
 | **number** | Integer value | 0-999 | `0`, `10`, `999` |
 | **string** | Text value | Unquoted: `[a-zA-Z_][a-zA-Z0-9_-]*` or quoted: `"..."` or `'...'` | `bug`, `"fix login"`, `'проблема'` |
-| **timestamp** | Creation time of entry | 4 digits, 6 digits or (8 digits + optional (`T` + 0, 2, 4 or 6 digits)) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
+| **timestamp** | Timestamp value | 4 digits, 6 digits or (8 digits + optional (`T` + 0, 2, 4 or 6 digits)) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
 
 ### Keywords
 
