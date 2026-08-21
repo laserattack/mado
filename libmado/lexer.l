@@ -137,7 +137,6 @@ NUMBER             [0-9]{1,3}
 /* static char is_whitespace(char c) */
 WHITESPACE         [ \t\r]
 TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
-QUOTED_TIMEFORMAT  \"{TIMEFORMAT}\"|\'{TIMEFORMAT}\'
 STRING             \"[^\"]*\"|\'[^\']*\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
 TIME_VARIABLE      @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
@@ -173,13 +172,6 @@ NEWLINE            \n
                           return TOKEN_TIMESTAMP;
                       }
 
-{QUOTED_TIMEFORMAT}   {
-                          yytext[strlen(yytext)-1] = '\0';
-                          yylval.str = strdup(yytext+1);
-                          yycolno += yyleng;
-                          return TOKEN_TIMESTAMP;
-                      }
-
 {IDENT}               {
                           static const struct keyword_entry keywords[] = {
                               {"deadline", TOKEN_DEADLINE},
@@ -188,6 +180,7 @@ NEWLINE            \n
                               {"time",     TOKEN_TIME},
                               {"mtime",    TOKEN_MTIME},
                               {"name",     TOKEN_NAME},
+                              {"path",     TOKEN_PATH},
                               {"tag",      TOKEN_TAG},
                               {"and",      TOKEN_AND},
                               {"or",       TOKEN_OR},

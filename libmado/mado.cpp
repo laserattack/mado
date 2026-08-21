@@ -215,7 +215,7 @@ Mado_Entry::parse(const Mado_Config *cfg,
     auto entry = std::make_unique<Mado_Entry>();
     entry->priority = 0;
     entry->time = dir_name;
-    entry->path = entry_dir;
+    entry->path = entry_dir / (cfg->entry_file_name + ".md");
     entry->deadline = "99990000T000000";
     entry->mtime = "99990000T000000";
 
@@ -342,7 +342,7 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
     Mado_Output_Format fmt = cfg->fmt;
 
     if (fmt == Mado_Output_Format::ONLY_PATH) {
-        os << path.string() << "/" << cfg->entry_file_name << ".md\n";
+        os << path.string() << "\n";
         return;
     }
 
@@ -355,6 +355,10 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
             has_any = true;
         };
 
+        if (has_flag(shown, Mado_Entry_Field::PATH)) {
+            sep();
+            os << "\"path\":\"" << path.string() << "\"";
+        }
         if (has_flag(shown, Mado_Entry_Field::TIME)) {
             sep();
             os << "\"time\":";
@@ -396,18 +400,14 @@ void Mado_Entry::print(const Mado_Config *cfg, std::ostream &os) const {
             }
             os << "]";
         }
-        if (has_flag(shown, Mado_Entry_Field::PATH)) {
-            sep();
-            os << "\"path\":\"" << path.string() << "/" << cfg->entry_file_name << ".md\"";
-        }
         os << "}\n";
         return;
     }
 
     // Mado_Output_Format::DEFAULT
-    os << path.string() << "/" << cfg->entry_file_name << ".md:1:";
+    os << path.string() << ":1:";
     if (has_flag(shown, Mado_Entry_Field::PATH))
-        os << " PATH:[" << path.string() << "/" << cfg->entry_file_name << ".md" << "]";
+        os << " PATH:[" << path.string() << "]";
     if (has_flag(shown, Mado_Entry_Field::TIME))
         os << " TIME:[" << time << "]";
     if (has_flag(shown, Mado_Entry_Field::MTIME))
@@ -535,8 +535,11 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         case CMP_DEADLINE:
         case CMP_TIME:
         case CMP_MTIME:
+        case CMP_PATH:
         case CMP_NAME: {
             const std::string *field = nullptr;
+            const std::string path_str = path.string();
+
             switch (filter->comparison.field) {
             case CMP_STATUS:
                 field = &status;
@@ -549,6 +552,9 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                 break;
             case CMP_NAME:
                 field = &name;
+                break;
+            case CMP_PATH:
+                field = &path_str;
                 break;
             case CMP_MTIME:
                 field = &mtime;
@@ -748,6 +754,7 @@ mado_parse_sort(const std::string &sort_str) {
     static const struct keyword_entry fields_for_parse_sort[] = {
         {"time", static_cast<int>(Mado_Entry_Field::TIME)},
         {"mtime", static_cast<int>(Mado_Entry_Field::MTIME)},
+        {"path", static_cast<int>(Mado_Entry_Field::PATH)},
         {"name", static_cast<int>(Mado_Entry_Field::NAME)},
         {"priority", static_cast<int>(Mado_Entry_Field::PRIORITY)},
         {"deadline", static_cast<int>(Mado_Entry_Field::DEADLINE)},
@@ -790,8 +797,9 @@ void Mado_Entries::print(const Mado_Config *cfg, std::ostream &os) const {
 std::vector<std::string> Mado_Entries::remove() const {
     std::vector<std::string> removed;
     for (auto &e : *this) {
-        std::filesystem::remove_all(e->path);
-        removed.push_back(e->path);
+        std::filesystem::path dir_path = e->path.parent_path();
+        std::filesystem::remove_all(dir_path);
+        removed.push_back(dir_path.string());
     }
     return removed;
 }

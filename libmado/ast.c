@@ -39,6 +39,7 @@ void ast_free(AST_Node *node) {
     case NODE_COMPARISON:
         if (node->comparison.field == CMP_TAG ||
             node->comparison.field == CMP_STATUS ||
+            node->comparison.field == CMP_PATH ||
             node->comparison.field == CMP_NAME ||
             node->comparison.field == CMP_TIME ||
             node->comparison.field == CMP_DEADLINE ||

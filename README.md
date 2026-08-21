@@ -88,6 +88,7 @@ The login page returns 500 error when using special characters.
 > - PRIORITY defaults to 0
 > - DEADLINE defaults to 99990000T000000
 > - TAGS defaults to a list with one empty element [""]
+> - PATH is a system field, always present and set to the full path of the entry's MAIN.md file. It cannot be changed or removed manually
 > - TIME is a system field, always present and set to the entry's directory name (creation timestamp in YYYYMMDDTHHMMSS format). It cannot be changed or removed — it reflects when the entry was created
 > - MTIME is a system field, automatically set to the modification time of the entry's file (YYYYMMDDTHHMMSS format). It updates whenever the entry file changes and cannot be manually edited
 
@@ -246,6 +247,7 @@ keywords
 | `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
+| `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `path ~ /home/user/projects` |
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
 | `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `mtime > 20260505T1230` |
 | `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `deadline > 20260505T1230 and deadline < 20260510T` |

@@ -86,7 +86,7 @@ extern AST_Node *ast_root;
 
 %token TOKEN_AND TOKEN_OR TOKEN_NOT
 %token TOKEN_DEADLINE TOKEN_PRIORITY TOKEN_TAG
-%token TOKEN_STATUS TOKEN_NAME TOKEN_TIME TOKEN_MTIME
+%token TOKEN_STATUS TOKEN_NAME TOKEN_PATH TOKEN_TIME TOKEN_MTIME
 %token TOKEN_ALL
 %token TOKEN_ALLOF TOKEN_ANYOF
 %token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
@@ -171,6 +171,7 @@ number_value:
     | TOKEN_DEADLINE  { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("deadline"); }
     | TOKEN_PRIORITY  { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("priority"); }
     | TOKEN_STATUS    { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("status"); }
+    | TOKEN_PATH      { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("path"); }
     | TOKEN_NAME      { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("name"); }
     | TOKEN_TAG       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("tag"); }
     | TOKEN_MTIME     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("mtime"); }
@@ -211,6 +212,7 @@ time_value:
     | TOKEN_DEADLINE  { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("deadline"); }
     | TOKEN_PRIORITY  { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("priority"); }
     | TOKEN_STATUS    { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("status"); }
+    | TOKEN_PATH      { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("path"); }
     | TOKEN_NAME      { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("name"); }
     | TOKEN_TAG       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("tag"); }
     | TOKEN_MTIME     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("mtime"); }
@@ -257,6 +259,7 @@ string_value:
     | TOKEN_DEADLINE  { $$ = NULL; YYERROR_KEYWORD_AS_STRING("deadline"); }
     | TOKEN_PRIORITY  { $$ = NULL; YYERROR_KEYWORD_AS_STRING("priority"); }
     | TOKEN_STATUS    { $$ = NULL; YYERROR_KEYWORD_AS_STRING("status"); }
+    | TOKEN_PATH      { $$ = NULL; YYERROR_KEYWORD_AS_STRING("path"); }
     | TOKEN_NAME      { $$ = NULL; YYERROR_KEYWORD_AS_STRING("name"); }
     | TOKEN_TAG       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("tag"); }
     | TOKEN_MTIME     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("mtime"); }
@@ -271,6 +274,7 @@ string_value:
 string_field:
     TOKEN_TAG      { $$ = CMP_TAG; }
     | TOKEN_STATUS { $$ = CMP_STATUS; }
+    | TOKEN_PATH   { $$ = CMP_PATH; }
     | TOKEN_NAME   { $$ = CMP_NAME; }
     ;
 

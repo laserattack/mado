@@ -232,8 +232,10 @@ static void print_usage(bool show_aliases) {
     std::cerr << "Global options:\n";
     std::cerr << "  -p, --parallel            Enable parallel parsing\n";
     std::cerr << "  -C, --working-dir <DIR>   Change working directory\n";
-    std::cerr << "  -D, --main-dir <NAME>     Custom main directory name\n";
-    std::cerr << "  -E, --entry-file <NAME>   Custom entry file name\n";
+    std::cerr << "  -D, --main-dir <NAME>     Custom main directory name. Default: "
+              << g_mado_config.main_dir_name << "\n";
+    std::cerr << "  -E, --entry-file <NAME>   Custom entry file name. Default: "
+              << g_mado_config.entry_file_name << "\n";
     std::cerr << "  -h, --help                Show this help\n";
     std::cerr << "\nCommands:\n";
     for (int i = 0; commands[i].name; i++) {

@@ -16,6 +16,7 @@ typedef enum {
     CMP_PRIORITY,
     CMP_TAG,
     CMP_STATUS,
+    CMP_PATH,
     CMP_NAME,
     CMP_TIME,
     CMP_DEADLINE,
