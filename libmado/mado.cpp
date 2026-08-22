@@ -505,11 +505,11 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                         return true;
                     break;
                 case CMP_FUZZY:
-                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str()) != INT32_MIN)
+                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str(), cfg->case_insensitive_search) != INT32_MIN)
                         return true;
                     break;
                 case CMP_NFUZZY:
-                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str()) == INT32_MIN)
+                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str(), cfg->case_insensitive_search) == INT32_MIN)
                         return true;
                     break;
                 case CMP_TILDE:
@@ -583,9 +583,9 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
             case CMP_NE:
                 return field_normalized != c;
             case CMP_FUZZY:
-                return fuzzy_match(c.c_str(), field_normalized.c_str()) != INT32_MIN;
+                return fuzzy_match(c.c_str(), field_normalized.c_str(), cfg->case_insensitive_search) != INT32_MIN;
             case CMP_NFUZZY:
-                return fuzzy_match(c.c_str(), field_normalized.c_str()) == INT32_MIN;
+                return fuzzy_match(c.c_str(), field_normalized.c_str(), cfg->case_insensitive_search) == INT32_MIN;
             case CMP_TILDE:
                 return field_normalized.find(c) != std::string::npos;
             case CMP_NTILDE:

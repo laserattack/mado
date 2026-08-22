@@ -345,7 +345,7 @@ sections, direct deletion from the buffer, etc
 
 ## Requirements
 
-- **Unix system** (Linux, possibly macOS/BSD)
+- **Linux system**
 - **Build dependencies**:
   - C compiler
   - C++ compiler (TBB may be required depending on the standard

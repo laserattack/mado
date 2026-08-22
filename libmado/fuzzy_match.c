@@ -26,13 +26,14 @@ static int32_t fuzzy_match_recurse(
     const char *pattern,
     const char *str,
     int32_t score,
-    bool first_char);
+    bool first_char,
+    bool ignore_case);
 
 /*
  * Returns score if each character in pattern is found sequentially within str.
  * Returns INT32_MIN otherwise.
  */
-int32_t fuzzy_match(const char *pattern, const char *str) {
+int32_t fuzzy_match(const char *pattern, const char *str, bool ignore_case) {
     const int unmatched_letter_penalty = -1;
     const size_t slen = strlen(str);
     const size_t plen = strlen(pattern);
@@ -49,7 +50,7 @@ int32_t fuzzy_match(const char *pattern, const char *str) {
     score += unmatched_letter_penalty * (int32_t)(slen - plen);
 
     /* Perform the match. */
-    score = fuzzy_match_recurse(pattern, str, score, true);
+    score = fuzzy_match_recurse(pattern, str, score, true, ignore_case);
 
     return score;
 }
@@ -67,7 +68,8 @@ int32_t fuzzy_match_recurse(
     const char *pattern,
     const char *str,
     int32_t score,
-    bool first_char) {
+    bool first_char,
+    bool ignore_case) {
     if (*pattern == '\0') {
         /* We've matched the full pattern. */
         return score;
@@ -82,12 +84,20 @@ int32_t fuzzy_match_recurse(
      * Find all occurrences of the next pattern character in str, and
      * recurse on them.
      */
-    while ((match = strcasestr(match, search)) != NULL) {
+    while (true) {
+        match = ignore_case
+                    ? strcasestr(match, search)
+                    : strstr(match, search);
+
+        if (match == NULL)
+            break;
+
         int32_t subscore = fuzzy_match_recurse(
             pattern + 1,
             match + 1,
             compute_score(match - str, first_char, match),
-            false);
+            false,
+            ignore_case);
         best_score = MAX(best_score, subscore);
         match++;
     }

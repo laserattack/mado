@@ -1,6 +1,6 @@
 - NAME: fuzzy match operator
 - TAGS: feat, new keyword, lexer, parser, compiler
-- STATUS: opened
+- STATUS: closed
 
 something like `status ~~ cld`
 
