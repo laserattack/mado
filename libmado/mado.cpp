@@ -17,6 +17,7 @@
 #include "mado.hpp"
 
 extern "C" {
+#include "fuzzy_match.h"
 #include "utils.h" // impl in lexer.l
 }
 
@@ -476,9 +477,11 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                 return priority >= cv;
             case CMP_LE:
                 return priority <= cv;
+            case CMP_FUZZY:
             case CMP_TILDE:
             case CMP_EQ:
                 return priority == cv;
+            case CMP_NFUZZY:
             case CMP_NTILDE:
             case CMP_NE:
                 return priority != cv;
@@ -499,6 +502,14 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                     break;
                 case CMP_NE:
                     if (tag_normalized != ct)
+                        return true;
+                    break;
+                case CMP_FUZZY:
+                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str()) != INT32_MIN)
+                        return true;
+                    break;
+                case CMP_NFUZZY:
+                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str()) == INT32_MIN)
                         return true;
                     break;
                 case CMP_TILDE:
@@ -571,6 +582,10 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
                 return field_normalized == c;
             case CMP_NE:
                 return field_normalized != c;
+            case CMP_FUZZY:
+                return fuzzy_match(c.c_str(), field_normalized.c_str()) != INT32_MIN;
+            case CMP_NFUZZY:
+                return fuzzy_match(c.c_str(), field_normalized.c_str()) == INT32_MIN;
             case CMP_TILDE:
                 return field_normalized.find(c) != std::string::npos;
             case CMP_NTILDE:

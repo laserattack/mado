@@ -111,6 +111,10 @@ mado list 'name = login'
 mado list 'name ~ login'
 mado list 'name ~ "fix login"' # multiple words — quotes required
 
+# Filter by entry name (fuzzy match)
+mado list 'name ~~ "fx lgn b"' # Finds "Fix login bug"
+mado list 'name !~~ lgn' # Entries that do NOT fuzzy match
+
 # Filter by creation time
 mado list 'time ~ 20260516' # Entries created on 2026-05-16
 mado list 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
@@ -222,6 +226,8 @@ keywords
 | `!=` | Not equal |
 | `~` | Contains |
 | `!~` | Not contains |
+| `~~` | Fuzzy match |
+| `!~~` | Not fuzzy match |
 
 ### Logical Operators
 
@@ -243,14 +249,14 @@ keywords
 
 | Keyword | Type    | Operators                      | Example                           |
 |---------|---------|--------------------------------|-----------------------------------|
-| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~` | `priority > 5`, `priority != 10` |
-| `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `tag = bug`, `tag ~ crit` |
-| `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `status = opened`, `status ~ open` |
-| `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `name = "Fix bug"`, `name ~ login` |
-| `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `path ~ /home/user/projects` |
-| `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `time > 20260505T1230 and time < 20260510T` |
-| `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `mtime > 20260505T1230` |
-| `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
+| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~` | `priority > 5`, `priority != 10` |
+| `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `tag = bug`, `tag ~ crit` |
+| `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `status = opened`, `status ~ ope` |
+| `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `name = "Fix bug"`, `name ~~ fx lgn` |
+| `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `path ~ /home/user/projects` |
+| `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `time > 20260505T1230 and time < 20260510T` |
+| `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
+| `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
 > **Note:** all operators also work with `anyof(...)` and `allof(...)`.

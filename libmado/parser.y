@@ -112,6 +112,8 @@ extern AST_Node *ast_root;
 %token TOKEN_LE
 %token TOKEN_EQ
 %token TOKEN_NE
+%token TOKEN_FUZZY
+%token TOKEN_NFUZZY
 %token TOKEN_TILDE
 %token TOKEN_NTILDE
 %token TOKEN_LPAREN
@@ -300,6 +302,8 @@ string_field:
 cmp_op:
     TOKEN_EQ         { $$ = CMP_EQ; }
     | TOKEN_NE       { $$ = CMP_NE; }
+    | TOKEN_FUZZY    { $$ = CMP_FUZZY; }
+    | TOKEN_NFUZZY   { $$ = CMP_NFUZZY; }
     | TOKEN_TILDE    { $$ = CMP_TILDE; }
     | TOKEN_NTILDE   { $$ = CMP_NTILDE; }
     | TOKEN_GT       { $$ = CMP_GT; }

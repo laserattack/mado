@@ -154,6 +154,8 @@ NEWLINE            \n
 "<="            { yycolno += yyleng; return TOKEN_LE; }
 "="             { yycolno += yyleng; return TOKEN_EQ; }
 "!="            { yycolno += yyleng; return TOKEN_NE; }
+"~~"            { yycolno += yyleng; return TOKEN_FUZZY; }
+"!~~"           { yycolno += yyleng; return TOKEN_NFUZZY; }
 "~"             { yycolno += yyleng; return TOKEN_TILDE; }
 "!~"            { yycolno += yyleng; return TOKEN_NTILDE; }
 "("             { yycolno += yyleng; return TOKEN_LPAREN; }

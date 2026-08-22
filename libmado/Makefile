@@ -7,7 +7,7 @@ FLEX = flex
 BISON = bison
 
 LIB = libmado.a
-OBJS = mado.o ast.o lex.yy.o parser.tab.o
+OBJS = mado.o ast.o fuzzy_match.o lex.yy.o parser.tab.o
 
 all:
 	bison -d parser.y
@@ -15,6 +15,7 @@ all:
 	$(CC) $(CFLAGS) -c lex.yy.c -o lex.yy.o
 	$(CC) $(CFLAGS) -c parser.tab.c -o parser.tab.o
 	$(CC) $(CFLAGS) -c ast.c -o ast.o
+	$(CC) $(CFLAGS) -c fuzzy_match.c -o fuzzy_match.o
 	$(CXX) $(CXXFLAGS) -c mado.cpp -o mado.o
 	$(AR) rcs $(LIB) $(OBJS)
 

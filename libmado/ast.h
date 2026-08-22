@@ -30,6 +30,8 @@ typedef enum {
     CMP_NE,
     CMP_GE,
     CMP_LE,
+    CMP_FUZZY,
+    CMP_NFUZZY,
     CMP_TILDE,
     CMP_NTILDE
 } Comparison_Operator;
