@@ -472,7 +472,7 @@ static int cmd_remove(int argc, char **argv) {
     return 0;
 }
 
-static int cmd_info([[maybe_unused]] int argc, [[maybe_unused]] char **argv) {
+static int cmd_info(int argc, char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int opt;

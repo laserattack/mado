@@ -1,0 +1,3 @@
+- NAME: Статический бинарь в репо
+- TAGS: chore, release
+- STATUS: opened
