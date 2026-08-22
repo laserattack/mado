@@ -14,19 +14,19 @@ extern AST_Node *ast_root;
 
 #define YYERROR_KEYWORD_AS_STRING(name) \
     do { \
-        yyerror("resolved as keyword \"" name "\", quote it to use as a string"); \
+        yyerror("syntax error, resolved as keyword \"" name "\", quote it to use as a string"); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_NUMBER_AS_STRING(value) \
     do { \
-        yyerror("number cannot be used as a string value, quote it to use as a string"); \
+        yyerror("syntax error, number cannot be used as a string value, quote it to use as a string"); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_TIMESTAMP_AS_STRING(value) \
     do { \
-        yyerror("timestamp cannot be used as a string value, quote it to use as a string"); \
+        yyerror("syntax error, timestamp cannot be used as a string value, quote it to use as a string"); \
         YYERROR; \
     } while (0)
 
@@ -36,19 +36,19 @@ extern AST_Node *ast_root;
 
 #define YYERROR_STRING_AS_TIMESTAMP() \
     do { \
-        yyerror("string cannot be used as a timestamp value " YYERROR_TIMESTAMP_FORMAT); \
+        yyerror("syntax error, string cannot be used as a timestamp value " YYERROR_TIMESTAMP_FORMAT); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_NUMBER_AS_TIMESTAMP() \
     do { \
-        yyerror("number cannot be used as a timestamp value " YYERROR_TIMESTAMP_FORMAT); \
+        yyerror("syntax error, number cannot be used as a timestamp value " YYERROR_TIMESTAMP_FORMAT); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_KEYWORD_AS_TIMESTAMP(name) \
     do { \
-        yyerror("resolved as keyword \"" name "\", expected timestamp value " YYERROR_TIMESTAMP_FORMAT); \
+        yyerror("syntax error, resolved as keyword \"" name "\", expected timestamp value " YYERROR_TIMESTAMP_FORMAT); \
         YYERROR; \
     } while (0)
 
@@ -58,19 +58,27 @@ extern AST_Node *ast_root;
 
 #define YYERROR_STRING_AS_NUMBER() \
     do { \
-        yyerror("string cannot be used as a numeric value " YYERROR_NUMBER_FORMAT); \
+        yyerror("syntax error, string cannot be used as a numeric value " YYERROR_NUMBER_FORMAT); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_TIMESTAMP_AS_NUMBER() \
     do { \
-        yyerror("timestamp cannot be used as a numeric value " YYERROR_NUMBER_FORMAT); \
+        yyerror("syntax error, timestamp cannot be used as a numeric value " YYERROR_NUMBER_FORMAT); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_KEYWORD_AS_NUMBER(name) \
     do { \
-        yyerror("resolved as keyword \"" name "\", expected numeric value " YYERROR_NUMBER_FORMAT); \
+        yyerror("syntax error, resolved as keyword \"" name "\", expected numeric value " YYERROR_NUMBER_FORMAT); \
+        YYERROR; \
+    } while (0)
+
+// empty list
+
+#define YYERROR_EMPTY_LIST() \
+    do { \
+        yyerror("syntax error, empty list not allowed"); \
         YYERROR; \
     } while (0)
 
@@ -84,17 +92,35 @@ extern AST_Node *ast_root;
     struct AST_Node *node;
 }
 
-%token TOKEN_AND TOKEN_OR TOKEN_NOT
-%token TOKEN_DEADLINE TOKEN_PRIORITY TOKEN_TAG
-%token TOKEN_STATUS TOKEN_NAME TOKEN_PATH TOKEN_TIME TOKEN_MTIME
+%token TOKEN_AND
+%token TOKEN_OR
+%token TOKEN_NOT
+%token TOKEN_DEADLINE
+%token TOKEN_PRIORITY
+%token TOKEN_TAG
+%token TOKEN_STATUS
+%token TOKEN_NAME
+%token TOKEN_PATH
+%token TOKEN_TIME
+%token TOKEN_MTIME
 %token TOKEN_ALL
-%token TOKEN_ALLOF TOKEN_ANYOF
-%token TOKEN_GT TOKEN_LT TOKEN_GE TOKEN_LE TOKEN_EQ
-%token TOKEN_NE TOKEN_TILDE TOKEN_NTILDE
-%token TOKEN_LPAREN TOKEN_RPAREN TOKEN_COMMA
-
+%token TOKEN_ALLOF
+%token TOKEN_ANYOF
+%token TOKEN_GT
+%token TOKEN_LT
+%token TOKEN_GE
+%token TOKEN_LE
+%token TOKEN_EQ
+%token TOKEN_NE
+%token TOKEN_TILDE
+%token TOKEN_NTILDE
+%token TOKEN_LPAREN
+%token TOKEN_RPAREN
+%token TOKEN_COMMA
 %token <num> TOKEN_NUMBER
-%token <str> TOKEN_STRING TOKEN_TIMESTAMP
+%token <str> TOKEN_STRING
+%token <str> TOKEN_TIMESTAMP
+
 %type <num> cmp_op string_field time_field list_modifier number_value
 %type <str> string_value time_value
 
@@ -153,6 +179,9 @@ condition_priority:
     | TOKEN_PRIORITY cmp_op list_modifier TOKEN_LPAREN number_list TOKEN_RPAREN {
         $$ = expand_list(CMP_PRIORITY, $2, NULL, $5, $3);
     }
+    | TOKEN_PRIORITY cmp_op list_modifier TOKEN_LPAREN TOKEN_RPAREN {
+        $$ = NULL; YYERROR_EMPTY_LIST();
+    }
     ;
 
 number_list:
@@ -175,12 +204,6 @@ number_value:
     | TOKEN_NAME      { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("name"); }
     | TOKEN_TAG       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("tag"); }
     | TOKEN_MTIME     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("mtime"); }
-    | TOKEN_AND       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("and"); }
-    | TOKEN_OR        { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("or"); }
-    | TOKEN_NOT       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("not"); }
-    | TOKEN_ALL       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("all"); }
-    | TOKEN_ALLOF     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("allof"); }
-    | TOKEN_ANYOF     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("anyof"); }
     ;
 
 //
@@ -193,6 +216,9 @@ condition_time:
     }
     | time_field cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
         $$ = expand_list($1, $2, $5, NULL, $3);
+    }
+    | time_field cmp_op list_modifier TOKEN_LPAREN TOKEN_RPAREN {
+        $$ = NULL; YYERROR_EMPTY_LIST();
     }
     ;
 
@@ -216,12 +242,6 @@ time_value:
     | TOKEN_NAME      { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("name"); }
     | TOKEN_TAG       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("tag"); }
     | TOKEN_MTIME     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("mtime"); }
-    | TOKEN_AND       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("and"); }
-    | TOKEN_OR        { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("or"); }
-    | TOKEN_NOT       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("not"); }
-    | TOKEN_ALL       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("all"); }
-    | TOKEN_ALLOF     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("allof"); }
-    | TOKEN_ANYOF     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("anyof"); }
     ;
 
 time_field:
@@ -240,6 +260,9 @@ condition_string:
     }
     | string_field cmp_op list_modifier TOKEN_LPAREN string_list TOKEN_RPAREN {
         $$ = expand_list($1, $2, $5, NULL, $3);
+    }
+    | string_field cmp_op list_modifier TOKEN_LPAREN TOKEN_RPAREN {
+        $$ = NULL; YYERROR_EMPTY_LIST();
     }
     ;
 
@@ -263,12 +286,6 @@ string_value:
     | TOKEN_NAME      { $$ = NULL; YYERROR_KEYWORD_AS_STRING("name"); }
     | TOKEN_TAG       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("tag"); }
     | TOKEN_MTIME     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("mtime"); }
-    | TOKEN_AND       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("and"); }
-    | TOKEN_OR        { $$ = NULL; YYERROR_KEYWORD_AS_STRING("or"); }
-    | TOKEN_NOT       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("not"); }
-    | TOKEN_ALL       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("all"); }
-    | TOKEN_ALLOF     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("allof"); }
-    | TOKEN_ANYOF     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("anyof"); }
     ;
 
 string_field:
