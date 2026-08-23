@@ -87,7 +87,7 @@ The login page returns 500 error when using special characters.
 > - NAME, STATUS default to empty string ""
 > - PRIORITY defaults to 0
 > - DEADLINE defaults to 99990101T000000
-> - TAGS defaults to a list with one empty element [""]
+> - TAGS defaults to a list with one empty string [""]
 > - PATH is a system field, always present and set to the full path of the entry's MAIN.md file. It cannot be changed or removed manually
 > - TIME is a system field, always present and set to the entry's directory name (creation timestamp in YYYYMMDDTHHMMSS format). It cannot be changed or removed — it reflects when the entry was created
 > - MTIME is a system field, automatically set to the modification time of the entry's file (YYYYMMDDTHHMMSS format). It updates whenever the entry file changes and cannot be manually edited
