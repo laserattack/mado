@@ -48,13 +48,14 @@ void lexerror(const char *fmt, ...) {
     va_end(args);
 }
 
-static char *resolve_time_var(const char *varname) {
+static char *resolve_time_macro(const char *varname) {
     static const struct keyword_entry time_vars[] = {
         {"now",   1},
         {"today", 2},
         {"week",  3},
         {"month", 4},
         {"year",  5},
+        {"never", 6},
     };
     static const int n = sizeof(time_vars) / sizeof(time_vars[0]);
 
@@ -126,6 +127,13 @@ static char *resolve_time_var(const char *varname) {
             snprintf(buf, sizeof(buf), "%04d", year);
         }
         break;
+    case 6: // never
+        {
+            time_t t = 253370764800 + offset * 86400;
+            struct tm *ttm = gmtime(&t); // no need timezone here
+            strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", ttm);
+        }
+        break;
     }
 
     return strdup(buf);
@@ -135,12 +143,35 @@ static char *resolve_time_var(const char *varname) {
 
 NUMBER             [0-9]{1,3}
 /* static char is_whitespace(char c) */
+NEWLINE            \n
 WHITESPACE         [ \t\r]
-TIMEFORMAT         ([0-9]{4}|[0-9]{6}|[0-9]{8}(T([0-9]{2}|[0-9]{4}|[0-9]{6})?)?)
 STRING             \"[^\"]*\"|\'[^\']*\'
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
-TIME_VARIABLE      @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
-NEWLINE            \n
+
+YEAR               [0-9]{4}
+MONTH              (0[1-9]|1[0-2])
+DAY                (0[1-9]|[12][0-9]|3[01])
+HOUR               ([01][0-9]|2[0-3])
+MIN                [0-5][0-9]
+SEC                [0-5][0-9]
+
+/* TIMEFORMAT      ( */
+/*                  {YEAR} */
+/*                  |{YEAR}{MONTH} */
+/*                  |{YEAR}{MONTH}{DAY} */
+/*                     (T */
+/*                         ( */
+/*                             {HOUR} */
+/*                             |{HOUR}{MIN} */
+/*                             |{HOUR}{MIN}{SEC} */
+/*                         )? */
+/*                     )? */
+/*                 ) */
+
+TIMEFORMAT         ({YEAR}|{YEAR}{MONTH}|{YEAR}{MONTH}{DAY}(T({HOUR}|{HOUR}{MIN}|{HOUR}{MIN}{SEC})?)?)
+
+/* macros */
+TIME_MACRO         @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 
 %%
 
@@ -205,8 +236,8 @@ NEWLINE            \n
                           return TOKEN_STRING;
                       }
 
-{TIME_VARIABLE}       {
-                          char *resolved = resolve_time_var(yytext + 1);
+{TIME_MACRO}          {
+                          char *resolved = resolve_time_macro(yytext + 1);
 
                           if (resolved) {
                               yylval.str = resolved;

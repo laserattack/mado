@@ -32,7 +32,7 @@ extern AST_Node *ast_root;
 
 // expected timestamp errors
 
-#define YYERROR_TIMESTAMP_FORMAT "\nExpected format: 4 digits, 6 digits or (8 digits + optional (T + 0, 2, 4 or 6 digits))"
+#define YYERROR_TIMESTAMP_FORMAT "\nExpected format: YYYYMMDDTHHMMSS with optional shorter forms: YYYY, YYYYMM, YYYYMMDD, YYYYMMDDT, YYYYMMDDTHH, YYYYMMDDTHHMM, YYYYMMDDTHHMMSS"
 
 #define YYERROR_STRING_AS_TIMESTAMP() \
     do { \

@@ -86,7 +86,7 @@ The login page returns 500 error when using special characters.
 > When a field is omitted or left empty:
 > - NAME, STATUS default to empty string ""
 > - PRIORITY defaults to 0
-> - DEADLINE defaults to 99990000T000000
+> - DEADLINE defaults to 99990101T000000
 > - TAGS defaults to a list with one empty element [""]
 > - PATH is a system field, always present and set to the full path of the entry's MAIN.md file. It cannot be changed or removed manually
 > - TIME is a system field, always present and set to the entry's directory name (creation timestamp in YYYYMMDDTHHMMSS format). It cannot be changed or removed — it reflects when the entry was created
@@ -243,7 +243,7 @@ keywords
 |------|-------------|--------|----------|
 | **number** | Integer value | 0-999 | `0`, `10`, `999` |
 | **string** | Text value | Unquoted: `[a-zA-Z_][a-zA-Z0-9_-]*` or quoted: `"..."` or `'...'` | `bug`, `"fix login"`, `'проблема'` |
-| **timestamp** | Timestamp value | 4 digits, 6 digits or (8 digits + optional (`T` + 0, 2, 4 or 6 digits)) | `2026`, `20260516`, `20260516T`, `20260516T1230` |
+| **timestamp** | Timestamp value | Subset of ISO 8601: `YYYYMMDDTHHMMSS` with optional shorter forms: `YYYY`, `YYYYMM`, `YYYYMMDD`, `YYYYMMDDT`, `YYYYMMDDTHH`, `YYYYMMDDTHHMM`, `YYYYMMDDTHHMMSS` | `2026`, `202605`, `20260516`, `20260516T`, `20260516T12`, `20260516T1230`, `20260516T123012` |
 
 ### Keywords
 
@@ -282,6 +282,9 @@ Resolve to timestamps. Accept optional offsets with `+`/`-`
 | `@week` | Start of current week (Monday) | weeks |
 | `@month` | Start of current month | months |
 | `@year` | Start of current year | years |
+| `@never` | UTC 99990101T000000 | days |
+
+> All time macros use local timezone, except `@never` which is UTC
 
 Examples:
 
@@ -293,6 +296,7 @@ mado list 'time >= @week-1'
 mado list 'deadline < @today+30'
 mado list 'time ~ @month-2'
 mado list 'mtime > @now-1'
+mado list 'deadline != @never' # entries with non-default deadline
 ```
 
 ## Installation

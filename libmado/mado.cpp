@@ -178,31 +178,34 @@ Mado_Entry::parse(const Mado_Config *cfg,
         if (s.empty() || s.size() > 15)
             return false;
 
-        // date part
-        size_t pos = 0;
-        while (pos < s.size() && ::isdigit(s[pos]) && pos < 8)
-            ++pos;
+        struct tm tm = {};
+        char *end = nullptr;
 
-        if (pos != 4 && pos != 6 && pos != 8)
+        if (s.size() == 4)
+            end = strptime(s.c_str(), "%Y", &tm);
+        else if (s.size() == 6)
+            end = strptime(s.c_str(), "%Y%m", &tm);
+        else if (s.size() == 8)
+            end = strptime(s.c_str(), "%Y%m%d", &tm);
+        else if (s.size() >= 9 && s[8] == 'T') {
+            std::string fmt = "%Y%m%dT";
+            if (s.size() - 9 == 0) {
+                // good (T without time part)
+            } else if (s.size() - 9 == 2) {
+                fmt += "%H";
+            } else if (s.size() - 9 == 4) {
+                fmt += "%H%M";
+            } else if (s.size() - 9 == 6) {
+                fmt += "%H%M%S";
+            } else {
+                return false;
+            }
+            end = strptime(s.c_str(), fmt.c_str(), &tm);
+        } else {
             return false;
-
-        if (pos == s.size())
-            return true;
-
-        // time part
-        if (s[pos] != 'T')
-            return false;
-        ++pos;
-
-        if (pos == s.size())
-            return true;
-
-        size_t time_digits = 0;
-        while (pos < s.size() && ::isdigit(s[pos]) && time_digits < 6) {
-            ++pos;
-            ++time_digits;
         }
-        return pos == s.size() && (time_digits == 2 || time_digits == 4 || time_digits == 6);
+
+        return end != nullptr && *end == '\0';
     };
 
     std::string dir_name = entry_dir.filename().string();
@@ -217,8 +220,8 @@ Mado_Entry::parse(const Mado_Config *cfg,
     entry->priority = 0;
     entry->time = dir_name;
     entry->path = entry_dir / (cfg->entry_file_name + ".md");
-    entry->deadline = "99990000T000000";
-    entry->mtime = "99990000T000000";
+    entry->deadline = "99990101T000000";
+    entry->mtime = "99990101T000000";
 
     bool need_name = should_parse_field(Mado_Entry_Field::NAME);
     bool need_priority = should_parse_field(Mado_Entry_Field::PRIORITY);
