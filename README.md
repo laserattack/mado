@@ -249,11 +249,11 @@ keywords
 
 | Keyword | Type    | Operators                      | Example                           |
 |---------|---------|--------------------------------|-----------------------------------|
-| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~` | `priority > 5`, `priority != 10` |
+| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~` (alias for `=`), `!~` (alias for `!=`), `~~` (alias for `=`), `!~~` (alias for `!=`) | `priority > 5`, `priority != 10` |
 | `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `tag = bug`, `tag ~ crit` |
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `status = opened`, `status ~ ope` |
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `name = "Fix bug"`, `name ~~ fx lgn` |
-| `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `path ~ /home/user/projects` |
+| `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `path ~ "/home/user/projects"` |
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `time > 20260505T1230 and time < 20260510T` |
 | `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
 | `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
