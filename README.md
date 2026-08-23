@@ -216,18 +216,18 @@ keywords
 
 ### Operators
 
-| Operator | Description |
-|----------|-------------|
-| `>` | Greater than |
-| `<` | Less than |
-| `>=` | Greater than or equal |
-| `<=` | Less than or equal |
-| `=` | Equal / exact match |
-| `!=` | Not equal |
-| `~` | Contains |
-| `!~` | Not contains |
-| `~~` | Fuzzy match |
-| `!~~` | Not fuzzy match |
+| Operator | Description | Note |
+|----------|-------------|------|
+| `>` | Greater than | For string/timestamp: lexicographic |
+| `<` | Less than | For string/timestamp: lexicographic |
+| `>=` | Greater than or equal | For string/timestamp: lexicographic |
+| `<=` | Less than or equal | For string/timestamp: lexicographic |
+| `=` | Equal / exact match | |
+| `!=` | Not equal | |
+| `~` | Contains | For numbers: alias for `=` |
+| `!~` | Not contains | For numbers: alias for `!=` |
+| `~~` | Fuzzy match | For numbers: alias for `=` |
+| `!~~` | Not fuzzy match | For numbers: alias for `!=` |
 
 ### Logical Operators
 
@@ -269,7 +269,7 @@ keywords
 ### Macros
 
 Macros start with `@` and are resolved at parse time — the value is
-substituted before the AST is evaluated.
+substituted before the AST is evaluated
 
 #### Time Macros
 
