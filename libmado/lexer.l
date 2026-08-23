@@ -52,10 +52,12 @@ static char *resolve_time_macro(const char *varname) {
     static const struct keyword_entry time_vars[] = {
         {"now",   1},
         {"today", 2},
-        {"week",  3},
-        {"month", 4},
-        {"year",  5},
-        {"never", 6},
+        {"yesterday", 3},
+        {"tomorrow", 4},
+        {"week",  5},
+        {"month", 6},
+        {"year",  7},
+        {"never", 8},
     };
     static const int n = sizeof(time_vars) / sizeof(time_vars[0]);
 
@@ -105,7 +107,21 @@ static char *resolve_time_macro(const char *varname) {
             strftime(buf, sizeof(buf), "%Y%m%d", ttm);
         }
         break;
-    case 3: // week
+    case 3: // yesterday
+        {
+            time_t t = now + (offset - 1) * 86400;
+            struct tm *ttm = localtime(&t);
+            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+        }
+        break;
+    case 4: // tomorrow
+        {
+            time_t t = now + (offset + 1) * 86400;
+            struct tm *ttm = localtime(&t);
+            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+        }
+        break;
+    case 5: // week
         {
             int days_since_monday = (tm->tm_wday + 6) % 7;
             time_t t = now - days_since_monday * 86400 + offset * 7 * 86400;
@@ -113,7 +129,7 @@ static char *resolve_time_macro(const char *varname) {
             strftime(buf, sizeof(buf), "%Y%m%d", ttm);
         }
         break;
-    case 4: // month
+    case 6: // month
         {
             int total_months = (tm->tm_year + 1900) * 12 + tm->tm_mon + offset;
             int year = total_months / 12;
@@ -121,14 +137,15 @@ static char *resolve_time_macro(const char *varname) {
             snprintf(buf, sizeof(buf), "%04d%02d", year, month);
         }
         break;
-    case 5: // year
+    case 7: // year
         {
             int year = tm->tm_year + 1900 + offset;
             snprintf(buf, sizeof(buf), "%04d", year);
         }
         break;
-    case 6: // never
+    case 8: // never (timestamp default value)
         {
+            // 253370764800 = 99990101T000000 (timestamp default value)
             time_t t = 253370764800 + offset * 86400;
             struct tm *ttm = gmtime(&t); // no need timezone here
             strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", ttm);

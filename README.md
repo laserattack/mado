@@ -277,11 +277,13 @@ Resolve to timestamps. Accept optional offsets with `+`/`-`
 
 | Macro | Resolution | Offset unit |
 |-------|-----------|-------------|
-| `@now` | Current timestamp | days |
-| `@today` | Start of today | days |
-| `@week` | Start of current week (Monday) | weeks |
-| `@month` | Start of current month | months |
-| `@year` | Start of current year | years |
+| `@now` | Current timestamp (`YYYYMMDDTHHMMSS`) | days |
+| `@today` | Today (`YYYYMMDD`) | days |
+| `@yesterday` | Yesterday (`YYYYMMDD`) | days |
+| `@tomorrow` | Tomorrow (`YYYYMMDD`) | days |
+| `@week` | Current week monday (`YYYYMMDD`) | weeks |
+| `@month` | Current month (`YYYYMM`) | months |
+| `@year` | Current year (`YYYY`) | years |
 | `@never` | UTC 99990101T000000 | days |
 
 > All time macros use local timezone, except `@never` which is UTC
