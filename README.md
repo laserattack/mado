@@ -186,6 +186,9 @@ Sort order:
 - `+field` or `field` — ascending order (default)
 - `-field` — descending order
 
+> **Note:** sort fields are matched fuzzily. `prio` is interpreted as
+> `priority`, `stts` as `status`, etc. Exact match is always preferred
+
 ## Output Formats
 
 The `-f` flag controls how entries are displayed:
@@ -208,6 +211,9 @@ mado list -f jsonl 'priority > 5' | jq '.name'
 mado list -f jsonl 'all' | jq -s 'group_by(.status)'
 mado list -f jsonl 'all' | jq -s 'sort_by(.priority)'
 ```
+
+> **Note:** output formats are matched fuzzily. `js` is interpreted as
+> `jsonl`, `pth` as `path`, etc. Exact match is always preferred
 
 ## Query Syntax
 
@@ -262,7 +268,10 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 | `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
 | `all`      | special | -                              | `all`                  |
 
-> **Note:** all operators also work with `anyof(...)` and `allof(...)`.
+> **Note:** keywords are matched fuzzily. `prio` is interpreted as
+> `priority`, `stts` as `status`, etc. Exact match is always preferred
+
+> **Note 2:** all operators also work with `anyof(...)` and `allof(...)`.
 > These are syntactic sugar that expand to multiple conditions.
 > `anyof(...)` expands with `or`, `allof(...)` expands with `and`.
 > Examples:
@@ -274,6 +283,9 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 Macros start with `@` and are resolved at tokenize time — the value is
 substituted before the AST is evaluated. Macros are simple: they
 expand to a single token, not to expressions
+
+> **Note:** macros are matched fuzzily. `@tday` is interpreted as
+> `@today`, `@mnth` as `@month`, etc. Exact match is always preferred
 
 #### Time Macros
 
