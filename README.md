@@ -284,9 +284,7 @@ Resolve to timestamps. Accept optional offsets with `+`/`-`
 | `@week` | Current week monday (`YYYYMMDD`) | weeks |
 | `@month` | Current month (`YYYYMM`) | months |
 | `@year` | Current year (`YYYY`) | years |
-| `@never` | UTC 99990101T000000 | days |
-
-> All time macros use local timezone, except `@never` which is UTC
+| `@never` | 99990101T000000 | days |
 
 Examples:
 
@@ -312,7 +310,7 @@ Resolve to numeric values
 
 Examples:
 
-```
+``` bash
 mado list 'priority = @max' # highest priority entries
 mado list 'priority = @min' # lowest priority entries
 ```
@@ -328,7 +326,7 @@ make
 If your standard library requires TBB for parallel algorithms, build
 with:
 
-```
+``` bash
 make USE_TBB=1
 ```
 
