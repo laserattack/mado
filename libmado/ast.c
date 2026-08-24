@@ -133,27 +133,27 @@ void ast_print(AST_Node *node, int depth) {
         break;
 
     case NODE_BINARY_OP:
-        printf("BINARY(%s)\n", operator_to_string(node->binary.op));
+        printf("BINARY: %s\n", operator_to_string(node->binary.op));
         ast_print(node->binary.left, depth + 1);
         ast_print(node->binary.right, depth + 1);
         break;
 
     case NODE_UNARY_OP:
-        printf("UNARY(%s)\n", operator_to_string(node->unary.op));
+        printf("UNARY: %s\n", operator_to_string(node->unary.op));
         ast_print(node->unary.expr, depth + 1);
         break;
 
     case NODE_COMPARISON:
-        printf("COMPARISON(%s %s ",
+        printf("COMPARISON: %s %s ",
                comparison_field_to_string(node->comparison.field),
                comparison_operator_to_string(node->comparison.cmp));
 
         switch (node->comparison.field) {
         case CMP_PRIORITY:
-            printf("%d)\n", node->comparison.value.int_value);
+            printf("%d\n", node->comparison.value.int_value);
             break;
         default:
-            printf("%s)\n", node->comparison.value.str_value ? node->comparison.value.str_value : "NULL");
+            printf("%s\n", node->comparison.value.str_value ? node->comparison.value.str_value : "NULL");
             break;
         }
         break;
