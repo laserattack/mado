@@ -88,7 +88,7 @@ void parse_macro_without_offset(const char *base_name_potential, char **base_nam
 }
 
 static char *resolve_time_macro(const char *base_name_and_offset) {
-    static const struct keyword_entry base_names[] = {
+    static const struct ident_entry base_names[] = {
         {"now",   1},
         {"today", 2},
         {"yesterday", 3},
@@ -104,7 +104,7 @@ static char *resolve_time_macro(const char *base_name_and_offset) {
     // get offset and base name
     char *base_name_potential = NULL;
     int offset = parse_macro_with_offset(base_name_and_offset, &base_name_potential);
-    int base_name = lookup_keyword(base_name_potential, base_names, n);
+    int base_name = lookup_ident(base_name_potential, base_names, n);
     free(base_name_potential);
 
     if (!base_name)
@@ -179,7 +179,7 @@ static char *resolve_time_macro(const char *base_name_and_offset) {
 }
 
 static char *resolve_number_macro(const char *base_name_without_offset) {
-    static const struct keyword_entry base_names[] = {
+    static const struct ident_entry base_names[] = {
         {"max", 1},
         {"min", 2},
     };
@@ -189,7 +189,7 @@ static char *resolve_number_macro(const char *base_name_without_offset) {
     // get base name
     char *base_name_potential = NULL;
     parse_macro_without_offset(base_name_without_offset, &base_name_potential);
-    int base_name = lookup_keyword(base_name_potential, base_names, n);
+    int base_name = lookup_ident(base_name_potential, base_names, n);
     free(base_name_potential);
 
     if (!base_name)
@@ -276,7 +276,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                       }
 
 {IDENT}               {
-                          static const struct keyword_entry keywords[] = {
+                          static const struct ident_entry keywords[] = {
                               {"deadline", TOKEN_DEADLINE},
                               {"priority", TOKEN_PRIORITY},
                               {"status",   TOKEN_STATUS},
@@ -294,7 +294,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                           };
                           static const int n_keywords = sizeof(keywords) / sizeof(keywords[0]);
 
-                          int token = lookup_keyword(yytext, keywords, n_keywords);
+                          int token = lookup_ident(yytext, keywords, n_keywords);
                           if (token > 0) {
                               yycolno += yyleng;
                               return token;

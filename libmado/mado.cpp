@@ -769,7 +769,7 @@ mado_parse_sort(const std::string &sort_str) {
     std::string token;
     std::vector<Mado_Sort_Criterion> criteria;
 
-    static const struct keyword_entry fields_for_parse_sort[] = {
+    static const struct ident_entry fields_for_parse_sort[] = {
         {"time", static_cast<int>(Mado_Entry_Field::TIME)},
         {"mtime", static_cast<int>(Mado_Entry_Field::MTIME)},
         {"path", static_cast<int>(Mado_Entry_Field::PATH)},
@@ -795,7 +795,7 @@ mado_parse_sort(const std::string &sort_str) {
             token.erase(0, 1);
         }
 
-        int field_token = lookup_keyword(token.c_str(), fields_for_parse_sort, n_fields);
+        int field_token = lookup_ident(token.c_str(), fields_for_parse_sort, n_fields);
         if (field_token > 0) {
             c.field = static_cast<Mado_Entry_Field>(field_token);
         } else {
@@ -975,7 +975,7 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
 std::pair<Mado_Output_Format, Mado_Error>
 mado_parse_format(const std::string &format_str) {
 
-    static const struct keyword_entry formats[] = {
+    static const struct ident_entry formats[] = {
         {"path", static_cast<int>(Mado_Output_Format::ONLY_PATH)},
         {"default", static_cast<int>(Mado_Output_Format::DEFAULT)},
         {"jsonl", static_cast<int>(Mado_Output_Format::JSONL)},
@@ -986,7 +986,7 @@ mado_parse_format(const std::string &format_str) {
     std::string cleaned(format_str);
     cleaned.erase(std::remove_if(cleaned.begin(), cleaned.end(), is_whitespace), cleaned.end());
 
-    int token = lookup_keyword(cleaned.c_str(), formats, n);
+    int token = lookup_ident(cleaned.c_str(), formats, n);
     if (token > 0) {
         return {static_cast<Mado_Output_Format>(token), Mado_Error::OK};
     }
