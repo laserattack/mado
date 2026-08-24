@@ -162,6 +162,7 @@ static const cmd::Option COMMAND_HELP_OPTIONS[] = {
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_DEBUG_OPTIONS[] = {
+    {"verbose", no_argument, nullptr, 'v', "Print VALID/INVALID status"},
     {"ast", no_argument, nullptr, 'a', "Print AST tree"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
@@ -608,12 +609,16 @@ static int cmd_debug(int argc, char **argv) {
     const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
     auto [gopts, short_str] = cmd::to_getopt(cmd->options);
     int show_ast = 0;
+    int verbose = 0;
     int opt;
 
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
         switch (opt) {
         case 'a':
             show_ast = 1;
+            break;
+        case 'v':
+            verbose = 1;
             break;
         default:
             return -1;
@@ -628,11 +633,19 @@ static int cmd_debug(int argc, char **argv) {
 
     auto filter = make_ast_ptr(parse(query));
     if (!filter) {
-        return mado_print_error(Mado_Error::PARSE, "parsing query");
+        int res = mado_print_error(Mado_Error::PARSE, "parsing query");
+        if (verbose) {
+            std::cout << "INVALID\n";
+        }
+        return res;
     }
 
     if (show_ast) {
         ast_print(filter.get(), 0);
+    }
+
+    if (verbose) {
+        std::cout << "VALID\n";
     }
 
     return 0;
