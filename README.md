@@ -390,7 +390,10 @@ sections, direct deletion from the buffer, etc
   - `flex`
   - `bison`
 
-## Inspiration
+## Acknowledgments
 
-Inspired by [Tsoding's video on building a query language
-compiler](https://youtu.be/8NdRGmp70Go)
+- [Tsoding's video on building a query language
+  compiler](https://youtu.be/8NdRGmp70Go) — the original idea and
+  inspiration
+- [philj56/fuzzy-match](https://github.com/philj56/fuzzy-match) —
+  fuzzy matching algorithm used in the query language
