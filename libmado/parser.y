@@ -10,41 +10,46 @@ extern void yyerror(const char *fmt, ...);
 
 extern AST_Node *ast_root;
 
+// expected string errors
+
 #define YYERROR_STRING_FORMAT "Expected format: unquoted [a-zA-Z_][a-zA-Z0-9_-]* or quoted \"...\" or '...'\n"
 
 #define YYERROR_NUMBER_AS_STRING(value) \
     do { \
         yyerror("expected string value\n" \
-                "\nGot: number\n" \
+                "\nResolved: number \"%d\"\n" \
                 "Fix: quote it to use as a string\n" \
-                YYERROR_STRING_FORMAT); \
+                YYERROR_STRING_FORMAT, value); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_TIMESTAMP_AS_STRING(value) \
     do { \
         yyerror("expected string value\n" \
-                "\nGot: timestamp\n" \
+                "\nResolved: timestamp \"%s\"\n" \
                 "Fix: quote it to use as a string\n" \
-                YYERROR_STRING_FORMAT); \
+                YYERROR_STRING_FORMAT, value); \
+        free(value); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_KEYWORD_AS_STRING(name) \
     do { \
         yyerror("expected string value\n" \
-                "\nGot: keyword \"" name "\"\n" \
+                "\nResolved: keyword \"%s\"\n" \
                 "Fix: quote it to use as a string\n" \
-                YYERROR_STRING_FORMAT); \
+                YYERROR_STRING_FORMAT, name); \
+        free(name); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_OPERATOR_AS_STRING(name) \
     do { \
         yyerror("expected string value\n" \
-                "\nGot: operator \"" name "\"\n" \
+                "\nResolved: operator \"%s\"\n" \
                 "Fix: quote it to use as a string\n" \
-                YYERROR_STRING_FORMAT); \
+                YYERROR_STRING_FORMAT, name); \
+        free(name); \
         YYERROR; \
     } while (0)
 
@@ -52,39 +57,42 @@ extern AST_Node *ast_root;
 
 #define YYERROR_TIMESTAMP_FORMAT "Expected format: YYYYMMDDTHHMMSS with optional shorter forms: YYYY, YYYYMM, YYYYMMDD, YYYYMMDDT, YYYYMMDDTHH, YYYYMMDDTHHMM, YYYYMMDDTHHMMSS\n"
 
-#define YYERROR_STRING_AS_TIMESTAMP() \
+#define YYERROR_STRING_AS_TIMESTAMP(value) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nGot: string\n" \
+                "\nResolved: string \"%s\"\n" \
                 "Fix: use a timestamp instead\n" \
-                YYERROR_TIMESTAMP_FORMAT); \
+                YYERROR_TIMESTAMP_FORMAT, value); \
+        free(value); \
         YYERROR; \
     } while (0)
 
-#define YYERROR_NUMBER_AS_TIMESTAMP() \
+#define YYERROR_NUMBER_AS_TIMESTAMP(value) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nGot: number\n" \
+                "\nResolved: number \"%d\"\n" \
                 "Fix: use a timestamp instead\n" \
-                YYERROR_TIMESTAMP_FORMAT); \
+                YYERROR_TIMESTAMP_FORMAT, value); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_KEYWORD_AS_TIMESTAMP(name) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nGot: keyword \"" name "\"\n" \
+                "\nResolved: keyword \"%s\"\n" \
                 "Fix: use a timestamp instead\n" \
-                YYERROR_TIMESTAMP_FORMAT); \
+                YYERROR_TIMESTAMP_FORMAT, name); \
+        free(name); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_OPERATOR_AS_TIMESTAMP(name) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nGot: operator \"" name "\"\n" \
+                "\nResolved: operator \"%s\"\n" \
                 "Fix: use a timestamp instead\n" \
-                YYERROR_TIMESTAMP_FORMAT); \
+                YYERROR_TIMESTAMP_FORMAT, name); \
+        free(name); \
         YYERROR; \
     } while (0)
 
@@ -92,39 +100,43 @@ extern AST_Node *ast_root;
 
 #define YYERROR_NUMBER_FORMAT "Expected format: 0-999\n"
 
-#define YYERROR_STRING_AS_NUMBER() \
+#define YYERROR_STRING_AS_NUMBER(value) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nGot: string\n" \
+                "\nResolved: string \"%s\"\n" \
                 "Fix: use a number instead\n" \
-                YYERROR_NUMBER_FORMAT); \
+                YYERROR_NUMBER_FORMAT, value); \
+        free(value); \
         YYERROR; \
     } while (0)
 
-#define YYERROR_TIMESTAMP_AS_NUMBER() \
+#define YYERROR_TIMESTAMP_AS_NUMBER(value) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nGot: timestamp\n" \
+                "\nResolved: timestamp \"%s\"\n" \
                 "Fix: use a number instead\n" \
-                YYERROR_NUMBER_FORMAT); \
+                YYERROR_NUMBER_FORMAT, value); \
+        free(value); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_KEYWORD_AS_NUMBER(name) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nGot: keyword \"" name "\"\n" \
+                "\nResolved: keyword \"%s\"\n" \
                 "Fix: use a number instead\n" \
-                YYERROR_NUMBER_FORMAT); \
+                YYERROR_NUMBER_FORMAT, name); \
+        free(name); \
         YYERROR; \
     } while (0)
 
 #define YYERROR_OPERATOR_AS_NUMBER(name) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nGot: operator \"" name "\"\n" \
+                "\nResolved: operator \"%s\"\n" \
                 "Fix: use a number instead\n" \
-                YYERROR_NUMBER_FORMAT); \
+                YYERROR_NUMBER_FORMAT, name); \
+        free(name); \
         YYERROR; \
     } while (0)
 
@@ -166,12 +178,13 @@ extern AST_Node *ast_root;
 %token TOKEN_LPAREN
 %token TOKEN_RPAREN
 %token TOKEN_COMMA
+
 %token <num> TOKEN_NUMBER
 %token <str> TOKEN_STRING
 %token <str> TOKEN_TIMESTAMP
 
 %type <num> cmp_op string_field time_field list_modifier number_value
-%type <str> string_value time_value
+%type <str> string_value time_value keyword_token operator_token
 
 %type <node> expr condition condition_priority condition_string condition_time
 %type <str_list> string_list time_list
@@ -243,38 +256,12 @@ number_list:
 number_value:
     // values
     TOKEN_NUMBER      { $$ = $1; }
-    | TOKEN_STRING    { free($1); $$ = 0; YYERROR_STRING_AS_NUMBER(); }
-    | TOKEN_TIMESTAMP { free($1); $$ = 0; YYERROR_TIMESTAMP_AS_NUMBER(); }
+    | TOKEN_STRING    { $$ = 0; YYERROR_STRING_AS_NUMBER($1); }
+    | TOKEN_TIMESTAMP { $$ = 0; YYERROR_TIMESTAMP_AS_NUMBER($1); }
     // keywords
-    | TOKEN_TIME      { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("time"); }
-    | TOKEN_DEADLINE  { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("deadline"); }
-    | TOKEN_PRIORITY  { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("priority"); }
-    | TOKEN_STATUS    { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("status"); }
-    | TOKEN_PATH      { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("path"); }
-    | TOKEN_NAME      { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("name"); }
-    | TOKEN_TAG       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("tag"); }
-    | TOKEN_MTIME     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("mtime"); }
-    | TOKEN_ALL       { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("all"); }
-    | TOKEN_ALLOF     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("allof"); }
-    | TOKEN_ANYOF     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER("anyof"); }
+    | keyword_token   { $$ = 0; YYERROR_KEYWORD_AS_NUMBER($1); }
     // operators
-    | TOKEN_AND       { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("and"); }
-    | TOKEN_OR        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("or"); }
-    | TOKEN_XOR       { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("xor"); }
-    | TOKEN_NOT       { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("not"); }
-    | TOKEN_GT        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER(">"); }
-    | TOKEN_LT        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("<"); }
-    | TOKEN_GE        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER(">="); }
-    | TOKEN_LE        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("<="); }
-    | TOKEN_EQ        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("="); }
-    | TOKEN_NE        { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("!="); }
-    | TOKEN_FUZZY     { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("~~"); }
-    | TOKEN_NFUZZY    { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("!~~"); }
-    | TOKEN_TILDE     { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("~"); }
-    | TOKEN_NTILDE    { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("!~"); }
-    | TOKEN_LPAREN    { $$ = 0; YYERROR_OPERATOR_AS_NUMBER("("); }
-    | TOKEN_RPAREN    { $$ = 0; YYERROR_OPERATOR_AS_NUMBER(")"); }
-    | TOKEN_COMMA     { $$ = 0; YYERROR_OPERATOR_AS_NUMBER(","); }
+    | operator_token  { $$ = 0; YYERROR_OPERATOR_AS_NUMBER($1); }
     ;
 
 //
@@ -301,38 +288,12 @@ time_list:
 time_value:
     // values
     TOKEN_TIMESTAMP   { $$ = $1; }
-    | TOKEN_STRING    { free($1); $$ = NULL; YYERROR_STRING_AS_TIMESTAMP(); }
-    | TOKEN_NUMBER    { $$ = NULL; YYERROR_NUMBER_AS_TIMESTAMP(); }
+    | TOKEN_STRING    { $$ = NULL; YYERROR_STRING_AS_TIMESTAMP($1); }
+    | TOKEN_NUMBER    { $$ = NULL; YYERROR_NUMBER_AS_TIMESTAMP($1); }
     // keywords
-    | TOKEN_TIME      { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("time"); }
-    | TOKEN_DEADLINE  { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("deadline"); }
-    | TOKEN_PRIORITY  { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("priority"); }
-    | TOKEN_STATUS    { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("status"); }
-    | TOKEN_PATH      { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("path"); }
-    | TOKEN_NAME      { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("name"); }
-    | TOKEN_TAG       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("tag"); }
-    | TOKEN_MTIME     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("mtime"); }
-    | TOKEN_ALL       { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("all"); }
-    | TOKEN_ALLOF     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("allof"); }
-    | TOKEN_ANYOF     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP("anyof"); }
+    | keyword_token   { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP($1); }
     // operators
-    | TOKEN_AND       { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("and"); }
-    | TOKEN_OR        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("or"); }
-    | TOKEN_XOR       { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("xor"); }
-    | TOKEN_NOT       { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("not"); }
-    | TOKEN_GT        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP(">"); }
-    | TOKEN_LT        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("<"); }
-    | TOKEN_GE        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP(">="); }
-    | TOKEN_LE        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("<="); }
-    | TOKEN_EQ        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("="); }
-    | TOKEN_NE        { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("!="); }
-    | TOKEN_FUZZY     { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("~~"); }
-    | TOKEN_NFUZZY    { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("!~~"); }
-    | TOKEN_TILDE     { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("~"); }
-    | TOKEN_NTILDE    { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("!~"); }
-    | TOKEN_LPAREN    { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP("("); }
-    | TOKEN_RPAREN    { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP(")"); }
-    | TOKEN_COMMA     { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP(","); }
+    | operator_token  { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP($1); }
     ;
 
 time_field:
@@ -365,38 +326,12 @@ string_list:
 string_value:
     // values
     TOKEN_STRING      { $$ = $1; }
-    | TOKEN_TIMESTAMP { free($1); $$ = NULL; YYERROR_TIMESTAMP_AS_STRING(); }
-    | TOKEN_NUMBER    { $$ = NULL; YYERROR_NUMBER_AS_STRING(); }
+    | TOKEN_TIMESTAMP { $$ = NULL; YYERROR_TIMESTAMP_AS_STRING($1); }
+    | TOKEN_NUMBER    { $$ = NULL; YYERROR_NUMBER_AS_STRING($1); }
     // keywords
-    | TOKEN_TIME      { $$ = NULL; YYERROR_KEYWORD_AS_STRING("time"); }
-    | TOKEN_DEADLINE  { $$ = NULL; YYERROR_KEYWORD_AS_STRING("deadline"); }
-    | TOKEN_PRIORITY  { $$ = NULL; YYERROR_KEYWORD_AS_STRING("priority"); }
-    | TOKEN_STATUS    { $$ = NULL; YYERROR_KEYWORD_AS_STRING("status"); }
-    | TOKEN_PATH      { $$ = NULL; YYERROR_KEYWORD_AS_STRING("path"); }
-    | TOKEN_NAME      { $$ = NULL; YYERROR_KEYWORD_AS_STRING("name"); }
-    | TOKEN_TAG       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("tag"); }
-    | TOKEN_MTIME     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("mtime"); }
-    | TOKEN_ALL       { $$ = NULL; YYERROR_KEYWORD_AS_STRING("all"); }
-    | TOKEN_ALLOF     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("allof"); }
-    | TOKEN_ANYOF     { $$ = NULL; YYERROR_KEYWORD_AS_STRING("anyof"); }
+    | keyword_token   { $$ = NULL; YYERROR_KEYWORD_AS_STRING($1); }
     // operators
-    | TOKEN_AND       { $$ = NULL; YYERROR_OPERATOR_AS_STRING("and"); }
-    | TOKEN_OR        { $$ = NULL; YYERROR_OPERATOR_AS_STRING("or"); }
-    | TOKEN_XOR       { $$ = NULL; YYERROR_OPERATOR_AS_STRING("xor"); }
-    | TOKEN_NOT       { $$ = NULL; YYERROR_OPERATOR_AS_STRING("not"); }
-    | TOKEN_GT        { $$ = NULL; YYERROR_OPERATOR_AS_STRING(">"); }
-    | TOKEN_LT        { $$ = NULL; YYERROR_OPERATOR_AS_STRING("<"); }
-    | TOKEN_GE        { $$ = NULL; YYERROR_OPERATOR_AS_STRING(">="); }
-    | TOKEN_LE        { $$ = NULL; YYERROR_OPERATOR_AS_STRING("<="); }
-    | TOKEN_EQ        { $$ = NULL; YYERROR_OPERATOR_AS_STRING("="); }
-    | TOKEN_NE        { $$ = NULL; YYERROR_OPERATOR_AS_STRING("!="); }
-    | TOKEN_FUZZY     { $$ = NULL; YYERROR_OPERATOR_AS_STRING("~~"); }
-    | TOKEN_NFUZZY    { $$ = NULL; YYERROR_OPERATOR_AS_STRING("!~~"); }
-    | TOKEN_TILDE     { $$ = NULL; YYERROR_OPERATOR_AS_STRING("~"); }
-    | TOKEN_NTILDE    { $$ = NULL; YYERROR_OPERATOR_AS_STRING("!~"); }
-    | TOKEN_LPAREN    { $$ = NULL; YYERROR_OPERATOR_AS_STRING("("); }
-    | TOKEN_RPAREN    { $$ = NULL; YYERROR_OPERATOR_AS_STRING(")"); }
-    | TOKEN_COMMA     { $$ = NULL; YYERROR_OPERATOR_AS_STRING(","); }
+    | operator_token  { $$ = NULL; YYERROR_OPERATOR_AS_STRING($1); }
     ;
 
 string_field:
@@ -424,6 +359,40 @@ cmp_op:
 list_modifier:
     TOKEN_ALLOF   { $$ = LM_ALLOF; }
     | TOKEN_ANYOF { $$ = LM_ANYOF; }
+    ;
+
+keyword_token:
+    TOKEN_TIME       { $$ = strdup("time"); }
+    | TOKEN_DEADLINE { $$ = strdup("deadline"); }
+    | TOKEN_PRIORITY { $$ = strdup("priority"); }
+    | TOKEN_STATUS   { $$ = strdup("status"); }
+    | TOKEN_PATH     { $$ = strdup("path"); }
+    | TOKEN_NAME     { $$ = strdup("name"); }
+    | TOKEN_TAG      { $$ = strdup("tag"); }
+    | TOKEN_MTIME    { $$ = strdup("mtime"); }
+    | TOKEN_ALL      { $$ = strdup("all"); }
+    | TOKEN_ALLOF    { $$ = strdup("allof"); }
+    | TOKEN_ANYOF    { $$ = strdup("anyof"); }
+    ;
+
+operator_token:
+    TOKEN_AND       { $$ = strdup("and"); }
+    | TOKEN_OR      { $$ = strdup("or"); }
+    | TOKEN_XOR     { $$ = strdup("xor"); }
+    | TOKEN_NOT     { $$ = strdup("not"); }
+    | TOKEN_GT      { $$ = strdup(">"); }
+    | TOKEN_LT      { $$ = strdup("<"); }
+    | TOKEN_GE      { $$ = strdup(">="); }
+    | TOKEN_LE      { $$ = strdup("<="); }
+    | TOKEN_EQ      { $$ = strdup("="); }
+    | TOKEN_NE      { $$ = strdup("!="); }
+    | TOKEN_FUZZY   { $$ = strdup("~~"); }
+    | TOKEN_NFUZZY  { $$ = strdup("!~~"); }
+    | TOKEN_TILDE   { $$ = strdup("~"); }
+    | TOKEN_NTILDE  { $$ = strdup("!~"); }
+    | TOKEN_LPAREN  { $$ = strdup("("); }
+    | TOKEN_RPAREN  { $$ = strdup(")"); }
+    | TOKEN_COMMA   { $$ = strdup(","); }
     ;
 
 %%
