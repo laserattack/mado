@@ -51,6 +51,119 @@ void ast_free(AST_Node *node) {
     free(node);
 }
 
+static void print_indent(int depth) {
+    for (int i = 0; i < depth; i++)
+        printf("  ");
+}
+
+static const char *operator_to_string(Operator op) {
+    switch (op) {
+    case OP_AND:
+        return "AND";
+    case OP_OR:
+        return "OR";
+    case OP_XOR:
+        return "XOR";
+    case OP_NOT:
+        return "NOT";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+static const char *comparison_field_to_string(Comparison_Field field) {
+    switch (field) {
+    case CMP_PRIORITY:
+        return "priority";
+    case CMP_TAG:
+        return "tag";
+    case CMP_STATUS:
+        return "status";
+    case CMP_PATH:
+        return "path";
+    case CMP_NAME:
+        return "name";
+    case CMP_TIME:
+        return "time";
+    case CMP_DEADLINE:
+        return "deadline";
+    case CMP_MTIME:
+        return "mtime";
+    default:
+        return "unknown";
+    }
+}
+
+static const char *comparison_operator_to_string(Comparison_Operator op) {
+    switch (op) {
+    case CMP_GT:
+        return ">";
+    case CMP_LT:
+        return "<";
+    case CMP_EQ:
+        return "=";
+    case CMP_NE:
+        return "!=";
+    case CMP_GE:
+        return ">=";
+    case CMP_LE:
+        return "<=";
+    case CMP_FUZZY:
+        return "~~";
+    case CMP_NFUZZY:
+        return "!~~";
+    case CMP_TILDE:
+        return "~";
+    case CMP_NTILDE:
+        return "!~";
+    default:
+        return "unknown";
+    }
+}
+
+void ast_print(AST_Node *node, int depth) {
+    if (!node)
+        return;
+
+    print_indent(depth);
+
+    switch (node->type) {
+    case NODE_ALL:
+        printf("ALL\n");
+        break;
+
+    case NODE_BINARY_OP:
+        printf("BINARY(%s)\n", operator_to_string(node->binary.op));
+        ast_print(node->binary.left, depth + 1);
+        ast_print(node->binary.right, depth + 1);
+        break;
+
+    case NODE_UNARY_OP:
+        printf("UNARY(%s)\n", operator_to_string(node->unary.op));
+        ast_print(node->unary.expr, depth + 1);
+        break;
+
+    case NODE_COMPARISON:
+        printf("COMPARISON(%s %s ",
+               comparison_field_to_string(node->comparison.field),
+               comparison_operator_to_string(node->comparison.cmp));
+
+        switch (node->comparison.field) {
+        case CMP_PRIORITY:
+            printf("%d)\n", node->comparison.value.int_value);
+            break;
+        default:
+            printf("%s)\n", node->comparison.value.str_value ? node->comparison.value.str_value : "NULL");
+            break;
+        }
+        break;
+
+    default:
+        printf("UNKNOWN\n");
+        break;
+    }
+}
+
 AST_Node *create_binary_op(Operator op, AST_Node *left, AST_Node *right) {
     AST_Node *node = malloc(sizeof(AST_Node));
     node->type = NODE_BINARY_OP;

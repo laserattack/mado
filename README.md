@@ -238,6 +238,8 @@ keywords
 | `xor` | Logical XOR (exactly one) |
 | `not` | Logical NOT |
 
+Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
+
 ### Types
 
 | Type | Description | Format | Examples |

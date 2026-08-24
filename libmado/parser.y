@@ -141,8 +141,8 @@ extern AST_Node *ast_root;
 %destructor { free($$->items); free($$); } <num_list>
 
 %left TOKEN_OR
-%left TOKEN_AND
 %left TOKEN_XOR
+%left TOKEN_AND
 %right TOKEN_NOT
 
 %start input

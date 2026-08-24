@@ -122,6 +122,7 @@ static int cmd_list(int argc, char **argv);
 static int cmd_remove(int argc, char **argv);
 static int cmd_info(int argc, char **argv);
 static int cmd_help(int argc, char **argv);
+static int cmd_debug(int argc, char **argv);
 
 static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {"sort", required_argument, nullptr, 's', "Sort entries (+field,-field,field,...)"},
@@ -158,6 +159,10 @@ static const cmd::Option COMMAND_INIT_OPTIONS[] = {
 
 static const cmd::Option COMMAND_HELP_OPTIONS[] = {
     {"show-aliases", no_argument, nullptr, 'a', "Show command aliases"},
+    {nullptr, 0, nullptr, 0, nullptr}};
+
+static const cmd::Option COMMAND_DEBUG_OPTIONS[] = {
+    {"ast", no_argument, nullptr, 'a', "Print AST tree"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static cmd::Command commands[] = {
@@ -214,6 +219,15 @@ static cmd::Command commands[] = {
         COMMAND_HELP_OPTIONS,
         cmd_help,
         (const char *[]){"usage", nullptr},
+    },
+
+    {
+        "debug",
+        "Debug query parsing",
+        "mado debug [COMMAND OPTIONS] <QUERY>",
+        COMMAND_DEBUG_OPTIONS,
+        cmd_debug,
+        (const char *[]){"check", nullptr},
     },
 
     {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr}};
@@ -585,6 +599,40 @@ static int cmd_help(int argc, char **argv) {
 
     } else {
         print_usage(show_aliases);
+    }
+
+    return 0;
+}
+
+static int cmd_debug(int argc, char **argv) {
+    const cmd::Command *cmd = cmd::find_by_name(argv[0], commands);
+    auto [gopts, short_str] = cmd::to_getopt(cmd->options);
+    int show_ast = 0;
+    int opt;
+
+    while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1) {
+        switch (opt) {
+        case 'a':
+            show_ast = 1;
+            break;
+        default:
+            return -1;
+        }
+    }
+
+    if (optind >= argc) {
+        return mado_print_error(Mado_Error::PARSE, "debug requires a query argument");
+    }
+
+    const char *query = argv[optind];
+
+    auto filter = make_ast_ptr(parse(query));
+    if (!filter) {
+        return mado_print_error(Mado_Error::PARSE, "parsing query");
+    }
+
+    if (show_ast) {
+        ast_print(filter.get(), 0);
     }
 
     return 0;

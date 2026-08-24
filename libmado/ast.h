@@ -75,6 +75,8 @@ typedef enum { LM_ALLOF,
 
 AST_Node *parse(const char *query);
 void ast_free(AST_Node *node);
+void ast_print(AST_Node *node, int depth);
+
 AST_Node *create_binary_op(Operator op, AST_Node *left, AST_Node *right);
 AST_Node *create_unary_op(Operator op, AST_Node *expr);
 AST_Node *create_comparison(Comparison_Field field, Comparison_Operator cmp, int int_val, char *str_val);
