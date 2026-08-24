@@ -21,6 +21,6 @@ all:
 	$(AR) rcs $(LIB) $(OBJS)
 
 clean:
-	rm -f lex.yy.c parser.tab.c parser.tab.h $(LIB) *.o
+	rm -f lex.yy.c parser.tab.c parser.tab.h $(LIB) *.o *.output
 
 .PHONY: all clean
