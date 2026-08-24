@@ -1,8 +1,11 @@
 #ifndef MADO_UTILS_H
 #define MADO_UTILS_H
 
+#include <stdint.h>
 #include <string.h>
 #include <strings.h>
+
+#include "fuzzy_match.h"
 
 struct ident_entry {
     const char *word;
@@ -25,20 +28,27 @@ int lookup_ident(const char *word,
                  int n_idents) {
 
     int word_len = (int)strlen(word);
-    int matches_count = 0, matched_token = 0;
+    int best_score = INT32_MIN;
+    int best_token = 0;
 
     for (int i = 0; i < n_idents; i++) {
         int cur_word_len = (int)strlen(idents[i].word);
-        if (word_len <= cur_word_len &&
+
+        // exact match
+        if (word_len == cur_word_len &&
             strncasecmp(word, idents[i].word, word_len) == 0) {
-            matched_token = idents[i].token;
-            if (word_len == cur_word_len)
-                return matched_token;
-            matches_count++;
+            return idents[i].token;
+        }
+
+        // Fuzzy match
+        int32_t score = fuzzy_match(word, idents[i].word, true);
+        if (score > best_score) {
+            best_score = score;
+            best_token = idents[i].token;
         }
     }
 
-    return (matches_count == 1) ? matched_token : 0;
+    return best_score != INT32_MIN ? best_token : 0;
 }
 
 #endif // MADO_UTILS_IMPL
