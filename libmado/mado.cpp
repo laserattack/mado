@@ -460,6 +460,8 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
             return matches_condition(cfg, filter->binary.left) && matches_condition(cfg, filter->binary.right);
         case OP_OR:
             return matches_condition(cfg, filter->binary.left) || matches_condition(cfg, filter->binary.right);
+        case OP_XOR:
+            return matches_condition(cfg, filter->binary.left) != matches_condition(cfg, filter->binary.right);
         default:
             return false;
         }

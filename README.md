@@ -235,6 +235,7 @@ keywords
 |----------|-------------|
 | `and` | Logical AND |
 | `or` | Logical OR |
+| `xor` | Logical XOR (exactly one) |
 | `not` | Logical NOT |
 
 ### Types

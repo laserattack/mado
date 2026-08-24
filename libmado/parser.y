@@ -94,6 +94,7 @@ extern AST_Node *ast_root;
 
 %token TOKEN_AND
 %token TOKEN_OR
+%token TOKEN_XOR
 %token TOKEN_NOT
 %token TOKEN_DEADLINE
 %token TOKEN_PRIORITY
@@ -141,6 +142,7 @@ extern AST_Node *ast_root;
 
 %left TOKEN_OR
 %left TOKEN_AND
+%left TOKEN_XOR
 %right TOKEN_NOT
 
 %start input
@@ -162,6 +164,7 @@ expr:
     | TOKEN_ALL                      { $$ = create_all(); }
     | expr TOKEN_AND expr            { $$ = create_binary_op(OP_AND, $1, $3); }
     | expr TOKEN_OR expr             { $$ = create_binary_op(OP_OR, $1, $3); }
+    | expr TOKEN_XOR expr            { $$ = create_binary_op(OP_XOR, $1, $3); }
     | TOKEN_NOT expr                 { $$ = create_unary_op(OP_NOT, $2); }
     | TOKEN_LPAREN expr TOKEN_RPAREN { $$ = $2; }
     ;

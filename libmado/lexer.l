@@ -287,6 +287,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                               {"tag",      TOKEN_TAG},
                               {"and",      TOKEN_AND},
                               {"or",       TOKEN_OR},
+                              {"xor",      TOKEN_XOR},
                               {"not",      TOKEN_NOT},
                               {"all",      TOKEN_ALL},
                               {"allof",    TOKEN_ALLOF},

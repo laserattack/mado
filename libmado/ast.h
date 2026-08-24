@@ -10,7 +10,8 @@ typedef enum {
 
 typedef enum { OP_AND,
                OP_OR,
-               OP_NOT } Operator;
+               OP_NOT,
+               OP_XOR } Operator;
 
 typedef enum {
     CMP_PRIORITY,
