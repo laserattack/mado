@@ -269,8 +269,9 @@ keywords
 
 ### Macros
 
-Macros start with `@` and are resolved at parse time — the value is
-substituted before the AST is evaluated
+Macros start with `@` and are resolved at tokenize time — the value is
+substituted before the AST is evaluated. Macros are simple: they
+expand to a single token, not to expressions
 
 #### Time Macros
 
@@ -313,7 +314,7 @@ Examples:
 
 ``` bash
 mado list 'priority = @max' # highest priority entries
-mado list 'priority = @min' # lowest priority entries
+mado list 'priority = @min' # lowest/default priority entries
 ```
 
 ## Installation
