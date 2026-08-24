@@ -12,13 +12,13 @@ extern AST_Node *ast_root;
 
 // expected string errors
 
-#define YYERROR_STRING_FORMAT "Expected format: unquoted [a-zA-Z_][a-zA-Z0-9_-]* or quoted \"...\" or '...'\n"
+#define YYERROR_STRING_FORMAT "Expected format: unquoted [a-zA-Z_][a-zA-Z0-9_-]* or quoted \"...\" or '...'"
 
 #define YYERROR_NUMBER_AS_STRING(value) \
     do { \
         yyerror("expected string value\n" \
-                "\nResolved: number \"%d\"\n" \
-                "Fix: quote it to use as a string\n" \
+                "Resolved: number \"%d\"\n" \
+                "Note: quote it to use as a string\n" \
                 YYERROR_STRING_FORMAT, value); \
         YYERROR; \
     } while (0)
@@ -26,8 +26,8 @@ extern AST_Node *ast_root;
 #define YYERROR_TIMESTAMP_AS_STRING(value) \
     do { \
         yyerror("expected string value\n" \
-                "\nResolved: timestamp \"%s\"\n" \
-                "Fix: quote it to use as a string\n" \
+                "Resolved: timestamp \"%s\"\n" \
+                "Note: quote it to use as a string\n" \
                 YYERROR_STRING_FORMAT, value); \
         free(value); \
         YYERROR; \
@@ -36,8 +36,8 @@ extern AST_Node *ast_root;
 #define YYERROR_KEYWORD_AS_STRING(name) \
     do { \
         yyerror("expected string value\n" \
-                "\nResolved: keyword \"%s\"\n" \
-                "Fix: quote it to use as a string\n" \
+                "Resolved: keyword \"%s\"\n" \
+                "Note: quote it to use as a string\n" \
                 YYERROR_STRING_FORMAT, name); \
         free(name); \
         YYERROR; \
@@ -46,8 +46,8 @@ extern AST_Node *ast_root;
 #define YYERROR_OPERATOR_AS_STRING(name) \
     do { \
         yyerror("expected string value\n" \
-                "\nResolved: operator \"%s\"\n" \
-                "Fix: quote it to use as a string\n" \
+                "Resolved: operator \"%s\"\n" \
+                "Note: quote it to use as a string\n" \
                 YYERROR_STRING_FORMAT, name); \
         free(name); \
         YYERROR; \
@@ -55,13 +55,13 @@ extern AST_Node *ast_root;
 
 // expected timestamp errors
 
-#define YYERROR_TIMESTAMP_FORMAT "Expected format: YYYYMMDDTHHMMSS with optional shorter forms: YYYY, YYYYMM, YYYYMMDD, YYYYMMDDT, YYYYMMDDTHH, YYYYMMDDTHHMM, YYYYMMDDTHHMMSS\n"
+#define YYERROR_TIMESTAMP_FORMAT "Expected format: YYYY, YYYYMM, YYYYMMDD, YYYYMMDDT, YYYYMMDDTHH, YYYYMMDDTHHMM, YYYYMMDDTHHMMSS"
 
 #define YYERROR_STRING_AS_TIMESTAMP(value) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nResolved: string \"%s\"\n" \
-                "Fix: use a timestamp instead\n" \
+                "Resolved: string \"%s\"\n" \
+                "Note: use a timestamp instead\n" \
                 YYERROR_TIMESTAMP_FORMAT, value); \
         free(value); \
         YYERROR; \
@@ -70,8 +70,8 @@ extern AST_Node *ast_root;
 #define YYERROR_NUMBER_AS_TIMESTAMP(value) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nResolved: number \"%d\"\n" \
-                "Fix: use a timestamp instead\n" \
+                "Resolved: number \"%d\"\n" \
+                "Note: use a timestamp instead\n" \
                 YYERROR_TIMESTAMP_FORMAT, value); \
         YYERROR; \
     } while (0)
@@ -79,8 +79,8 @@ extern AST_Node *ast_root;
 #define YYERROR_KEYWORD_AS_TIMESTAMP(name) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nResolved: keyword \"%s\"\n" \
-                "Fix: use a timestamp instead\n" \
+                "Resolved: keyword \"%s\"\n" \
+                "Note: use a timestamp instead\n" \
                 YYERROR_TIMESTAMP_FORMAT, name); \
         free(name); \
         YYERROR; \
@@ -89,8 +89,8 @@ extern AST_Node *ast_root;
 #define YYERROR_OPERATOR_AS_TIMESTAMP(name) \
     do { \
         yyerror("expected timestamp value\n" \
-                "\nResolved: operator \"%s\"\n" \
-                "Fix: use a timestamp instead\n" \
+                "Resolved: operator \"%s\"\n" \
+                "Note: use a timestamp instead\n" \
                 YYERROR_TIMESTAMP_FORMAT, name); \
         free(name); \
         YYERROR; \
@@ -98,13 +98,13 @@ extern AST_Node *ast_root;
 
 // expected number errors
 
-#define YYERROR_NUMBER_FORMAT "Expected format: 0-999\n"
+#define YYERROR_NUMBER_FORMAT "Expected format: 0-999"
 
 #define YYERROR_STRING_AS_NUMBER(value) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nResolved: string \"%s\"\n" \
-                "Fix: use a number instead\n" \
+                "Resolved: string \"%s\"\n" \
+                "Note: use a number instead\n" \
                 YYERROR_NUMBER_FORMAT, value); \
         free(value); \
         YYERROR; \
@@ -113,8 +113,8 @@ extern AST_Node *ast_root;
 #define YYERROR_TIMESTAMP_AS_NUMBER(value) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nResolved: timestamp \"%s\"\n" \
-                "Fix: use a number instead\n" \
+                "Resolved: timestamp \"%s\"\n" \
+                "Note: use a number instead\n" \
                 YYERROR_NUMBER_FORMAT, value); \
         free(value); \
         YYERROR; \
@@ -123,8 +123,8 @@ extern AST_Node *ast_root;
 #define YYERROR_KEYWORD_AS_NUMBER(name) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nResolved: keyword \"%s\"\n" \
-                "Fix: use a number instead\n" \
+                "Resolved: keyword \"%s\"\n" \
+                "Note: use a number instead\n" \
                 YYERROR_NUMBER_FORMAT, name); \
         free(name); \
         YYERROR; \
@@ -133,8 +133,8 @@ extern AST_Node *ast_root;
 #define YYERROR_OPERATOR_AS_NUMBER(name) \
     do { \
         yyerror("expected numeric value\n" \
-                "\nResolved: operator \"%s\"\n" \
-                "Fix: use a number instead\n" \
+                "Resolved: operator \"%s\"\n" \
+                "Note: use a number instead\n" \
                 YYERROR_NUMBER_FORMAT, name); \
         free(name); \
         YYERROR; \

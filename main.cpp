@@ -429,7 +429,7 @@ static int cmd_list(int argc, char **argv) {
     if (query) {
         filter = make_ast_ptr(parse(query));
         if (!filter) {
-            return mado_print_error(Mado_Error::PARSE, "parsing query");
+            return -1;
         }
     }
 
@@ -469,7 +469,7 @@ static int cmd_remove(int argc, char **argv) {
 
     auto filter = make_ast_ptr(parse(query));
     if (!filter) {
-        return mado_print_error(Mado_Error::PARSE, "parsing query");
+        return -1;
     }
 
     auto [main_dir, err] = mado_find_main_dir(&g_mado_config);
@@ -633,11 +633,10 @@ static int cmd_debug(int argc, char **argv) {
 
     auto filter = make_ast_ptr(parse(query));
     if (!filter) {
-        int res = mado_print_error(Mado_Error::PARSE, "parsing query");
         if (verbose) {
             std::cout << "INVALID\n";
         }
-        return res;
+        return -1;
     }
 
     if (show_ast) {

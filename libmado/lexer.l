@@ -21,17 +21,26 @@ int yywrap() {
 }
 
 static void some_error(const char *prefix, const char *fmt, va_list args) {
+    static const char q_prefix[] = "Your query: ";
+    static const int q_n = sizeof(q_prefix);
     int col = yycolno - yyleng;
+
     if (col < 1) col = 1;
-    fprintf(stderr, "%s at line %d, column %d: ", prefix, yylineno, col);
-    vfprintf(stderr, fmt, args);
+    for (int i = 1; i < col+q_n; i++)
+        fprintf(stderr, "-");
     fprintf(stderr, "\n");
     if (g_current_query) {
-        fprintf(stderr, "%s\n", g_current_query);
-        for (int i = 1; i < col; i++)
+        fprintf(stderr, "%s%s\n", q_prefix, g_current_query);
+        for (int i = 1; i < col+q_n-1; i++)
             fprintf(stderr, " ");
         fprintf(stderr, "^\n");
     }
+    fprintf(stderr, "%s at line %d, column %d: ", prefix, yylineno, col);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    for (int i = 1; i < col+q_n; i++)
+        fprintf(stderr, "-");
+    fprintf(stderr, "\n");
 }
 
 void yyerror(const char *fmt, ...) {
@@ -324,7 +333,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                           }
 
                           yycolno += yyleng;
-                          lexerror("cannot resolve macro: '%s', trying to skip...", yytext);
+                          lexerror("skipped unrecognized macro: \"%s\"", yytext);
                       }
 
 {STRING}              {
@@ -336,7 +345,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 
 .                     {
                           yycolno += yyleng;
-                          lexerror("unexpected char: '%s', trying to skip...", yytext);
+                          lexerror("skipped unexpected character: \"%s\"", yytext);
                       }
 
 %%
