@@ -252,7 +252,7 @@ keywords
 | `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~` (alias for `=`), `!~` (alias for `!=`), `~~` (alias for `=`), `!~~` (alias for `!=`) | `priority > 5`, `priority != 10` |
 | `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `tag = bug`, `tag ~ crit` |
 | `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `status = opened`, `status ~ ope` |
-| `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `name = "Fix bug"`, `name ~~ fx lgn` |
+| `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `name = "Fix bug"`, `name ~~ "fx lgn"` |
 | `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `path ~ "/home/user/projects"` |
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `time > 20260505T1230 and time < 20260510T` |
 | `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
@@ -299,6 +299,22 @@ mado list 'deadline < @today+30'
 mado list 'time ~ @month-2'
 mado list 'mtime > @now-1'
 mado list 'deadline != @never' # entries with non-default deadline
+```
+
+#### Number Macros
+
+Resolve to numeric values
+
+| Macro | Value |
+|-------|-------|
+| `@max` | 999 |
+| `@min` | 0 |
+
+Examples:
+
+```
+mado list 'priority = @max' # highest priority entries
+mado list 'priority = @min' # lowest priority entries
 ```
 
 ## Installation

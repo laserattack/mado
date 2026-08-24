@@ -48,8 +48,47 @@ void lexerror(const char *fmt, ...) {
     va_end(args);
 }
 
-static char *resolve_time_macro(const char *varname) {
-    static const struct keyword_entry time_vars[] = {
+// return offset and construct base name
+static int parse_macro_with_offset(const char *base_name_potential_and_offset, char **base_name) {
+    char *clean = malloc(strlen(base_name_potential_and_offset) + 1);
+    int j = 0;
+    for (int i = 0; base_name_potential_and_offset[i]; i++)
+        if (!is_whitespace(base_name_potential_and_offset[i]))
+            clean[j++] = base_name_potential_and_offset[i];
+    clean[j] = '\0';
+
+    int offset = 0;
+    const char *plus = strchr(clean, '+');
+    const char *minus = strchr(clean, '-');
+    const char *sign = plus ? plus : minus;
+
+    if (sign) {
+        size_t base_len = sign - clean;
+        *base_name = strndup(clean, base_len);
+        offset = atoi(sign + 1);
+        if (*sign == '-') offset = -offset;
+    } else {
+        *base_name = strdup(clean);
+    }
+
+    free(clean);
+    return offset;
+}
+
+// parse macro name without offset, construct base name
+void parse_macro_without_offset(const char *base_name_potential, char **base_name) {
+    char *clean = malloc(strlen(base_name_potential) + 1);
+    int j = 0;
+    for (int i = 0; base_name_potential[i]; i++)
+        if (!is_whitespace(base_name_potential[i]))
+            clean[j++] = base_name_potential[i];
+    clean[j] = '\0';
+    *base_name = strdup(clean);
+    free(clean);
+}
+
+static char *resolve_time_macro(const char *base_name_and_offset) {
+    static const struct keyword_entry base_names[] = {
         {"now",   1},
         {"today", 2},
         {"yesterday", 3},
@@ -59,74 +98,57 @@ static char *resolve_time_macro(const char *varname) {
         {"year",  7},
         {"never", 8},
     };
-    static const int n = sizeof(time_vars) / sizeof(time_vars[0]);
+    static const int n = sizeof(base_names) / sizeof(base_names[0]);
+    static const int resolved_max_len = 16; // sizeof(YYYYMMDDTHHMMSS\0)
 
-    char clean[64];
-    int j = 0;
-    for (int i = 0; varname[i]; i++)
-        if (!is_whitespace(varname[i]))
-            clean[j++] = varname[i];
-    clean[j] = '\0';
+    // get offset and base name
+    char *base_name_potential = NULL;
+    int offset = parse_macro_with_offset(base_name_and_offset, &base_name_potential);
+    int base_name = lookup_keyword(base_name_potential, base_names, n);
+    free(base_name_potential);
+
+    if (!base_name)
+        return NULL;
 
     time_t now = time(NULL);
     struct tm *tm = localtime(&now);
-    char buf[64];
-    char base[32];
-    int offset = 0;
+    char *resolved = malloc(resolved_max_len);
 
-    const char *plus = strchr(clean, '+');
-    const char *minus = strchr(clean, '-');
-    const char *sign = plus ? plus : minus;
-
-    if (sign) {
-        size_t base_len = sign - clean;
-        memcpy(base, clean, base_len);
-        base[base_len] = '\0';
-        offset = atoi(sign + 1);
-        if (*sign == '-') offset = -offset;
-    } else {
-        strcpy(base, clean);
-    }
-
-    int var_type = lookup_keyword(base, time_vars, n);
-    if (!var_type)
-        return NULL;
-
-    switch (var_type) {
+    switch (base_name) {
     case 1: // now
         {
             time_t t = now + offset * 86400;
             struct tm *ttm = localtime(&t);
-            strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", ttm);
+            strftime(resolved, resolved_max_len, "%Y%m%dT%H%M%S", ttm);
         }
         break;
     case 2: // today
         {
             time_t t = now + offset * 86400;
             struct tm *ttm = localtime(&t);
-            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+            strftime(resolved, resolved_max_len, "%Y%m%d", ttm);
         }
         break;
     case 3: // yesterday
         {
             time_t t = now + (offset - 1) * 86400;
             struct tm *ttm = localtime(&t);
-            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+            strftime(resolved, resolved_max_len, "%Y%m%d", ttm);
         }
         break;
     case 4: // tomorrow
         {
             time_t t = now + (offset + 1) * 86400;
             struct tm *ttm = localtime(&t);
-            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+            strftime(resolved, resolved_max_len, "%Y%m%d", ttm);
         }
         break;
     case 5: // week
         {
-            int days_since_monday = (tm->tm_wday + 6) % 7;
-            time_t t = now - days_since_monday * 86400 + offset * 7 * 86400;
+            int days_since_week = (tm->tm_wday + 6) % 7;
+            time_t t = now - days_since_week * 86400 + offset * 7 * 86400;
             struct tm *ttm = localtime(&t);
-            strftime(buf, sizeof(buf), "%Y%m%d", ttm);
+            strftime(resolved, resolved_max_len, "%Y%m%d", ttm);
         }
         break;
     case 6: // month
@@ -134,26 +156,58 @@ static char *resolve_time_macro(const char *varname) {
             int total_months = (tm->tm_year + 1900) * 12 + tm->tm_mon + offset;
             int year = total_months / 12;
             int month = total_months % 12 + 1;
-            snprintf(buf, sizeof(buf), "%04d%02d", year, month);
+            snprintf(resolved, resolved_max_len, "%04d%02d", year, month);
         }
         break;
     case 7: // year
         {
             int year = tm->tm_year + 1900 + offset;
-            snprintf(buf, sizeof(buf), "%04d", year);
+            snprintf(resolved, resolved_max_len, "%04d", year);
         }
         break;
-    case 8: // never (timestamp default value)
+    case 8: // never
         {
-            // 253370764800 = 99990101T000000 (timestamp default value)
+            // timestamp default value: 253370764800 = 99990101T000000
             time_t t = 253370764800 + offset * 86400;
-            struct tm *ttm = gmtime(&t); // no need timezone here
-            strftime(buf, sizeof(buf), "%Y%m%dT%H%M%S", ttm);
+            struct tm *ttm = gmtime(&t);
+            strftime(resolved, resolved_max_len, "%Y%m%dT%H%M%S", ttm);
         }
         break;
     }
 
-    return strdup(buf);
+    return resolved;
+}
+
+static char *resolve_number_macro(const char *base_name_without_offset) {
+    static const struct keyword_entry base_names[] = {
+        {"max", 1},
+        {"min", 2},
+    };
+    static const int n = sizeof(base_names) / sizeof(base_names[0]);
+    static const int resolved_max_len = 4; // sizeof(999\0)
+
+    // get base name
+    char *base_name_potential = NULL;
+    parse_macro_without_offset(base_name_without_offset, &base_name_potential);
+    int base_name = lookup_keyword(base_name_potential, base_names, n);
+    free(base_name_potential);
+
+    if (!base_name)
+        return NULL;
+
+    int value = 0;
+    switch (base_name) {
+    case 1: // max
+        value = 999;
+        break;
+    case 2: // min
+        value = 0;
+        break;
+    }
+
+    char *resolved = malloc(resolved_max_len);
+    snprintf(resolved, resolved_max_len, "%d", value);
+    return resolved;
 }
 
 %}
@@ -187,8 +241,7 @@ SEC                [0-5][0-9]
 
 TIMEFORMAT         ({YEAR}|{YEAR}{MONTH}|{YEAR}{MONTH}{DAY}(T({HOUR}|{HOUR}{MIN}|{HOUR}{MIN}{SEC})?)?)
 
-/* macros */
-TIME_MACRO         @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
+MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 
 %%
 
@@ -253,18 +306,24 @@ TIME_MACRO         @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                           return TOKEN_STRING;
                       }
 
-{TIME_MACRO}          {
-                          char *resolved = resolve_time_macro(yytext + 1);
-
-                          if (resolved) {
-                              yylval.str = resolved;
+{MACRO}               {
+                          char *resolved_time_macro = resolve_time_macro(yytext + 1);
+                          if (resolved_time_macro) {
+                              yylval.str = resolved_time_macro;
                               yycolno += yyleng;
                               return TOKEN_TIMESTAMP;
-                          } else {
-                              yylval.str = strdup(yytext);
-                              yycolno += yyleng;
-                              return TOKEN_STRING;
                           }
+
+                          char *resolved_number_macro = resolve_number_macro(yytext + 1);
+                          if (resolved_number_macro) {
+                              yylval.num = atoi(resolved_number_macro);
+                              free(resolved_number_macro);
+                              yycolno += yyleng;
+                              return TOKEN_NUMBER;
+                          }
+
+                          yycolno += yyleng;
+                          lexerror("cannot resolve macro: '%s', trying to skip...", yytext);
                       }
 
 {STRING}              {
