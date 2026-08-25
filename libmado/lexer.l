@@ -21,39 +21,31 @@ int yywrap() {
 }
 
 static void some_error(const char *prefix, const char *fmt, va_list args) {
-    static const char q_prefix[] = "Your query: ";
+    static const char q_prefix[] = "Here: ";
     static const int q_n = sizeof(q_prefix);
-    int col = yycolno - yyleng;
+    int col, token_start, token_end;
 
+    col = yycolno - yyleng;
     if (col < 1) col = 1;
-    for (int i = 1; i < col+q_n; i++)
-        fprintf(stderr, "-");
-    fprintf(stderr, "\n");
-    if (g_current_query) {
-        fprintf(stderr, "%s%s\n", q_prefix, g_current_query);
-        for (int i = 1; i < col+q_n-1; i++)
-            fprintf(stderr, " ");
-        fprintf(stderr, "^\n");
-    }
-    fprintf(stderr, "%s at line %d, column %d: ", prefix, yylineno, col);
+    token_start = col+q_n-1;
+    token_end = token_start + yyleng - 1;
+
+    fprintf(stderr, "%s at line %d, col %d: ", prefix, yylineno, col);
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
-    for (int i = 1; i < col+q_n; i++)
-        fprintf(stderr, "-");
-    fprintf(stderr, "\n");
+
+    if (g_current_query) {
+        fprintf(stderr, "%s%s\n", q_prefix, g_current_query);
+        for (int i = 1; i <= token_end; i++)
+            fprintf(stderr, (i < token_start ? " " : "^"));
+        fprintf(stderr, "\n");
+    }
 }
 
 void yyerror(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     some_error("Error", fmt, args);
-    va_end(args);
-}
-
-void lexerror(const char *fmt, ...) {
-    va_list args;
-    va_start(args, fmt);
-    some_error("Warning", fmt, args);
     va_end(args);
 }
 
@@ -332,8 +324,9 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                               return TOKEN_NUMBER;
                           }
 
+                          yylval.str = strdup(yytext);
                           yycolno += yyleng;
-                          lexerror("skipped unrecognized macro: \"%s\"", yytext);
+                          return TOKEN_UNRESOLVED;
                       }
 
 {STRING}              {
@@ -344,8 +337,9 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                       }
 
 .                     {
+                          yylval.str = strdup(yytext);
                           yycolno += yyleng;
-                          lexerror("skipped unexpected character: \"%s\"", yytext);
+                          return TOKEN_UNRESOLVED;
                       }
 
 %%
