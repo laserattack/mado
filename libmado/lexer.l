@@ -217,7 +217,20 @@ NUMBER             [0-9]{1,3}
 /* static char is_whitespace(char c) */
 NEWLINE            \n
 WHITESPACE         [ \t\r]
-STRING             \"[^\"]*\"|\'[^\']*\'
+
+/* STRING          \"(          */
+/*                    \\["'\\]| */
+/*                      [^\"\\] */
+/*                   )*         */
+/*                 \"|          */
+/*                 \'(          */
+/*                    \\["'\\]| */
+/*                      [^\'\\] */
+/*                   )*         */
+/*                 \'           */
+
+STRING             \"(\\["'\\]|[^\"\\])*\"|\'(\\["'\\]|[^\'\\])*\'
+
 IDENT              [a-zA-Z_][a-zA-Z0-9_-]*
 
 YEAR               [0-9]{4}
@@ -227,18 +240,18 @@ HOUR               ([01][0-9]|2[0-3])
 MIN                [0-5][0-9]
 SEC                [0-5][0-9]
 
-/* TIMEFORMAT      ( */
-/*                  {YEAR} */
-/*                  |{YEAR}{MONTH} */
-/*                  |{YEAR}{MONTH}{DAY} */
-/*                     (T */
-/*                         ( */
-/*                             {HOUR} */
-/*                             |{HOUR}{MIN} */
+/* TIMEFORMAT      (                             */
+/*                  {YEAR}                       */
+/*                  |{YEAR}{MONTH}               */
+/*                  |{YEAR}{MONTH}{DAY}          */
+/*                     (T                        */
+/*                         (                     */
+/*                             {HOUR}            */
+/*                             |{HOUR}{MIN}      */
 /*                             |{HOUR}{MIN}{SEC} */
-/*                         )? */
-/*                     )? */
-/*                 ) */
+/*                         )?                    */
+/*                     )?                        */
+/*                 )                             */
 
 TIMEFORMAT         ({YEAR}|{YEAR}{MONTH}|{YEAR}{MONTH}{DAY}(T({HOUR}|{HOUR}{MIN}|{HOUR}{MIN}{SEC})?)?)
 
@@ -331,9 +344,24 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                       }
 
 {STRING}              {
-                          yytext[strlen(yytext)-1] = '\0';
-                          yylval.str = strdup(yytext+1);
+                          char *raw = strdup(yytext + 1);
+                          raw[strlen(raw) - 1] = '\0';
+
+                          char *result = malloc(strlen(raw) + 1);
+                          int j = 0;
+                          for (int i = 0; raw[i]; i++) {
+                              if (raw[i] == '\\' && (raw[i+1] == '"' || raw[i+1] == '\\' || raw[i+1] == '\'')) {
+                                  result[j++] = raw[i+1];
+                                  i++;
+                              } else {
+                                  result[j++] = raw[i];
+                              }
+                          }
+                          result[j] = '\0';
+
+                          free(raw);
                           yycolno += yyleng;
+                          yylval.str = result;
                           return TOKEN_STRING;
                       }
 
