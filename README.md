@@ -19,6 +19,8 @@ files and supports powerful filtering with a query language
   - [Keywords](#keywords)
   - [Macros](#macros)
 - [Installation](#installation)
+  - [Download static binary](#download-static-binary)
+  - [Build from source](#build-from-source)
 - [Performance](#performance)
 - [Interfaces](#interfaces)
   - [Emacs interface](#emacs-interface)
@@ -333,6 +335,14 @@ mado list 'priority = @min' # lowest/default priority entries
 
 ## Installation
 
+### Download static binary
+
+Download the latest static binary from [GitHub
+Releases](https://github.com/laserattack/mado/releases/latest). The
+binary works on any x86_64 Linux without dependencies
+
+### Build from source
+
 Clone the repository and build:
 
 ``` bash
@@ -347,6 +357,14 @@ make USE_TBB=1
 ```
 
 This will produce an executable file `./mado`
+
+To build a statically linked binary:
+
+```
+make release
+```
+
+This will produce `./release/mado`
 
 ## Performance
 
@@ -381,7 +399,8 @@ sections, direct deletion from the buffer, etc
 
 ## Requirements
 
-- **Linux system**
+- **Linux system** (x86_64 for static binary; any arch for build from
+  source)
 - **Build dependencies**:
   - C compiler
   - C++ compiler (TBB may be required depending on the standard

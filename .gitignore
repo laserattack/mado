@@ -5,5 +5,6 @@ lex.yy.c
 *.a
 *.output
 mado
+release
 digest.txt
 TAGS
