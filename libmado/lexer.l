@@ -296,6 +296,8 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                           };
                           static const int n_keywords = sizeof(keywords) / sizeof(keywords[0]);
 
+                          yylval.str = strdup(yytext);
+
                           int token = lookup_ident(yytext, keywords, n_keywords);
                           if (token > 0) {
                               yycolno += yyleng;
@@ -303,7 +305,6 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                           }
 
                           // default string
-                          yylval.str = strdup(yytext);
                           yycolno += yyleng;
                           return TOKEN_STRING;
                       }

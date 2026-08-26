@@ -10,221 +10,6 @@ extern void yyerror(const char *fmt, ...);
 
 extern AST_Node *ast_root;
 
-// expected string errors
-
-#define YYERROR_STRING_EXPECTED "Expected: unquoted [a-zA-Z_][a-zA-Z0-9_-]* or quoted \"...\" or '...'"
-
-#define YYERROR_NUMBER_AS_STRING(value) \
-    do { \
-        yyerror("syntax error, expected string value, resolved to number \"%d\"\n" \
-                YYERROR_STRING_EXPECTED, value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_TIMESTAMP_AS_STRING(value) \
-    do { \
-        yyerror("syntax error, expected string value, resolved to timestamp \"%s\"\n" \
-                YYERROR_STRING_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_PUNCTUATION_AS_STRING(value) \
-    do { \
-        yyerror("syntax error, expected string value, resolved to punctuation \"%s\"\n" \
-                YYERROR_STRING_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_KEYWORD_AS_STRING(name) \
-    do { \
-        yyerror("syntax error, expected string value, resolved to keyword \"%s\"\n" \
-                YYERROR_STRING_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_OPERATOR_AS_STRING(name) \
-    do { \
-        yyerror("syntax error, expected string value, resolved to operator \"%s\"\n" \
-                YYERROR_STRING_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_SPECIAL_AS_STRING(name) \
-    do { \
-        yyerror("syntax error, expected string value, resolved to special keyword \"%s\"\n" \
-                YYERROR_STRING_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-// expected timestamp errors
-
-#define YYERROR_TIMESTAMP_EXPECTED "Expected: YYYY, YYYYMM, YYYYMMDD, YYYYMMDDT, YYYYMMDDTHH, YYYYMMDDTHHMM, YYYYMMDDTHHMMSS"
-
-#define YYERROR_STRING_AS_TIMESTAMP(value) \
-    do { \
-        yyerror("syntax error, expected timestamp value, resolved to string \"%s\"\n" \
-                YYERROR_TIMESTAMP_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_NUMBER_AS_TIMESTAMP(value) \
-    do { \
-        yyerror("syntax error, expected timestamp value, resolved to number \"%d\"\n" \
-                YYERROR_TIMESTAMP_EXPECTED, value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_PUNCTUATION_AS_TIMESTAMP(value) \
-    do { \
-        yyerror("syntax error, expected timestamp value, resolved to punctuation \"%s\"\n" \
-                YYERROR_TIMESTAMP_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_KEYWORD_AS_TIMESTAMP(name) \
-    do { \
-        yyerror("syntax error, expected timestamp value, resolved to keyword \"%s\"\n" \
-                YYERROR_TIMESTAMP_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_OPERATOR_AS_TIMESTAMP(name) \
-    do { \
-        yyerror("syntax error, expected timestamp value, resolved to operator \"%s\"\n" \
-                YYERROR_TIMESTAMP_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_SPECIAL_AS_TIMESTAMP(name) \
-    do { \
-        yyerror("syntax error, expected timestamp value, resolved to special keyword \"%s\"\n" \
-                YYERROR_TIMESTAMP_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-// expected number errors
-
-#define YYERROR_NUMBER_FORMAT "Expected format: 0-999"
-
-#define YYERROR_STRING_AS_NUMBER(value) \
-    do { \
-        yyerror("syntax error, expected numeric value, resolved to string \"%s\"\n" \
-                YYERROR_NUMBER_FORMAT, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_TIMESTAMP_AS_NUMBER(value) \
-    do { \
-        yyerror("syntax error, expected numeric value, resolved to timestamp \"%s\"\n" \
-                YYERROR_NUMBER_FORMAT, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_PUNCTUATION_AS_NUMBER(value) \
-    do { \
-        yyerror("syntax error, expected numeric value, resolved to punctuation \"%s\"\n" \
-                YYERROR_NUMBER_FORMAT, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_KEYWORD_AS_NUMBER(name) \
-    do { \
-        yyerror("syntax error, expected numeric value, resolved to keyword \"%s\"\n" \
-                YYERROR_NUMBER_FORMAT, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_OPERATOR_AS_NUMBER(name) \
-    do { \
-        yyerror("syntax error, expected numeric value, resolved to operator \"%s\"\n" \
-                YYERROR_NUMBER_FORMAT, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_SPECIAL_AS_NUMBER(name) \
-    do { \
-        yyerror("syntax error, expected numeric value, resolved to special keyword \"%s\"\n" \
-                YYERROR_NUMBER_FORMAT, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-// expected comparison operator errors
-
-#define YYERROR_CMP_EXPECTED "Expected: =, !=, ~, !~, ~~, !~~, >, <, >=, <="
-
-#define YYERROR_STRING_AS_CMP(value) \
-    do { \
-        yyerror("syntax error, expected comparison operator, resolved to string \"%s\"\n" \
-                YYERROR_CMP_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_TIMESTAMP_AS_CMP(value) \
-    do { \
-        yyerror("syntax error, expected comparison operator, resolved to timestamp \"%s\"\n" \
-                YYERROR_CMP_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_KEYWORD_AS_CMP(name) \
-    do { \
-        yyerror("syntax error, expected comparison operator, resolved to keyword \"%s\"\n" \
-                YYERROR_CMP_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_OPERATOR_AS_CMP(name) \
-    do { \
-        yyerror("syntax error, expected comparison operator, resolved to logical operator \"%s\"\n" \
-                YYERROR_CMP_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_PUNCTUATION_AS_CMP(value) \
-    do { \
-        yyerror("syntax error, expected comparison operator, resolved to punctuation \"%s\"\n" \
-                YYERROR_CMP_EXPECTED, value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
-#define YYERROR_SPECIAL_AS_CMP(name) \
-    do { \
-        yyerror("syntax error, expected comparison operator, resolved to special keyword \"%s\"\n" \
-                YYERROR_CMP_EXPECTED, name); \
-        free(name); \
-        YYERROR; \
-    } while (0)
-
-//
-
-#define YYERROR_UNRESOLVED_TOKEN(value) \
-    do { \
-        yyerror("syntax error, unresolved token \"%s\"", value); \
-        free(value); \
-        YYERROR; \
-    } while (0)
-
 %}
 
 %union {
@@ -235,45 +20,63 @@ extern AST_Node *ast_root;
     struct AST_Node *node;
 }
 
-%token TOKEN_AND
-%token TOKEN_OR
-%token TOKEN_XOR
-%token TOKEN_NOT
-%token TOKEN_DEADLINE
-%token TOKEN_PRIORITY
-%token TOKEN_TAG
-%token TOKEN_STATUS
-%token TOKEN_NAME
-%token TOKEN_PATH
-%token TOKEN_TIME
-%token TOKEN_MTIME
-%token TOKEN_ALL
-%token TOKEN_ALLOF
-%token TOKEN_ANYOF
-%token TOKEN_GT
-%token TOKEN_LT
-%token TOKEN_GE
-%token TOKEN_LE
-%token TOKEN_EQ
-%token TOKEN_NE
-%token TOKEN_FUZZY
-%token TOKEN_NFUZZY
-%token TOKEN_TILDE
-%token TOKEN_NTILDE
-%token TOKEN_LPAREN
-%token TOKEN_RPAREN
-%token TOKEN_COMMA
+%token <str> TOKEN_DEADLINE "DEADLINE"
+%token <str> TOKEN_PRIORITY "PRIORITY"
+%token <str> TOKEN_TAG "TAG"
+%token <str> TOKEN_STATUS "STATUS"
+%token <str> TOKEN_NAME "NAME"
+%token <str> TOKEN_PATH "PATH"
+%token <str> TOKEN_TIME "TIME"
+%token <str> TOKEN_MTIME "MTIME"
+%token <str> TOKEN_ALL "ALL"
+%token <str> TOKEN_ALLOF "ALLOF"
+%token <str> TOKEN_ANYOF "ANYOF"
 
-%token <num> TOKEN_NUMBER
-%token <str> TOKEN_STRING
-%token <str> TOKEN_TIMESTAMP
-%token <str> TOKEN_UNRESOLVED // special
+%token <str> TOKEN_AND "AND"
+%token <str> TOKEN_OR "OR"
+%token <str> TOKEN_XOR "XOR"
+%token <str> TOKEN_NOT "NOT"
 
-%type <num> cmp_op string_field time_field number_field list_modifier number_value
-%type <str> string_value time_value keyword_token punctuation_token operator_token special_token
-%type <str> logical_operator_token cmp_operator_token
-%type <node> expr condition condition_number condition_string condition_time
-%type <str_list> string_list time_list
+%token TOKEN_GT "GT"
+%token TOKEN_LT "LT"
+%token TOKEN_GE "GE"
+%token TOKEN_LE "LE"
+%token TOKEN_EQ "EQ"
+%token TOKEN_NE "NE"
+%token TOKEN_FUZZY "FUZZY"
+%token TOKEN_NFUZZY "NFUZZY"
+%token TOKEN_TILDE "TILDE"
+%token TOKEN_NTILDE "NTILDE"
+
+%token TOKEN_LPAREN "LPAREN"
+%token TOKEN_RPAREN "RPAREN"
+%token TOKEN_COMMA "COMMA"
+
+%token <num> TOKEN_NUMBER "NUMBER VALUE"
+%token <str> TOKEN_STRING "STRING VALUE"
+%token <str> TOKEN_TIMESTAMP "TIMESTAMP VALUE"
+
+%token <str> TOKEN_UNRESOLVED "token"
+
+%type <num> cmp_op
+%type <num> string_field
+%type <num> time_field
+%type <num> number_field
+%type <num> list_modifier
+%type <num> number_value
+
+%type <str> string_value
+%type <str> time_value
+
+%type <node> expr
+%type <node> condition
+%type <node> condition_number
+%type <node> condition_string
+%type <node> condition_time
+
+%type <str_list> time_list
+%type <str_list> string_list
+
 %type <num_list> number_list
 
 %destructor { ast_free($$); } <node>
@@ -306,11 +109,11 @@ input:
 
 expr:
     condition                        { $$ = $1; }
-    | TOKEN_ALL                      { $$ = create_all(); }
-    | expr TOKEN_AND expr            { $$ = create_binary_op(OP_AND, $1, $3); }
-    | expr TOKEN_OR expr             { $$ = create_binary_op(OP_OR, $1, $3); }
-    | expr TOKEN_XOR expr            { $$ = create_binary_op(OP_XOR, $1, $3); }
-    | TOKEN_NOT expr                 { $$ = create_unary_op(OP_NOT, $2); }
+    | TOKEN_ALL                      { free($1); $$ = create_all(); }
+    | expr TOKEN_AND expr            { free($2); $$ = create_binary_op(OP_AND, $1, $3); }
+    | expr TOKEN_OR expr             { free($2); $$ = create_binary_op(OP_OR, $1, $3); }
+    | expr TOKEN_XOR expr            { free($2); $$ = create_binary_op(OP_XOR, $1, $3); }
+    | TOKEN_NOT expr                 { free($1); $$ = create_unary_op(OP_NOT, $2); }
     | TOKEN_LPAREN expr TOKEN_RPAREN { $$ = $2; }
     ;
 
@@ -340,19 +143,11 @@ number_list:
     ;
 
 number_value:
-    TOKEN_NUMBER        { $$ = $1; }
-    // unexpected
-    | TOKEN_STRING      { $$ = 0; YYERROR_STRING_AS_NUMBER($1); }
-    | TOKEN_TIMESTAMP   { $$ = 0; YYERROR_TIMESTAMP_AS_NUMBER($1); }
-    | TOKEN_UNRESOLVED  { $$ = 0; YYERROR_UNRESOLVED_TOKEN($1); }
-    | keyword_token     { $$ = 0; YYERROR_KEYWORD_AS_NUMBER($1); }
-    | operator_token    { $$ = 0; YYERROR_OPERATOR_AS_NUMBER($1); }
-    | punctuation_token { $$ = 0; YYERROR_PUNCTUATION_AS_NUMBER($1); }
-    | special_token     { $$ = 0; YYERROR_SPECIAL_AS_NUMBER($1); }
+    TOKEN_NUMBER   { $$ = $1; }
     ;
 
 number_field:
-    TOKEN_PRIORITY { $$ = CMP_PRIORITY; }
+    TOKEN_PRIORITY { free($1); $$ = CMP_PRIORITY; }
     ;
 
 //
@@ -377,21 +172,13 @@ time_list:
     ;
 
 time_value:
-    TOKEN_TIMESTAMP     { $$ = $1; }
-    // unexpected
-    | TOKEN_STRING      { $$ = NULL; YYERROR_STRING_AS_TIMESTAMP($1); }
-    | TOKEN_NUMBER      { $$ = NULL; YYERROR_NUMBER_AS_TIMESTAMP($1); }
-    | TOKEN_UNRESOLVED  { $$ = NULL; YYERROR_UNRESOLVED_TOKEN($1); }
-    | keyword_token     { $$ = NULL; YYERROR_KEYWORD_AS_TIMESTAMP($1); }
-    | operator_token    { $$ = NULL; YYERROR_OPERATOR_AS_TIMESTAMP($1); }
-    | punctuation_token { $$ = NULL; YYERROR_PUNCTUATION_AS_TIMESTAMP($1); }
-    | special_token     { $$ = NULL; YYERROR_SPECIAL_AS_TIMESTAMP($1); }
+    TOKEN_TIMESTAMP  { $$ = $1; }
     ;
 
 time_field:
-    TOKEN_TIME       { $$ = CMP_TIME; }
-    | TOKEN_DEADLINE { $$ = CMP_DEADLINE; }
-    | TOKEN_MTIME    { $$ = CMP_MTIME; }
+    TOKEN_TIME       { free($1); $$ = CMP_TIME; }
+    | TOKEN_DEADLINE { free($1); $$ = CMP_DEADLINE; }
+    | TOKEN_MTIME    { free($1); $$ = CMP_MTIME; }
     ;
 
 //
@@ -416,101 +203,49 @@ string_list:
     ;
 
 string_value:
-    // unexpected
-    TOKEN_STRING        { $$ = $1; }
-    | TOKEN_TIMESTAMP   { $$ = NULL; YYERROR_TIMESTAMP_AS_STRING($1); }
-    | TOKEN_NUMBER      { $$ = NULL; YYERROR_NUMBER_AS_STRING($1); }
-    | TOKEN_UNRESOLVED  { $$ = NULL; YYERROR_UNRESOLVED_TOKEN($1); }
-    | keyword_token     { $$ = NULL; YYERROR_KEYWORD_AS_STRING($1); }
-    | operator_token    { $$ = NULL; YYERROR_OPERATOR_AS_STRING($1); }
-    | punctuation_token { $$ = NULL; YYERROR_PUNCTUATION_AS_STRING($1); }
-    | special_token     { $$ = NULL; YYERROR_SPECIAL_AS_STRING($1); }
+    TOKEN_STRING     { $$ = $1; }
+    | TOKEN_DEADLINE { $$ = $1; }
+    | TOKEN_PRIORITY { $$ = $1; }
+    | TOKEN_TAG      { $$ = $1; }
+    | TOKEN_STATUS   { $$ = $1; }
+    | TOKEN_NAME     { $$ = $1; }
+    | TOKEN_PATH     { $$ = $1; }
+    | TOKEN_TIME     { $$ = $1; }
+    | TOKEN_MTIME    { $$ = $1; }
+    | TOKEN_ALL      { $$ = $1; }
+    | TOKEN_ALLOF    { $$ = $1; }
+    | TOKEN_ANYOF    { $$ = $1; }
+    | TOKEN_AND      { $$ = $1; }
+    | TOKEN_OR       { $$ = $1; }
+    | TOKEN_XOR      { $$ = $1; }
+    | TOKEN_NOT      { $$ = $1; }
     ;
 
 string_field:
-    TOKEN_TAG      { $$ = CMP_TAG; }
-    | TOKEN_STATUS { $$ = CMP_STATUS; }
-    | TOKEN_PATH   { $$ = CMP_PATH; }
-    | TOKEN_NAME   { $$ = CMP_NAME; }
+    TOKEN_TAG      { free($1); $$ = CMP_TAG; }
+    | TOKEN_STATUS { free($1); $$ = CMP_STATUS; }
+    | TOKEN_PATH   { free($1); $$ = CMP_PATH; }
+    | TOKEN_NAME   { free($1); $$ = CMP_NAME; }
     ;
 
 //
 
 cmp_op:
-    TOKEN_EQ         { $$ = CMP_EQ; }
-    | TOKEN_NE       { $$ = CMP_NE; }
-    | TOKEN_FUZZY    { $$ = CMP_FUZZY; }
-    | TOKEN_NFUZZY   { $$ = CMP_NFUZZY; }
-    | TOKEN_TILDE    { $$ = CMP_TILDE; }
-    | TOKEN_NTILDE   { $$ = CMP_NTILDE; }
-    | TOKEN_GT       { $$ = CMP_GT; }
-    | TOKEN_LT       { $$ = CMP_LT; }
-    | TOKEN_GE       { $$ = CMP_GE; }
-    | TOKEN_LE       { $$ = CMP_LE; }
-    // unexpected
-    | TOKEN_STRING           { $$ = 0; YYERROR_STRING_AS_CMP($1); }
-    | TOKEN_TIMESTAMP        { $$ = 0; YYERROR_TIMESTAMP_AS_CMP($1); }
-    | TOKEN_UNRESOLVED       { $$ = 0; YYERROR_UNRESOLVED_TOKEN($1); }
-    | keyword_token          { $$ = 0; YYERROR_KEYWORD_AS_CMP($1); }
-    | logical_operator_token { $$ = 0; YYERROR_OPERATOR_AS_CMP($1); }
-    | punctuation_token      { $$ = 0; YYERROR_PUNCTUATION_AS_CMP($1); }
-    | special_token          { $$ = 0; YYERROR_SPECIAL_AS_CMP($1); }
+    TOKEN_EQ       { $$ = CMP_EQ; }
+    | TOKEN_NE     { $$ = CMP_NE; }
+    | TOKEN_FUZZY  { $$ = CMP_FUZZY; }
+    | TOKEN_NFUZZY { $$ = CMP_NFUZZY; }
+    | TOKEN_TILDE  { $$ = CMP_TILDE; }
+    | TOKEN_NTILDE { $$ = CMP_NTILDE; }
+    | TOKEN_GT     { $$ = CMP_GT; }
+    | TOKEN_LT     { $$ = CMP_LT; }
+    | TOKEN_GE     { $$ = CMP_GE; }
+    | TOKEN_LE     { $$ = CMP_LE; }
     ;
 
 list_modifier:
-    TOKEN_ALLOF   { $$ = LM_ALLOF; }
-    | TOKEN_ANYOF { $$ = LM_ANYOF; }
+    TOKEN_ALLOF   { free($1); $$ = LM_ALLOF; }
+    | TOKEN_ANYOF { free($1); $$ = LM_ANYOF; }
     ;
-
-// tokens (for errors)
-
-keyword_token:
-    TOKEN_TIME       { $$ = strdup("time"); }
-    | TOKEN_DEADLINE { $$ = strdup("deadline"); }
-    | TOKEN_PRIORITY { $$ = strdup("priority"); }
-    | TOKEN_STATUS   { $$ = strdup("status"); }
-    | TOKEN_PATH     { $$ = strdup("path"); }
-    | TOKEN_NAME     { $$ = strdup("name"); }
-    | TOKEN_TAG      { $$ = strdup("tag"); }
-    | TOKEN_MTIME    { $$ = strdup("mtime"); }
-    | TOKEN_ALLOF    { $$ = strdup("allof"); }
-    | TOKEN_ANYOF    { $$ = strdup("anyof"); }
-    ;
-
-special_token:
-    TOKEN_ALL        { $$ = strdup("all"); }
-    ;
-
-operator_token:
-    logical_operator_token
-    | cmp_operator_token
-    ;
-
-logical_operator_token:
-    TOKEN_AND       { $$ = strdup("and"); }
-    | TOKEN_OR      { $$ = strdup("or"); }
-    | TOKEN_XOR     { $$ = strdup("xor"); }
-    | TOKEN_NOT     { $$ = strdup("not"); }
-    ;
-
-cmp_operator_token:
-    TOKEN_GT        { $$ = strdup(">"); }
-    | TOKEN_LT      { $$ = strdup("<"); }
-    | TOKEN_GE      { $$ = strdup(">="); }
-    | TOKEN_LE      { $$ = strdup("<="); }
-    | TOKEN_EQ      { $$ = strdup("="); }
-    | TOKEN_NE      { $$ = strdup("!="); }
-    | TOKEN_FUZZY   { $$ = strdup("~~"); }
-    | TOKEN_NFUZZY  { $$ = strdup("!~~"); }
-    | TOKEN_TILDE   { $$ = strdup("~"); }
-    | TOKEN_NTILDE  { $$ = strdup("!~"); }
-    ;
-
-punctuation_token:
-    TOKEN_LPAREN    { $$ = strdup("("); }
-    | TOKEN_RPAREN  { $$ = strdup(")"); }
-    | TOKEN_COMMA   { $$ = strdup(","); }
-    ;
-
 
 %%
