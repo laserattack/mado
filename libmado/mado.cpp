@@ -37,6 +37,7 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->hide_fields = Mado_Entry_Field::NONE;
     cfg->case_insensitive_search = false;
     cfg->parallel = false;
+    cfg->load_all_first = false;
     cfg->sort_criteria.clear();
     cfg->fmt = Mado_Output_Format::DEFAULT;
 }
@@ -656,10 +657,9 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
 
 // ================ ENTRIES
 
-Mado_Entries
-Mado_Entries::get_all(const Mado_Config *cfg,
-                      const std::filesystem::path &main_dir,
-                      const AST_Node *filter) {
+static std::vector<std::filesystem::path>
+collect_entry_dirs(const std::filesystem::path &main_dir) {
+    std::vector<std::filesystem::path> dirs;
 
     auto is_entry_dir = [](const std::string &s) {
         return s.size() == 15 &&
@@ -668,21 +668,27 @@ Mado_Entries::get_all(const Mado_Config *cfg,
                std::all_of(s.begin() + 9, s.end(), ::isdigit);
     };
 
-    Mado_Entries result;
-
     if (!std::filesystem::exists(main_dir) || !std::filesystem::is_directory(main_dir))
-        return result;
+        return dirs;
 
-    std::vector<std::filesystem::path> dirs;
     for (const auto &dirent : std::filesystem::directory_iterator(main_dir)) {
         auto dir_path = dirent.path();
         std::string dir_name = dir_path.filename().string();
 
-        if (!is_entry_dir(dir_name))
-            continue;
-
-        dirs.push_back(dir_path);
+        if (is_entry_dir(dir_name))
+            dirs.push_back(dir_path);
     }
+
+    return dirs;
+}
+
+Mado_Entries
+Mado_Entries::load_all(const Mado_Config *cfg,
+                       const std::filesystem::path &main_dir,
+                       const AST_Node *filter) {
+
+    std::vector<std::filesystem::path> dirs = collect_entry_dirs(main_dir);
+    Mado_Entries result;
 
     if (cfg->parallel) {
         std::vector<std::unique_ptr<Mado_Entry>> entries(dirs.size());
@@ -702,6 +708,37 @@ Mado_Entries::get_all(const Mado_Config *cfg,
         for (const auto &dir : dirs) {
             auto entry = Mado_Entry::parse(cfg, dir, filter);
             if (entry) {
+                result.entries_.push_back(std::move(entry));
+            }
+        }
+    }
+
+    return result;
+}
+
+Mado_Entries
+Mado_Entries::load_matching(const Mado_Config *cfg,
+                            const std::filesystem::path &main_dir,
+                            const AST_Node *filter) {
+
+    std::vector<std::filesystem::path> dirs = collect_entry_dirs(main_dir);
+    Mado_Entries result;
+
+    if (cfg->parallel) {
+        std::mutex mtx;
+
+        std::for_each(std::execution::par, dirs.begin(), dirs.end(),
+                      [&](const auto &dir) {
+                          auto entry = Mado_Entry::parse(cfg, dir, filter);
+                          if (entry && entry->matches_condition(cfg, filter)) {
+                              std::lock_guard<std::mutex> lock(mtx);
+                              result.entries_.push_back(std::move(entry));
+                          }
+                      });
+    } else {
+        for (const auto &dir : dirs) {
+            auto entry = Mado_Entry::parse(cfg, dir, filter);
+            if (entry && entry->matches_condition(cfg, filter)) {
                 result.entries_.push_back(std::move(entry));
             }
         }
@@ -924,7 +961,7 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     if (err != Mado_Error::OK)
         return err;
 
-    auto entries = Mado_Entries::get_all(cfg, main_dir_path, nullptr);
+    auto entries = Mado_Entries::load_all(cfg, main_dir_path, nullptr);
 
     struct EntryCounts {
         std::map<std::string, int> status_counts;

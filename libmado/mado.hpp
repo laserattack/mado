@@ -93,6 +93,7 @@ struct Mado_Config {
     int max_header_lines;
     bool case_insensitive_search;
     bool parallel;
+    bool load_all_first;
     Mado_Entry_Field hide_fields;
     std::vector<Mado_Sort_Criterion> sort_criteria;
     Mado_Output_Format fmt;
@@ -140,9 +141,15 @@ class Mado_Entries {
     auto begin() const { return entries_.begin(); }
     auto end() const { return entries_.end(); }
 
-    static Mado_Entries get_all(const Mado_Config *cfg,
-                                const std::filesystem::path &main_dir,
-                                const AST_Node *filter);
+    static Mado_Entries
+    load_all(const Mado_Config *cfg,
+             const std::filesystem::path &main_dir,
+             const AST_Node *filter);
+
+    static Mado_Entries
+    load_matching(const Mado_Config *cfg,
+                  const std::filesystem::path &main_dir,
+                  const AST_Node *filter);
 
   private:
     std::vector<std::unique_ptr<Mado_Entry>> entries_;

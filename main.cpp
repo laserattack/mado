@@ -245,13 +245,14 @@ static int count_aliases(const cmd::Command *cmd) {
 static void print_usage(bool show_aliases) {
     std::cerr << "Usage: " << argv0 << " [GLOBAL OPTIONS] [command] [COMMAND OPTIONS]\n\n";
     std::cerr << "Global options:\n";
-    std::cerr << "  -p, --parallel            Enable parallel parsing\n";
+    std::cerr << "  -h, --help                Show this help\n";
     std::cerr << "  -C, --working-dir <DIR>   Change working directory\n";
     std::cerr << "  -D, --main-dir <NAME>     Custom main directory name. Currently: "
               << g_mado_config.main_dir_name << "\n";
     std::cerr << "  -E, --entry-file <NAME>   Custom entry file name. Currently: "
               << g_mado_config.entry_file_name << "\n";
-    std::cerr << "  -h, --help                Show this help\n";
+    std::cerr << "  -p, --parallel            Enable parallel parsing\n";
+    std::cerr << "  -F, --load-all-first      Load all entries before filtering\n";
     std::cerr << "\nCommands:\n";
     for (int i = 0; commands[i].name; i++) {
         fprintf(stderr, "  %-12s %s\n", commands[i].name, commands[i].description);
@@ -438,10 +439,16 @@ static int cmd_list(int argc, char **argv) {
         return mado_print_error(err, "finding main directory");
     }
 
-    Mado_Entries::get_all(&g_mado_config, main_dir, filter.get())
-        .filter(&g_mado_config, filter.get())
-        .sort(&g_mado_config)
-        .print(&g_mado_config);
+    if (g_mado_config.load_all_first) {
+        Mado_Entries::load_all(&g_mado_config, main_dir, filter.get())
+            .filter(&g_mado_config, filter.get())
+            .sort(&g_mado_config)
+            .print(&g_mado_config);
+    } else {
+        Mado_Entries::load_matching(&g_mado_config, main_dir, filter.get())
+            .sort(&g_mado_config)
+            .print(&g_mado_config);
+    }
 
     return 0;
 }
@@ -477,9 +484,15 @@ static int cmd_remove(int argc, char **argv) {
         return mado_print_error(err, "finding main directory");
     }
 
-    auto removed = Mado_Entries::get_all(&g_mado_config, main_dir, filter.get())
-                       .filter(&g_mado_config, filter.get())
-                       .remove();
+    std::vector<std::string> removed;
+    if (g_mado_config.load_all_first) {
+        removed = Mado_Entries::load_all(&g_mado_config, main_dir, filter.get())
+                      .filter(&g_mado_config, filter.get())
+                      .remove();
+    } else {
+        removed = Mado_Entries::load_matching(&g_mado_config, main_dir, filter.get())
+                      .remove();
+    }
 
     for (const auto &path : removed)
         std::cout << path << "\n";
@@ -654,18 +667,19 @@ static int cmd_debug(int argc, char **argv) {
 
 static int handle_global_options(int argc, char **argv) {
     static struct option global_options[] = {
-        {"parallel", no_argument, 0, 'p'},
+        {"help", no_argument, 0, 'h'},
         {"working-dir", required_argument, 0, 'C'},
         {"main-dir", required_argument, 0, 'D'},
         {"entry-file", required_argument, 0, 'E'},
-        {"help", no_argument, 0, 'h'},
+        {"parallel", no_argument, 0, 'p'},
+        {"load-all-first", no_argument, 0, 'F'},
         {0, 0, 0, 0}};
     int opt;
-    while ((opt = getopt_long(argc, argv, "+C:D:E:hp", global_options, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "+C:D:E:hpF", global_options, nullptr)) != -1) {
         switch (opt) {
-        case 'p':
-            g_mado_config.parallel = true;
-            break;
+        case 'h':
+            print_usage(false);
+            return 1;
         case 'C':
             if (chdir(optarg) != 0) {
                 mado_print_error(Mado_Error::IO, "changing working directory");
@@ -679,9 +693,12 @@ static int handle_global_options(int argc, char **argv) {
         case 'E':
             g_mado_config.entry_file_name = optarg;
             break;
-        case 'h':
-            print_usage(false);
-            return 1;
+        case 'p':
+            g_mado_config.parallel = true;
+            break;
+        case 'F':
+            g_mado_config.load_all_first = true;
+            break;
         default:
             return -1;
         }
