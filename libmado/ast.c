@@ -75,52 +75,60 @@ static const char *operator_to_string(Operator op) {
 static const char *comparison_field_to_string(Comparison_Field field) {
     switch (field) {
     case CMP_PRIORITY:
-        return "priority";
+        return "PRIORITY";
     case CMP_TAG:
-        return "tag";
+        return "TAG";
     case CMP_STATUS:
-        return "status";
+        return "STATUS";
     case CMP_PATH:
-        return "path";
+        return "PATH";
     case CMP_NAME:
-        return "name";
+        return "NAME";
     case CMP_TIME:
-        return "time";
+        return "TIME";
     case CMP_DEADLINE:
-        return "deadline";
+        return "DEADLINE";
     case CMP_MTIME:
-        return "mtime";
+        return "MTIME";
     case CMP_ANY:
-        return "any";
+        return "ANY";
     default:
-        return "unknown";
+        return "UNKNOWN";
     }
 }
 
 static const char *comparison_operator_to_string(Comparison_Operator op) {
     switch (op) {
     case CMP_GT:
-        return ">";
+        return "GT";
     case CMP_LT:
-        return "<";
+        return "LT";
     case CMP_EQ:
-        return "=";
+        return "EQ";
     case CMP_NE:
-        return "!=";
+        return "NE";
     case CMP_GE:
-        return ">=";
+        return "GE";
     case CMP_LE:
-        return "<=";
+        return "LE";
     case CMP_FUZZY:
-        return "~~";
+        return "FUZZY";
     case CMP_NFUZZY:
-        return "!~~";
-    case CMP_TILDE:
-        return "~";
-    case CMP_NTILDE:
-        return "!~";
+        return "NFUZZY";
+    case CMP_SUBSTR:
+        return "SUBSTR";
+    case CMP_NSUBSTR:
+        return "NSUBSTR";
+    case CMP_STARTS:
+        return "STARTS";
+    case CMP_NSTARTS:
+        return "NSTARTS";
+    case CMP_ENDS:
+        return "ENDS";
+    case CMP_NENDS:
+        return "NENDS";
     default:
-        return "unknown";
+        return "UNKNOWN";
     }
 }
 
@@ -153,10 +161,10 @@ void ast_print(AST_Node *node, int depth) {
 
         switch (node->comparison.field) {
         case CMP_PRIORITY:
-            printf("%d\n", node->comparison.value.int_value);
+            printf("NUMBER: %d\n", node->comparison.value.int_value);
             break;
         default:
-            printf("%s\n", node->comparison.value.str_value ? node->comparison.value.str_value : "NULL");
+            printf("TEXT: %s\n", node->comparison.value.str_value ? node->comparison.value.str_value : "NULL");
             break;
         }
         break;

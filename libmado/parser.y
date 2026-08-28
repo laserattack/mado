@@ -47,8 +47,12 @@ extern AST_Node *ast_root;
 %token TOKEN_NE "NE"
 %token TOKEN_FUZZY "FUZZY"
 %token TOKEN_NFUZZY "NFUZZY"
-%token TOKEN_TILDE "TILDE"
-%token TOKEN_NTILDE "NTILDE"
+%token TOKEN_SUBSTR "SUBSTR"
+%token TOKEN_NSUBSTR "NSUBSTR"
+%token TOKEN_TOKEN_STARTS "STARTS"
+%token TOKEN_TOKEN_NSTARTS "NSTARTS"
+%token TOKEN_TOKEN_ENDS "ENDS"
+%token TOKEN_TOKEN_NENDS "NENDS"
 
 %token TOKEN_LPAREN "LPAREN"
 %token TOKEN_RPAREN "RPAREN"
@@ -286,16 +290,20 @@ any_field:
 //
 
 cmp_op:
-    TOKEN_EQ       { $$ = CMP_EQ; }
-    | TOKEN_NE     { $$ = CMP_NE; }
-    | TOKEN_FUZZY  { $$ = CMP_FUZZY; }
-    | TOKEN_NFUZZY { $$ = CMP_NFUZZY; }
-    | TOKEN_TILDE  { $$ = CMP_TILDE; }
-    | TOKEN_NTILDE { $$ = CMP_NTILDE; }
-    | TOKEN_GT     { $$ = CMP_GT; }
-    | TOKEN_LT     { $$ = CMP_LT; }
-    | TOKEN_GE     { $$ = CMP_GE; }
-    | TOKEN_LE     { $$ = CMP_LE; }
+    TOKEN_EQ              { $$ = CMP_EQ; }
+    | TOKEN_NE            { $$ = CMP_NE; }
+    | TOKEN_FUZZY         { $$ = CMP_FUZZY; }
+    | TOKEN_NFUZZY        { $$ = CMP_NFUZZY; }
+    | TOKEN_SUBSTR        { $$ = CMP_SUBSTR; }
+    | TOKEN_NSUBSTR       { $$ = CMP_NSUBSTR; }
+    | TOKEN_TOKEN_STARTS  { $$ = CMP_STARTS; }
+    | TOKEN_TOKEN_NSTARTS { $$ = CMP_NSTARTS; }
+    | TOKEN_TOKEN_ENDS    { $$ = CMP_ENDS; }
+    | TOKEN_TOKEN_NENDS   { $$ = CMP_NENDS; }
+    | TOKEN_GT            { $$ = CMP_GT; }
+    | TOKEN_LT            { $$ = CMP_LT; }
+    | TOKEN_GE            { $$ = CMP_GE; }
+    | TOKEN_LE            { $$ = CMP_LE; }
     ;
 
 list_modifier:

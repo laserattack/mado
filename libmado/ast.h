@@ -34,8 +34,12 @@ typedef enum {
     CMP_LE,
     CMP_FUZZY,
     CMP_NFUZZY,
-    CMP_TILDE,
-    CMP_NTILDE
+    CMP_SUBSTR,
+    CMP_NSUBSTR,
+    CMP_STARTS,
+    CMP_NSTARTS,
+    CMP_ENDS,
+    CMP_NENDS,
 } Comparison_Operator;
 
 typedef struct AST_Node {

@@ -262,19 +262,32 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 {WHITESPACE}+   { yycolno += yyleng; }
 {NEWLINE}+      { yylineno++; yycolno = 1; }
 
+"("             { yycolno += yyleng; return TOKEN_LPAREN; }
+")"             { yycolno += yyleng; return TOKEN_RPAREN; }
 ","             { yycolno += yyleng; return TOKEN_COMMA; }
+
 ">"             { yycolno += yyleng; return TOKEN_GT; }
 "<"             { yycolno += yyleng; return TOKEN_LT; }
 ">="            { yycolno += yyleng; return TOKEN_GE; }
 "<="            { yycolno += yyleng; return TOKEN_LE; }
 "="             { yycolno += yyleng; return TOKEN_EQ; }
 "!="            { yycolno += yyleng; return TOKEN_NE; }
+
 "~~"            { yycolno += yyleng; return TOKEN_FUZZY; }
 "!~~"           { yycolno += yyleng; return TOKEN_NFUZZY; }
-"~"             { yycolno += yyleng; return TOKEN_TILDE; }
-"!~"            { yycolno += yyleng; return TOKEN_NTILDE; }
-"("             { yycolno += yyleng; return TOKEN_LPAREN; }
-")"             { yycolno += yyleng; return TOKEN_RPAREN; }
+
+"^~"            { yycolno += yyleng; return TOKEN_TOKEN_STARTS; }
+"^!~"           { yycolno += yyleng; return TOKEN_TOKEN_NSTARTS; }
+"~^"            { yycolno += yyleng; return TOKEN_TOKEN_STARTS; }
+"!~^"           { yycolno += yyleng; return TOKEN_TOKEN_NSTARTS; }
+
+"$~"            { yycolno += yyleng; return TOKEN_TOKEN_ENDS; }
+"$!~"           { yycolno += yyleng; return TOKEN_TOKEN_NENDS; }
+"~$"            { yycolno += yyleng; return TOKEN_TOKEN_ENDS; }
+"!~$"           { yycolno += yyleng; return TOKEN_TOKEN_NENDS; }
+
+"~"             { yycolno += yyleng; return TOKEN_SUBSTR; }
+"!~"            { yycolno += yyleng; return TOKEN_NSUBSTR; }
 
 
 {NUMBER}              {

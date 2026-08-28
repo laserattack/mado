@@ -112,6 +112,8 @@ mado list 'name = login'
 # Filter by entry name (substring)
 mado list 'name ~ login'
 mado list 'name ~ "fix login"' # multiple words — quotes required
+mado list 'name ^~ "Fix"' # Starts with "Fix"
+mado list 'name !~$ "bug"' # NOT ends with "bug"
 
 # Filter by entry name (fuzzy match)
 mado list 'name ~~ "fx lgn b"' # Finds "Fix login bug"
@@ -238,6 +240,10 @@ keywords
 | `!=` | Not equal | |
 | `~` | Contains | For numbers: alias for `=` |
 | `!~` | Not contains | For numbers: alias for `!=` |
+| `^~` or `~^` | Starts with | For numbers: alias for `=` |
+| `^!~` or `!~^` | Not starts with | For numbers: alias for `!=` |
+| `$~` or `~$` | Ends with | For numbers: alias for `=` |
+| `$!~` or `!~$` | Not ends with | For numbers: alias for `!=` |
 | `~~` | Fuzzy match | For numbers: alias for `=` |
 | `!~~` | Not fuzzy match | For numbers: alias for `!=` |
 

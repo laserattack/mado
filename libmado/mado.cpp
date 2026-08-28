@@ -464,10 +464,18 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
             return fuzzy_match(cn.c_str(), vn.c_str(), cfg->case_insensitive_search) != INT32_MIN;
         case CMP_NFUZZY:
             return fuzzy_match(cn.c_str(), vn.c_str(), cfg->case_insensitive_search) == INT32_MIN;
-        case CMP_TILDE:
+        case CMP_SUBSTR:
             return vn.find(cn) != std::string::npos;
-        case CMP_NTILDE:
+        case CMP_NSUBSTR:
             return vn.find(cn) == std::string::npos;
+        case CMP_STARTS:
+            return vn.rfind(cn, 0) == 0;
+        case CMP_NSTARTS:
+            return vn.rfind(cn, 0) != 0;
+        case CMP_ENDS:
+            return vn.size() >= cn.size() && vn.compare(vn.size() - cn.size(), cn.size(), cn) == 0;
+        case CMP_NENDS:
+            return !(vn.size() >= cn.size() && vn.compare(vn.size() - cn.size(), cn.size(), cn) == 0);
         case CMP_GT:
             return vn > cn;
         case CMP_LT:
@@ -492,11 +500,15 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         case CMP_LE:
             return v <= c;
         case CMP_FUZZY:
-        case CMP_TILDE:
+        case CMP_SUBSTR:
+        case CMP_ENDS:
+        case CMP_STARTS:
         case CMP_EQ:
             return v == c;
         case CMP_NFUZZY:
-        case CMP_NTILDE:
+        case CMP_NSUBSTR:
+        case CMP_NSTARTS:
+        case CMP_NENDS:
         case CMP_NE:
             return v != c;
         default:
