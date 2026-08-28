@@ -28,6 +28,11 @@ void ast_free(AST_Node *node) {
 
     switch (node->type) {
     case NODE_ALL:
+    case NODE_UNTAGGED:
+    case NODE_UNSTATUSED:
+    case NODE_UNNAMED:
+    case NODE_UNPRIORITIZED:
+    case NODE_UNDEADLINED:
         break;
     case NODE_BINARY_OP:
         ast_free(node->binary.left);
@@ -142,6 +147,21 @@ void ast_print(AST_Node *node, int depth) {
     case NODE_ALL:
         printf("ALL\n");
         break;
+    case NODE_UNTAGGED:
+        printf("UNTAGGED\n");
+        break;
+    case NODE_UNSTATUSED:
+        printf("UNSTATUSED\n");
+        break;
+    case NODE_UNNAMED:
+        printf("UNNAMED\n");
+        break;
+    case NODE_UNPRIORITIZED:
+        printf("UNPRIORITIZED\n");
+        break;
+    case NODE_UNDEADLINED:
+        printf("UNDEADLINED\n");
+        break;
 
     case NODE_BINARY_OP:
         printf("BINARY: %s\n", operator_to_string(node->binary.op));
@@ -211,6 +231,36 @@ AST_Node *create_comparison(Comparison_Field field,
 AST_Node *create_all() {
     AST_Node *node = malloc(sizeof(AST_Node));
     node->type = NODE_ALL;
+    return node;
+}
+
+AST_Node *create_untagged() {
+    AST_Node *node = malloc(sizeof(AST_Node));
+    node->type = NODE_UNTAGGED;
+    return node;
+}
+
+AST_Node *create_unstatused() {
+    AST_Node *node = malloc(sizeof(AST_Node));
+    node->type = NODE_UNSTATUSED;
+    return node;
+}
+
+AST_Node *create_unnamed() {
+    AST_Node *node = malloc(sizeof(AST_Node));
+    node->type = NODE_UNNAMED;
+    return node;
+}
+
+AST_Node *create_unprioritized() {
+    AST_Node *node = malloc(sizeof(AST_Node));
+    node->type = NODE_UNPRIORITIZED;
+    return node;
+}
+
+AST_Node *create_undeadlined() {
+    AST_Node *node = malloc(sizeof(AST_Node));
+    node->type = NODE_UNDEADLINED;
     return node;
 }
 

@@ -519,6 +519,17 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
     switch (filter->type) {
     case NODE_ALL:
         return true;
+    case NODE_UNTAGGED:
+        // If there are no tags, the list contains one empty string by default
+        return tags.size() == 1 && tags[0].empty();
+    case NODE_UNSTATUSED:
+        return status.empty();
+    case NODE_UNNAMED:
+        return name.empty();
+    case NODE_UNPRIORITIZED:
+        return priority == 0;
+    case NODE_UNDEADLINED:
+        return deadline == "99990101T000000";
     case NODE_BINARY_OP:
         switch (filter->binary.op) {
         case OP_AND:

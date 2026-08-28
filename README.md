@@ -280,9 +280,14 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 | `deadline` | timestamp  | all | `deadline > 20260505T1230 and deadline < 20260510T` |
 | `any`      | string/timestamp/number  | all | `any ~ login`, `any = 10` |
 | `all`      | special | -                              | `all`                  |
+| `untagged` | special | -                              | `untagged`                  |
+| `unstatused` | special | -                            | `unstatused`                  |
+| `unnamed` | special | -                                | `unnamed`                  |
+| `unprioritized` | special | -                          | `unprioritized`                  |
+| `undeadlined` | special | -                            | `undeadlined`                  |
 
 > **Note:** keywords are matched fuzzily. `prio` is interpreted as
-> `priority`, `stts` as `status`, etc. Exact match is always preferred
+> `priority`, `upred` as `unprioritized`, etc. Exact match is always preferred
 
 > **Note 2:** `any` searches across all fields — if the value is a
 > number, it searches all numeric fields; otherwise it searches all

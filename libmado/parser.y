@@ -29,10 +29,15 @@ extern AST_Node *ast_root;
 %token <str> TOKEN_PATH "PATH"
 %token <str> TOKEN_TIME "TIME"
 %token <str> TOKEN_MTIME "MTIME"
-%token <str> TOKEN_ALL "ALL"
 %token <str> TOKEN_ALLOF "ALLOF"
 %token <str> TOKEN_ANYOF "ANYOF"
 %token <str> TOKEN_ANY "ANY"
+%token <str> TOKEN_ALL "ALL"
+%token <str> TOKEN_UNTAGGED "UNTAGGED"
+%token <str> TOKEN_UNSTATUSED "UNSTATUSED"
+%token <str> TOKEN_UNNAMED "UNNAMED"
+%token <str> TOKEN_UNPRIORITIZED "UNPRIORITIZED"
+%token <str> TOKEN_UNDEADLINED "UNDEADLINED"
 
 %token <str> TOKEN_AND "AND"
 %token <str> TOKEN_OR "OR"
@@ -120,6 +125,11 @@ input:
 expr:
     condition                        { $$ = $1; }
     | TOKEN_ALL                      { free($1); $$ = create_all(); }
+    | TOKEN_UNTAGGED                 { free($1); $$ = create_untagged(); }
+    | TOKEN_UNSTATUSED               { free($1); $$ = create_unstatused(); }
+    | TOKEN_UNNAMED                  { free($1); $$ = create_unnamed(); }
+    | TOKEN_UNPRIORITIZED            { free($1); $$ = create_unprioritized(); }
+    | TOKEN_UNDEADLINED              { free($1); $$ = create_undeadlined(); }
     | expr TOKEN_AND expr            { free($2); $$ = create_binary_op(OP_AND, $1, $3); }
     | expr TOKEN_OR expr             { free($2); $$ = create_binary_op(OP_OR, $1, $3); }
     | expr TOKEN_XOR expr            { free($2); $$ = create_binary_op(OP_XOR, $1, $3); }
@@ -216,22 +226,27 @@ string_list:
 string_value:
     TOKEN_STRING     { $$ = $1; }
     // keywords
-    | TOKEN_DEADLINE { $$ = $1; }
-    | TOKEN_PRIORITY { $$ = $1; }
-    | TOKEN_TAG      { $$ = $1; }
-    | TOKEN_STATUS   { $$ = $1; }
-    | TOKEN_NAME     { $$ = $1; }
-    | TOKEN_PATH     { $$ = $1; }
-    | TOKEN_TIME     { $$ = $1; }
-    | TOKEN_MTIME    { $$ = $1; }
-    | TOKEN_ANY      { $$ = $1; }
-    | TOKEN_ALL      { $$ = $1; }
-    | TOKEN_ALLOF    { $$ = $1; }
-    | TOKEN_ANYOF    { $$ = $1; }
-    | TOKEN_AND      { $$ = $1; }
-    | TOKEN_OR       { $$ = $1; }
-    | TOKEN_XOR      { $$ = $1; }
-    | TOKEN_NOT      { $$ = $1; }
+    | TOKEN_DEADLINE      { $$ = $1; }
+    | TOKEN_PRIORITY      { $$ = $1; }
+    | TOKEN_TAG           { $$ = $1; }
+    | TOKEN_STATUS        { $$ = $1; }
+    | TOKEN_NAME          { $$ = $1; }
+    | TOKEN_PATH          { $$ = $1; }
+    | TOKEN_TIME          { $$ = $1; }
+    | TOKEN_MTIME         { $$ = $1; }
+    | TOKEN_ANY           { $$ = $1; }
+    | TOKEN_ALLOF         { $$ = $1; }
+    | TOKEN_ANYOF         { $$ = $1; }
+    | TOKEN_AND           { $$ = $1; }
+    | TOKEN_OR            { $$ = $1; }
+    | TOKEN_XOR           { $$ = $1; }
+    | TOKEN_NOT           { $$ = $1; }
+    | TOKEN_ALL           { $$ = $1; }
+    | TOKEN_UNTAGGED      { $$ = $1; }
+    | TOKEN_UNSTATUSED    { $$ = $1; }
+    | TOKEN_UNNAMED       { $$ = $1; }
+    | TOKEN_UNPRIORITIZED { $$ = $1; }
+    | TOKEN_UNDEADLINED   { $$ = $1; }
     ;
 
 string_field:
@@ -261,26 +276,31 @@ any_list:
     ;
 
 any_value:
-    TOKEN_STRING      { $$ = $1; }
-    | TOKEN_TIMESTAMP { $$ = $1; }
-    | TOKEN_NUMBER    { asprintf(&$$, "%d", $1); }
+    TOKEN_STRING          { $$ = $1; }
+    | TOKEN_TIMESTAMP     { $$ = $1; }
+    | TOKEN_NUMBER        { asprintf(&$$, "%d", $1); }
     // keywords
-    | TOKEN_DEADLINE  { $$ = $1; }
-    | TOKEN_PRIORITY  { $$ = $1; }
-    | TOKEN_TAG       { $$ = $1; }
-    | TOKEN_STATUS    { $$ = $1; }
-    | TOKEN_NAME      { $$ = $1; }
-    | TOKEN_PATH      { $$ = $1; }
-    | TOKEN_TIME      { $$ = $1; }
-    | TOKEN_MTIME     { $$ = $1; }
-    | TOKEN_ANY       { $$ = $1; }
-    | TOKEN_ALL       { $$ = $1; }
-    | TOKEN_ALLOF     { $$ = $1; }
-    | TOKEN_ANYOF     { $$ = $1; }
-    | TOKEN_AND       { $$ = $1; }
-    | TOKEN_OR        { $$ = $1; }
-    | TOKEN_XOR       { $$ = $1; }
-    | TOKEN_NOT       { $$ = $1; }
+    | TOKEN_DEADLINE      { $$ = $1; }
+    | TOKEN_PRIORITY      { $$ = $1; }
+    | TOKEN_TAG           { $$ = $1; }
+    | TOKEN_STATUS        { $$ = $1; }
+    | TOKEN_NAME          { $$ = $1; }
+    | TOKEN_PATH          { $$ = $1; }
+    | TOKEN_TIME          { $$ = $1; }
+    | TOKEN_MTIME         { $$ = $1; }
+    | TOKEN_ANY           { $$ = $1; }
+    | TOKEN_ALLOF         { $$ = $1; }
+    | TOKEN_ANYOF         { $$ = $1; }
+    | TOKEN_AND           { $$ = $1; }
+    | TOKEN_OR            { $$ = $1; }
+    | TOKEN_XOR           { $$ = $1; }
+    | TOKEN_NOT           { $$ = $1; }
+    | TOKEN_ALL           { $$ = $1; }
+    | TOKEN_UNTAGGED      { $$ = $1; }
+    | TOKEN_UNSTATUSED    { $$ = $1; }
+    | TOKEN_UNNAMED       { $$ = $1; }
+    | TOKEN_UNPRIORITIZED { $$ = $1; }
+    | TOKEN_UNDEADLINED   { $$ = $1; }
     ;
 
 any_field:

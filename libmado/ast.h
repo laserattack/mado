@@ -5,7 +5,12 @@ typedef enum {
     NODE_BINARY_OP,
     NODE_UNARY_OP,
     NODE_COMPARISON,
-    NODE_ALL
+    NODE_ALL,
+    NODE_UNTAGGED,
+    NODE_UNSTATUSED,
+    NODE_UNNAMED,
+    NODE_UNPRIORITIZED,
+    NODE_UNDEADLINED,
 } Node_Type;
 
 typedef enum { OP_AND,
@@ -86,6 +91,11 @@ AST_Node *create_binary_op(Operator op, AST_Node *left, AST_Node *right);
 AST_Node *create_unary_op(Operator op, AST_Node *expr);
 AST_Node *create_comparison(Comparison_Field field, Comparison_Operator cmp, int int_val, char *str_val);
 AST_Node *create_all();
+AST_Node *create_untagged();
+AST_Node *create_unstatused();
+AST_Node *create_unnamed();
+AST_Node *create_unprioritized();
+AST_Node *create_undeadlined();
 AST_Node *expand_list(Comparison_Field field, Comparison_Operator op,
                       String_List *str_list, Num_List *num_list,
                       ListModifier lm);
