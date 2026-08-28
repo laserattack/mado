@@ -272,7 +272,7 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `time > 20260505T1230 and time < 20260510T` |
 | `mtime`    | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
 | `deadline` | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
-| `any`      | string/timestamp/number  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~` | `any ~ login`, `any = 10` |
+| `any`      | string/timestamp/number  | `>`, `<`, `>=`, `<=`, `=`, `!=`, (alias for `=` if number), `!~` (alias for `!=` if number), `~~` (alias for `=` if number), `!~~` (alias for `!=` if number) | `any ~ login`, `any = 10` |
 | `all`      | special | -                              | `all`                  |
 
 > **Note:** keywords are matched fuzzily. `prio` is interpreted as
@@ -280,7 +280,7 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 
 > **Note 2:** `any` searches across all fields — if the value is a
 > number, it searches all numeric fields; otherwise it searches all
-> text fields
+> text (string/timestamp) fields
 
 > **Note 3:** all operators also work with `anyof(...)` and `allof(...)`.
 > These are syntactic sugar that expand to multiple conditions.
