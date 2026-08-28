@@ -301,7 +301,7 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 > - `tag ~ allof(bug, crit, fix)` is equivalent to `tag ~ bug and tag ~ crit and tag ~ fix`
 
 > **Note 4:** `in [...]` is syntactic sugar for range conditions.
-> It expands to two comparisons joined with `and`.
+> It expands to comparisons joined with `and`.
 > Examples:
 > - `priority in [50..100]` is equivalent to `priority >= 50 and priority <= 100`
 > - `priority in [..50]` is equivalent to `priority <= 50`
