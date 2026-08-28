@@ -566,7 +566,7 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
             const std::string c = filter->comparison.value.str_value;
 
             // number field
-            if (!c.empty() && std::all_of(c.begin(), c.end(), ::isdigit)) {
+            if (!c.empty() && c.size() <= 3 && std::all_of(c.begin(), c.end(), ::isdigit)) {
                 return check_number(priority, atoi(c.c_str()));
             }
 
