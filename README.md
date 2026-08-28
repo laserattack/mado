@@ -270,15 +270,15 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 
 | Keyword | Type    | Operators                      | Example                           |
 |---------|---------|--------------------------------|-----------------------------------|
-| `priority` | number | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~` (alias for `=`), `!~` (alias for `!=`), `~~` (alias for `=`), `!~~` (alias for `!=`) | `priority > 5`, `priority != 10` |
-| `tag`      | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `tag = bug`, `tag ~ crit` |
-| `status`   | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `status = opened`, `status ~ ope` |
-| `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `name = "Fix bug"`, `name ~~ "fx lgn"` |
-| `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `path ~ "/home/user/projects"` |
-| `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `time > 20260505T1230 and time < 20260510T` |
-| `mtime`    | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
-| `deadline` | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
-| `any`      | string/timestamp/number  | `>`, `<`, `>=`, `<=`, `=`, `!=`, (alias for `=` if number), `!~` (alias for `!=` if number), `~~` (alias for `=` if number), `!~~` (alias for `!=` if number) | `any ~ login`, `any = 10` |
+| `priority` | number | all | `priority > 5`, `priority != 10` |
+| `tag`      | string  | all | `tag = bug`, `tag ~ crit` |
+| `status`   | string  | all | `status = opened`, `status ~ ope` |
+| `name`     | string  | all | `name = "Fix bug"`, `name ~~ "fx lgn"` |
+| `path`     | string  | all | `path ~ "/home/user/projects"` |
+| `time`     | timestamp  | all | `time > 20260505T1230 and time < 20260510T` |
+| `mtime`    | timestamp  | all | `mtime > 20260505T1230` |
+| `deadline` | timestamp  | all | `deadline > 20260505T1230 and deadline < 20260510T` |
+| `any`      | string/timestamp/number  | all | `any ~ login`, `any = 10` |
 | `all`      | special | -                              | `all`                  |
 
 > **Note:** keywords are matched fuzzily. `prio` is interpreted as
