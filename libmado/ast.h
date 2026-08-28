@@ -21,7 +21,8 @@ typedef enum {
     CMP_NAME,
     CMP_TIME,
     CMP_DEADLINE,
-    CMP_MTIME
+    CMP_MTIME,
+    CMP_ANY,
 } Comparison_Field;
 
 typedef enum {

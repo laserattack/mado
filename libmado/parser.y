@@ -1,4 +1,5 @@
 %{
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -31,6 +32,7 @@ extern AST_Node *ast_root;
 %token <str> TOKEN_ALL "ALL"
 %token <str> TOKEN_ALLOF "ALLOF"
 %token <str> TOKEN_ANYOF "ANYOF"
+%token <str> TOKEN_ANY "ANY"
 
 %token <str> TOKEN_AND "AND"
 %token <str> TOKEN_OR "OR"
@@ -60,6 +62,7 @@ extern AST_Node *ast_root;
 
 %type <num> cmp_op
 %type <num> string_field
+%type <num> any_field
 %type <num> time_field
 %type <num> number_field
 %type <num> list_modifier
@@ -67,15 +70,18 @@ extern AST_Node *ast_root;
 
 %type <str> string_value
 %type <str> time_value
+%type <str> any_value
 
 %type <node> expr
 %type <node> condition
 %type <node> condition_number
 %type <node> condition_string
 %type <node> condition_time
+%type <node> condition_any
 
 %type <str_list> time_list
 %type <str_list> string_list
+%type <str_list> any_list
 
 %type <num_list> number_list
 
@@ -121,6 +127,7 @@ condition:
     condition_number
     | condition_time
     | condition_string
+    | condition_any
     ;
 
 // number
@@ -204,6 +211,7 @@ string_list:
 
 string_value:
     TOKEN_STRING     { $$ = $1; }
+    // keywords
     | TOKEN_DEADLINE { $$ = $1; }
     | TOKEN_PRIORITY { $$ = $1; }
     | TOKEN_TAG      { $$ = $1; }
@@ -212,6 +220,7 @@ string_value:
     | TOKEN_PATH     { $$ = $1; }
     | TOKEN_TIME     { $$ = $1; }
     | TOKEN_MTIME    { $$ = $1; }
+    | TOKEN_ANY      { $$ = $1; }
     | TOKEN_ALL      { $$ = $1; }
     | TOKEN_ALLOF    { $$ = $1; }
     | TOKEN_ANYOF    { $$ = $1; }
@@ -226,6 +235,52 @@ string_field:
     | TOKEN_STATUS { free($1); $$ = CMP_STATUS; }
     | TOKEN_PATH   { free($1); $$ = CMP_PATH; }
     | TOKEN_NAME   { free($1); $$ = CMP_NAME; }
+    ;
+
+// any
+
+condition_any:
+    any_field cmp_op any_value {
+        $$ = create_comparison($1, $2, 0, $3);
+    }
+    | any_field cmp_op list_modifier TOKEN_LPAREN any_list TOKEN_RPAREN {
+        $$ = expand_list($1, $2, $5, NULL, $3);
+    }
+    ;
+
+any_list:
+    any_value { $$ = create_string_list($1); }
+    | any_list TOKEN_COMMA any_value {
+        append_string($1, $3);
+        $$ = $1;
+    }
+    ;
+
+any_value:
+    TOKEN_STRING      { $$ = $1; }
+    | TOKEN_TIMESTAMP { $$ = $1; }
+    | TOKEN_NUMBER    { asprintf(&$$, "%d", $1); }
+    // keywords
+    | TOKEN_DEADLINE  { $$ = $1; }
+    | TOKEN_PRIORITY  { $$ = $1; }
+    | TOKEN_TAG       { $$ = $1; }
+    | TOKEN_STATUS    { $$ = $1; }
+    | TOKEN_NAME      { $$ = $1; }
+    | TOKEN_PATH      { $$ = $1; }
+    | TOKEN_TIME      { $$ = $1; }
+    | TOKEN_MTIME     { $$ = $1; }
+    | TOKEN_ANY       { $$ = $1; }
+    | TOKEN_ALL       { $$ = $1; }
+    | TOKEN_ALLOF     { $$ = $1; }
+    | TOKEN_ANYOF     { $$ = $1; }
+    | TOKEN_AND       { $$ = $1; }
+    | TOKEN_OR        { $$ = $1; }
+    | TOKEN_XOR       { $$ = $1; }
+    | TOKEN_NOT       { $$ = $1; }
+    ;
+
+any_field:
+    TOKEN_ANY         { free($1); $$ = CMP_ANY; }
     ;
 
 //

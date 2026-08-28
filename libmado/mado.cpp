@@ -451,6 +451,59 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         return result;
     };
 
+    auto check_string = [&](const std::string &v, const std::string &c) -> bool {
+        const std::string vn = normalize_string_field(v);
+        const std::string cn = normalize_string_field(c);
+
+        switch (filter->comparison.cmp) {
+        case CMP_EQ:
+            return vn == cn;
+        case CMP_NE:
+            return vn != cn;
+        case CMP_FUZZY:
+            return fuzzy_match(cn.c_str(), vn.c_str(), cfg->case_insensitive_search) != INT32_MIN;
+        case CMP_NFUZZY:
+            return fuzzy_match(cn.c_str(), vn.c_str(), cfg->case_insensitive_search) == INT32_MIN;
+        case CMP_TILDE:
+            return vn.find(cn) != std::string::npos;
+        case CMP_NTILDE:
+            return vn.find(cn) == std::string::npos;
+        case CMP_GT:
+            return vn > cn;
+        case CMP_LT:
+            return vn < cn;
+        case CMP_GE:
+            return vn >= cn;
+        case CMP_LE:
+            return vn <= cn;
+        default:
+            return false;
+        }
+    };
+
+    auto check_number = [&](uint16_t v, int c) -> bool {
+        switch (filter->comparison.cmp) {
+        case CMP_GT:
+            return v > c;
+        case CMP_LT:
+            return v < c;
+        case CMP_GE:
+            return v >= c;
+        case CMP_LE:
+            return v <= c;
+        case CMP_FUZZY:
+        case CMP_TILDE:
+        case CMP_EQ:
+            return v == c;
+        case CMP_NFUZZY:
+        case CMP_NTILDE:
+        case CMP_NE:
+            return v != c;
+        default:
+            return false;
+        }
+    };
+
     switch (filter->type) {
     case NODE_ALL:
         return true;
@@ -472,78 +525,14 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
     case NODE_COMPARISON: {
         switch (filter->comparison.field) {
         case CMP_PRIORITY: {
-            int cv = filter->comparison.value.int_value;
-            switch (filter->comparison.cmp) {
-            case CMP_GT:
-                return priority > cv;
-            case CMP_LT:
-                return priority < cv;
-            case CMP_GE:
-                return priority >= cv;
-            case CMP_LE:
-                return priority <= cv;
-            case CMP_FUZZY:
-            case CMP_TILDE:
-            case CMP_EQ:
-                return priority == cv;
-            case CMP_NFUZZY:
-            case CMP_NTILDE:
-            case CMP_NE:
-                return priority != cv;
-            default:
-                return false;
-            }
+            const int c = filter->comparison.value.int_value;
+            return check_number(priority, c);
         }
         case CMP_TAG: {
-            const std::string ct = normalize_string_field(filter->comparison.value.str_value);
-
+            const std::string c = filter->comparison.value.str_value;
             for (const auto &tag : tags) {
-                const std::string tag_normalized = normalize_string_field(tag);
-
-                switch (filter->comparison.cmp) {
-                case CMP_EQ:
-                    if (tag_normalized == ct)
-                        return true;
-                    break;
-                case CMP_NE:
-                    if (tag_normalized != ct)
-                        return true;
-                    break;
-                case CMP_FUZZY:
-                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str(), cfg->case_insensitive_search) != INT32_MIN)
-                        return true;
-                    break;
-                case CMP_NFUZZY:
-                    if (fuzzy_match(ct.c_str(), tag_normalized.c_str(), cfg->case_insensitive_search) == INT32_MIN)
-                        return true;
-                    break;
-                case CMP_TILDE:
-                    if (tag_normalized.find(ct) != std::string::npos)
-                        return true;
-                    break;
-                case CMP_NTILDE:
-                    if (tag_normalized.find(ct) == std::string::npos)
-                        return true;
-                    break;
-                case CMP_GT:
-                    if (tag_normalized > ct)
-                        return true;
-                    break;
-                case CMP_LT:
-                    if (tag_normalized < ct)
-                        return true;
-                    break;
-                case CMP_GE:
-                    if (tag_normalized >= ct)
-                        return true;
-                    break;
-                case CMP_LE:
-                    if (tag_normalized <= ct)
-                        return true;
-                    break;
-                default:
-                    break;
-                }
+                if (check_string(tag, c))
+                    return true;
             }
             return false;
         }
@@ -553,59 +542,54 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         case CMP_MTIME:
         case CMP_PATH:
         case CMP_NAME: {
-            const std::string *field = nullptr;
+            const std::string c = filter->comparison.value.str_value;
             const std::string path_str = path.string();
 
             switch (filter->comparison.field) {
             case CMP_STATUS:
-                field = &status;
-                break;
+                return check_string(status, c);
             case CMP_DEADLINE:
-                field = &deadline;
-                break;
+                return check_string(deadline, c);
             case CMP_TIME:
-                field = &time;
-                break;
+                return check_string(time, c);
             case CMP_NAME:
-                field = &name;
-                break;
+                return check_string(name, c);
             case CMP_PATH:
-                field = &path_str;
-                break;
+                return check_string(path_str, c);
             case CMP_MTIME:
-                field = &mtime;
-                break;
+                return check_string(mtime, c);
             default:
                 return false;
             }
+        }
+        case CMP_ANY: {
+            const std::string c = filter->comparison.value.str_value;
 
-            const std::string c = normalize_string_field(filter->comparison.value.str_value);
-            const std::string field_normalized = normalize_string_field(*field);
-
-            switch (filter->comparison.cmp) {
-            case CMP_EQ:
-                return field_normalized == c;
-            case CMP_NE:
-                return field_normalized != c;
-            case CMP_FUZZY:
-                return fuzzy_match(c.c_str(), field_normalized.c_str(), cfg->case_insensitive_search) != INT32_MIN;
-            case CMP_NFUZZY:
-                return fuzzy_match(c.c_str(), field_normalized.c_str(), cfg->case_insensitive_search) == INT32_MIN;
-            case CMP_TILDE:
-                return field_normalized.find(c) != std::string::npos;
-            case CMP_NTILDE:
-                return field_normalized.find(c) == std::string::npos;
-            case CMP_GT:
-                return field_normalized > c;
-            case CMP_LT:
-                return field_normalized < c;
-            case CMP_GE:
-                return field_normalized >= c;
-            case CMP_LE:
-                return field_normalized <= c;
-            default:
-                return false;
+            // number field
+            if (!c.empty() && std::all_of(c.begin(), c.end(), ::isdigit)) {
+                return check_number(priority, atoi(c.c_str()));
             }
+
+            // string field
+            if (check_string(name, c))
+                return true;
+            if (check_string(status, c))
+                return true;
+            if (check_string(path.string(), c))
+                return true;
+            if (check_string(time, c))
+                return true;
+            if (check_string(mtime, c))
+                return true;
+            if (check_string(deadline, c))
+                return true;
+
+            for (const auto &tag : tags) {
+                if (check_string(tag, c))
+                    return true;
+            }
+
+            return false;
         }
         default:
             return false;

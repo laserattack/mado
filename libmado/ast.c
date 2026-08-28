@@ -43,7 +43,8 @@ void ast_free(AST_Node *node) {
             node->comparison.field == CMP_NAME ||
             node->comparison.field == CMP_TIME ||
             node->comparison.field == CMP_DEADLINE ||
-            node->comparison.field == CMP_MTIME) {
+            node->comparison.field == CMP_MTIME ||
+            node->comparison.field == CMP_ANY) {
             free(node->comparison.value.str_value);
         }
         break;
@@ -89,6 +90,8 @@ static const char *comparison_field_to_string(Comparison_Field field) {
         return "deadline";
     case CMP_MTIME:
         return "mtime";
+    case CMP_ANY:
+        return "any";
     default:
         return "unknown";
     }

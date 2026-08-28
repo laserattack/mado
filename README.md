@@ -122,6 +122,10 @@ mado list 'time ~ 20260516' # Entries created on 2026-05-16
 mado list 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
 mado list 'time > 2023 and time < @year+1' # Entries created between 2023 and current year (inclusive)
 
+# Search across all fields
+mado list 'any ~ login' # Finds in string/timestamp fields
+mado list 'any = 10' # Finds in numeric fields
+
 # Find entries with complex conditions
 mado list '(tag = bug or tag = critical) and status = opened and deadline < @now'
 mado list 'not (priority < 3 or status = closed)'
@@ -266,14 +270,19 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 | `name`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `name = "Fix bug"`, `name ~~ "fx lgn"` |
 | `path`     | string  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `path ~ "/home/user/projects"` |
 | `time`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `time > 20260505T1230 and time < 20260510T` |
-| `mtime`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
-| `deadline`     | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
+| `mtime`    | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `mtime > 20260505T1230` |
+| `deadline` | timestamp  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~`           | `deadline > 20260505T1230 and deadline < 20260510T` |
+| `any`      | string/timestamp/number  | `>`, `<`, `>=`, `<=`, `=`, `!=`, `~`, `!~`, `~~`, `!~~` | `any ~ login`, `any = 10` |
 | `all`      | special | -                              | `all`                  |
 
 > **Note:** keywords are matched fuzzily. `prio` is interpreted as
 > `priority`, `stts` as `status`, etc. Exact match is always preferred
 
-> **Note 2:** all operators also work with `anyof(...)` and `allof(...)`.
+> **Note 2:** `any` searches across all fields — if the value is a
+> number, it searches all numeric fields; otherwise it searches all
+> text fields
+
+> **Note 3:** all operators also work with `anyof(...)` and `allof(...)`.
 > These are syntactic sugar that expand to multiple conditions.
 > `anyof(...)` expands with `or`, `allof(...)` expands with `and`.
 > Examples:

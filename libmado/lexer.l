@@ -306,6 +306,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                               {"all",      TOKEN_ALL},
                               {"allof",    TOKEN_ALLOF},
                               {"anyof",    TOKEN_ANYOF},
+                              {"any",      TOKEN_ANY},
                           };
                           static const int n_keywords = sizeof(keywords) / sizeof(keywords[0]);
 
