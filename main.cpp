@@ -128,15 +128,15 @@ static const cmd::Option COMMAND_LIST_OPTIONS[] = {
     {"sort", required_argument, nullptr, 's', "Sort entries (+field,-field,field,...)"},
     {"format", required_argument, nullptr, 'f', "Output format (default, path, jsonl)"},
     {"ignore-case", no_argument, nullptr, 'i', "Case-insensitive search"},
-    {"only-hidden", no_argument, nullptr, 'o', "Show only hidden fields"},
-    {"hide-name", no_argument, nullptr, 'n', "Hide name field"},
-    {"hide-time", no_argument, nullptr, 't', "Hide time field"},
-    {"hide-mtime", no_argument, nullptr, 'm', "Hide mtime field"},
-    {"hide-deadline", no_argument, nullptr, 'd', "Hide deadline field"},
-    {"hide-priority", no_argument, nullptr, 'p', "Hide priority field"},
-    {"hide-status", no_argument, nullptr, 'u', "Hide status field"},
-    {"hide-tags", no_argument, nullptr, 'g', "Hide tags field"},
-    {"hide-path", no_argument, nullptr, 'h', "Hide path field"},
+    {"only-hidden", no_argument, nullptr, 'O', "Show only hidden fields"},
+    {"hide-name", no_argument, nullptr, 'N', "Hide name field"},
+    {"hide-time", no_argument, nullptr, 'T', "Hide time field"},
+    {"hide-mtime", no_argument, nullptr, 'M', "Hide mtime field"},
+    {"hide-deadline", no_argument, nullptr, 'D', "Hide deadline field"},
+    {"hide-priority", no_argument, nullptr, 'P', "Hide priority field"},
+    {"hide-status", no_argument, nullptr, 'S', "Hide status field"},
+    {"hide-tags", no_argument, nullptr, 'G', "Hide tags field"},
+    {"hide-path", no_argument, nullptr, 'H', "Hide path field"},
     {nullptr, 0, nullptr, 0, nullptr}};
 
 static const cmd::Option COMMAND_REMOVE_OPTIONS[] = {
@@ -356,7 +356,7 @@ static int cmd_list(int argc, char **argv) {
 
     opterr = 0;
     while ((opt = getopt_long(argc, argv, short_str.c_str(), gopts.data(), nullptr)) != -1)
-        if (opt == 'o') {
+        if (opt == 'O') {
             only = 1;
             g_mado_config.hide_fields = Mado_Entry_Field::ALL;
         }
@@ -391,30 +391,30 @@ static int cmd_list(int argc, char **argv) {
         case 'i':
             g_mado_config.case_insensitive_search = true;
             break;
-        case 'o':
+        case 'O':
             break;
-        case 'n':
+        case 'N':
             toggle_field(Mado_Entry_Field::NAME);
             break;
-        case 't':
+        case 'T':
             toggle_field(Mado_Entry_Field::TIME);
             break;
-        case 'm':
+        case 'M':
             toggle_field(Mado_Entry_Field::MTIME);
             break;
-        case 'd':
+        case 'D':
             toggle_field(Mado_Entry_Field::DEADLINE);
             break;
-        case 'p':
+        case 'P':
             toggle_field(Mado_Entry_Field::PRIORITY);
             break;
-        case 'u':
+        case 'S':
             toggle_field(Mado_Entry_Field::STATUS);
             break;
-        case 'g':
+        case 'G':
             toggle_field(Mado_Entry_Field::TAGS);
             break;
-        case 'h':
+        case 'H':
             toggle_field(Mado_Entry_Field::PATH);
             break;
         default:
