@@ -31,7 +31,6 @@ extern AST_Node *ast_root;
 %token <str> TOKEN_MTIME "MTIME"
 %token <str> TOKEN_ALLOF "ALLOF"
 %token <str> TOKEN_ANYOF "ANYOF"
-%token <str> TOKEN_RANGE "RANGE"
 %token <str> TOKEN_IN "IN"
 %token <str> TOKEN_ANY "ANY"
 %token <str> TOKEN_ALL "ALL"
@@ -65,6 +64,8 @@ extern AST_Node *ast_root;
 %token TOKEN_RPAREN "RPAREN"
 %token TOKEN_COMMA "COMMA"
 %token TOKEN_DOTDOT "DOTDOT"
+%token TOKEN_LBRACKET "LBRACKET"
+%token TOKEN_RBRACKET "RBRACKET"
 
 %token <num> TOKEN_NUMBER "NUMBER VALUE"
 %token <str> TOKEN_STRING "STRING VALUE"
@@ -156,20 +157,17 @@ condition_number:
     | number_field cmp_op list_modifier TOKEN_LPAREN number_list TOKEN_RPAREN {
         $$ = expand_list(CMP_PRIORITY, $2, NULL, $5, $3);
     }
-    | number_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN number_value TOKEN_DOTDOT number_value TOKEN_RPAREN {
-        $$ = expand_range(CMP_PRIORITY, $5, NULL, $7, NULL);
+    | number_field TOKEN_IN TOKEN_LBRACKET number_value TOKEN_DOTDOT number_value TOKEN_RBRACKET {
+        $$ = expand_range(CMP_PRIORITY, $4, NULL, $6, NULL);
         free($2);
-        free($3);
     }
-    | number_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN TOKEN_DOTDOT number_value TOKEN_RPAREN {
-        $$ = expand_range(CMP_PRIORITY, 0, NULL, $6, NULL);
+    | number_field TOKEN_IN TOKEN_LBRACKET TOKEN_DOTDOT number_value TOKEN_RBRACKET {
+        $$ = expand_range(CMP_PRIORITY, 0, NULL, $5, NULL);
         free($2);
-        free($3);
     }
-    | number_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN number_value TOKEN_DOTDOT TOKEN_RPAREN {
-        $$ = expand_range(CMP_PRIORITY, $5, NULL, 999, NULL);
+    | number_field TOKEN_IN TOKEN_LBRACKET number_value TOKEN_DOTDOT TOKEN_RBRACKET {
+        $$ = expand_range(CMP_PRIORITY, $4, NULL, 999, NULL);
         free($2);
-        free($3);
     }
     ;
 
@@ -200,20 +198,17 @@ condition_time:
     | time_field cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
         $$ = expand_list($1, $2, $5, NULL, $3);
     }
-    | time_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN time_value TOKEN_DOTDOT time_value TOKEN_RPAREN {
-        $$ = expand_range($1, 0, $5, 0, $7);
+    | time_field TOKEN_IN TOKEN_LBRACKET time_value TOKEN_DOTDOT time_value TOKEN_RBRACKET {
+        $$ = expand_range($1, 0, $4, 0, $6);
         free($2);
-        free($3);
     }
-    | time_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN TOKEN_DOTDOT time_value TOKEN_RPAREN {
-        $$ = create_comparison($1, CMP_LE, 0, $6);
+    | time_field TOKEN_IN TOKEN_LBRACKET TOKEN_DOTDOT time_value TOKEN_RBRACKET {
+        $$ = create_comparison($1, CMP_LE, 0, $5);
         free($2);
-        free($3);
     }
-    | time_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN time_value TOKEN_DOTDOT TOKEN_RPAREN {
-        $$ = create_comparison($1, CMP_GE, 0, $5);
+    | time_field TOKEN_IN TOKEN_LBRACKET time_value TOKEN_DOTDOT TOKEN_RBRACKET {
+        $$ = create_comparison($1, CMP_GE, 0, $4);
         free($2);
-        free($3);
     }
     ;
 
@@ -246,20 +241,17 @@ condition_string:
     | string_field cmp_op list_modifier TOKEN_LPAREN string_list TOKEN_RPAREN {
         $$ = expand_list($1, $2, $5, NULL, $3);
     }
-    | string_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN string_value TOKEN_DOTDOT string_value TOKEN_RPAREN {
-        $$ = expand_range($1, 0, $5, 0, $7);
+    | string_field TOKEN_IN TOKEN_LBRACKET string_value TOKEN_DOTDOT string_value TOKEN_RBRACKET {
+        $$ = expand_range($1, 0, $4, 0, $6);
         free($2);
-        free($3);
     }
-    | string_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN TOKEN_DOTDOT string_value TOKEN_RPAREN {
-        $$ = create_comparison($1, CMP_LE, 0, $6);
+    | string_field TOKEN_IN TOKEN_LBRACKET TOKEN_DOTDOT string_value TOKEN_RBRACKET {
+        $$ = create_comparison($1, CMP_LE, 0, $5);
         free($2);
-        free($3);
     }
-    | string_field TOKEN_IN TOKEN_RANGE TOKEN_LPAREN string_value TOKEN_DOTDOT TOKEN_RPAREN {
-        $$ = create_comparison($1, CMP_GE, 0, $5);
+    | string_field TOKEN_IN TOKEN_LBRACKET string_value TOKEN_DOTDOT TOKEN_RBRACKET {
+        $$ = create_comparison($1, CMP_GE, 0, $4);
         free($2);
-        free($3);
     }
     ;
 
@@ -285,7 +277,6 @@ string_value:
     | TOKEN_ANY           { $$ = $1; }
     | TOKEN_ALLOF         { $$ = $1; }
     | TOKEN_ANYOF         { $$ = $1; }
-    | TOKEN_RANGE         { $$ = $1; }
     | TOKEN_IN            { $$ = $1; }
     | TOKEN_AND           { $$ = $1; }
     | TOKEN_OR            { $$ = $1; }
@@ -341,7 +332,6 @@ any_value:
     | TOKEN_ANY           { $$ = $1; }
     | TOKEN_ALLOF         { $$ = $1; }
     | TOKEN_ANYOF         { $$ = $1; }
-    | TOKEN_RANGE         { $$ = $1; }
     | TOKEN_IN            { $$ = $1; }
     | TOKEN_AND           { $$ = $1; }
     | TOKEN_OR            { $$ = $1; }

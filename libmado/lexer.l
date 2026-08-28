@@ -266,6 +266,8 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 ")"             { yycolno += yyleng; return TOKEN_RPAREN; }
 ","             { yycolno += yyleng; return TOKEN_COMMA; }
 ".."            { yycolno += yyleng; return TOKEN_DOTDOT; }
+"["             { yycolno += yyleng; return TOKEN_LBRACKET; }
+"]"             { yycolno += yyleng; return TOKEN_RBRACKET; }
 
 ">"             { yycolno += yyleng; return TOKEN_GT; }
 "<"             { yycolno += yyleng; return TOKEN_LT; }
@@ -319,7 +321,6 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                               {"not",          TOKEN_NOT},
                               {"allof",        TOKEN_ALLOF},
                               {"anyof",        TOKEN_ANYOF},
-                              {"range",        TOKEN_RANGE},
                               {"in",           TOKEN_IN},
                               {"any",          TOKEN_ANY},
                               {"all",          TOKEN_ALL},
