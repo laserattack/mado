@@ -68,7 +68,7 @@ const char *mado_strerror(Mado_Error err) {
     }
 }
 
-// ================ PRINT HELPERS
+// ================ HELPERS
 
 static void print_json_string(const std::string &str, std::ostream &os) {
     os << '"';
@@ -85,6 +85,29 @@ static void print_json_string(const std::string &str, std::ostream &os) {
         }
     }
     os << '"';
+}
+
+static Comparison_Field mado_field_to_ast_field(Mado_Entry_Field field) {
+    switch (field) {
+    case Mado_Entry_Field::PRIORITY:
+        return CMP_PRIORITY;
+    case Mado_Entry_Field::TAGS:
+        return CMP_TAG;
+    case Mado_Entry_Field::STATUS:
+        return CMP_STATUS;
+    case Mado_Entry_Field::PATH:
+        return CMP_PATH;
+    case Mado_Entry_Field::NAME:
+        return CMP_NAME;
+    case Mado_Entry_Field::TIME:
+        return CMP_TIME;
+    case Mado_Entry_Field::DEADLINE:
+        return CMP_DEADLINE;
+    case Mado_Entry_Field::MTIME:
+        return CMP_MTIME;
+    default:
+        return CMP_ANY;
+    }
 }
 
 // ================ ENTRY
@@ -152,22 +175,30 @@ Mado_Entry::create(const Mado_Config *cfg,
     if (err != Mado_Error::OK)
         return {nullptr, err};
 
-    return {parse(cfg, entry_path), Mado_Error::OK};
+    return {parse(cfg, entry_path, nullptr), Mado_Error::OK};
 }
 
 std::unique_ptr<Mado_Entry>
 Mado_Entry::parse(const Mado_Config *cfg,
-                  const std::filesystem::path &entry_dir) {
+                  const std::filesystem::path &entry_dir,
+                  const AST_Node *filter) {
 
-    auto should_parse_field = [&cfg](Mado_Entry_Field field) {
+    auto should_parse_field = [&](Mado_Entry_Field field) {
         bool hidden = has_flag(cfg->hide_fields, field);
         bool used_in_sorting = false;
+
+        // If there is no filter, then all fields are parsed
+        bool used_in_query = filter && ast_uses_field(filter, mado_field_to_ast_field(field));
+
+        // used in sorting?
         for (const auto &criterion : cfg->sort_criteria) {
             if (criterion.field == field)
                 used_in_sorting = true;
         }
-        if (hidden && !used_in_sorting)
+
+        if (hidden && !used_in_sorting && !used_in_query)
             return false;
+
         return true;
     };
 
@@ -627,7 +658,8 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
 
 Mado_Entries
 Mado_Entries::get_all(const Mado_Config *cfg,
-                      const std::filesystem::path &main_dir) {
+                      const std::filesystem::path &main_dir,
+                      const AST_Node *filter) {
 
     auto is_entry_dir = [](const std::string &s) {
         return s.size() == 15 &&
@@ -658,7 +690,7 @@ Mado_Entries::get_all(const Mado_Config *cfg,
         std::for_each(std::execution::par, dirs.begin(), dirs.end(),
                       [&](const auto &dir) {
                           size_t idx = &dir - dirs.data();
-                          entries[idx] = Mado_Entry::parse(cfg, dir);
+                          entries[idx] = Mado_Entry::parse(cfg, dir, filter);
                       });
 
         for (auto &entry : entries) {
@@ -668,7 +700,7 @@ Mado_Entries::get_all(const Mado_Config *cfg,
         }
     } else {
         for (const auto &dir : dirs) {
-            auto entry = Mado_Entry::parse(cfg, dir);
+            auto entry = Mado_Entry::parse(cfg, dir, filter);
             if (entry) {
                 result.entries_.push_back(std::move(entry));
             }
@@ -892,7 +924,7 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     if (err != Mado_Error::OK)
         return err;
 
-    auto entries = Mado_Entries::get_all(cfg, main_dir_path);
+    auto entries = Mado_Entries::get_all(cfg, main_dir_path, nullptr);
 
     struct EntryCounts {
         std::map<std::string, int> status_counts;

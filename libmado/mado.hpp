@@ -118,7 +118,9 @@ class Mado_Entry {
     create(const Mado_Config *cfg, const std::filesystem::path &main_dir);
 
     static std::unique_ptr<Mado_Entry>
-    parse(const Mado_Config *cfg, const std::filesystem::path &entry_dir);
+    parse(const Mado_Config *cfg,
+          const std::filesystem::path &entry_dir,
+          const AST_Node *filter);
 };
 
 // ================ ENTRIES
@@ -138,7 +140,9 @@ class Mado_Entries {
     auto begin() const { return entries_.begin(); }
     auto end() const { return entries_.end(); }
 
-    static Mado_Entries get_all(const Mado_Config *cfg, const std::filesystem::path &main_dir);
+    static Mado_Entries get_all(const Mado_Config *cfg,
+                                const std::filesystem::path &main_dir,
+                                const AST_Node *filter);
 
   private:
     std::vector<std::unique_ptr<Mado_Entry>> entries_;

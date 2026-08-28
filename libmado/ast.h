@@ -1,6 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
+#include <stdbool.h>
+
 typedef enum {
     NODE_BINARY_OP,
     NODE_UNARY_OP,
@@ -84,6 +86,7 @@ typedef enum { LM_ALLOF,
                LM_ANYOF } ListModifier;
 
 AST_Node *parse(const char *query);
+bool ast_uses_field(const AST_Node *node, Comparison_Field field);
 void ast_free(AST_Node *node);
 void ast_print(AST_Node *node, int depth);
 

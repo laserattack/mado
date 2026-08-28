@@ -438,7 +438,7 @@ static int cmd_list(int argc, char **argv) {
         return mado_print_error(err, "finding main directory");
     }
 
-    Mado_Entries::get_all(&g_mado_config, main_dir)
+    Mado_Entries::get_all(&g_mado_config, main_dir, filter.get())
         .filter(&g_mado_config, filter.get())
         .sort(&g_mado_config)
         .print(&g_mado_config);
@@ -477,7 +477,7 @@ static int cmd_remove(int argc, char **argv) {
         return mado_print_error(err, "finding main directory");
     }
 
-    auto removed = Mado_Entries::get_all(&g_mado_config, main_dir)
+    auto removed = Mado_Entries::get_all(&g_mado_config, main_dir, filter.get())
                        .filter(&g_mado_config, filter.get())
                        .remove();
 

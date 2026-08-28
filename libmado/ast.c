@@ -23,6 +23,47 @@ AST_Node *parse(const char *query) {
     return ast_root;
 }
 
+bool ast_uses_field(const AST_Node *node, Comparison_Field field) {
+    if (!node)
+        return false;
+
+    switch (node->type) {
+    case NODE_BINARY_OP:
+        return ast_uses_field(node->binary.left, field) ||
+               ast_uses_field(node->binary.right, field);
+
+    case NODE_UNARY_OP:
+        return ast_uses_field(node->unary.expr, field);
+
+    case NODE_COMPARISON:
+        if (node->comparison.field == field)
+            return true;
+        if (node->comparison.field == CMP_ANY)
+            return true;
+        return false;
+
+    case NODE_ALL:
+        return false;
+
+    case NODE_UNTAGGED:
+        return field == CMP_TAG;
+
+    case NODE_UNSTATUSED:
+        return field == CMP_STATUS;
+
+    case NODE_UNNAMED:
+        return field == CMP_NAME;
+
+    case NODE_UNPRIORITIZED:
+        return field == CMP_PRIORITY;
+
+    case NODE_UNDEADLINED:
+        return field == CMP_DEADLINE;
+    }
+
+    return false;
+}
+
 void ast_free(AST_Node *node) {
     if (!node)
         return;
