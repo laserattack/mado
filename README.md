@@ -300,6 +300,15 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 > - `status = anyof(opened, reopened)` is equivalent to `status = opened or status = reopened`
 > - `tag ~ allof(bug, crit, fix)` is equivalent to `tag ~ bug and tag ~ crit and tag ~ fix`
 
+> **Note 4:** `in range(...)` is syntactic sugar for range conditions.
+> It expands to two comparisons joined with `and`.
+> Examples:
+> - `priority in range(50..100)` is equivalent to `priority >= 50 and priority <= 100`
+> - `priority in range(..50)` is equivalent to `priority <= 50`
+> - `priority in range(50..)` is equivalent to `priority >= 50`
+> - `deadline in range(@today..@today+7)` is equivalent to `deadline >= @today and deadline <= @today+7`
+> - `name in range(a..z)` is equivalent to `name >= a and name <= z`
+
 ### Macros
 
 Macros start with `@` and are resolved at tokenize time — the value is
