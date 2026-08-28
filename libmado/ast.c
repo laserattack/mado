@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -262,6 +263,22 @@ AST_Node *create_undeadlined() {
     AST_Node *node = malloc(sizeof(AST_Node));
     node->type = NODE_UNDEADLINED;
     return node;
+}
+
+AST_Node *expand_range(Comparison_Field field,
+                       int low_num, char *low_str,
+                       int high_num, char *high_str) {
+    bool is_num = (low_str == NULL && high_str == NULL);
+
+    AST_Node *left = is_num
+                         ? create_comparison(field, CMP_GE, low_num, NULL)
+                         : create_comparison(field, CMP_GE, 0, low_str);
+
+    AST_Node *right = is_num
+                          ? create_comparison(field, CMP_LE, high_num, NULL)
+                          : create_comparison(field, CMP_LE, 0, high_str);
+
+    return create_binary_op(OP_AND, left, right);
 }
 
 AST_Node *expand_list(Comparison_Field field, Comparison_Operator op,

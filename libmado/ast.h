@@ -96,6 +96,9 @@ AST_Node *create_unstatused();
 AST_Node *create_unnamed();
 AST_Node *create_unprioritized();
 AST_Node *create_undeadlined();
+AST_Node *expand_range(Comparison_Field field,
+                       int low_num, char *low_str,
+                       int high_num, char *high_str);
 AST_Node *expand_list(Comparison_Field field, Comparison_Operator op,
                       String_List *str_list, Num_List *num_list,
                       ListModifier lm);
