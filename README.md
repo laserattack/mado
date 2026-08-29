@@ -397,20 +397,20 @@ This will produce `./release/mado`
 
 ## Performance
 
-Time to list `100,043` entries with filter query: `~3.5s`
-
-Time to list `100,043` entries with filter query and `--parallel`
-mode: `~1.3s`
+Time to list `100,000` entries with filter query: `~1.2s`
 
 > **Note:** benchmarked on AMD Ryzen 5 5600H (6 cores, 12 threads,
 > 3.30 GHz base) with NVMe SSD
 
 > **Note 2:** Performance can be improved by hiding unnecessary
-> fields. For example, hiding `mtime` (`--hide-mtime`) eliminates one
-> `stat()` system call per entry file, reducing I/O overhead
+> fields. A field is considered unnecessary if it is hidden, not used
+> in sorting, and not referenced in the query. Such fields are skipped
+> during parsing. For example, hiding `mtime` (`--hide-mtime`)
+> eliminates one `stat()` system call per entry file, reducing I/O
+> overhead
 
-Time to list `100,043` entries with filter query, `--parallel` mode
-and `--hide-mtime`: `~1s`
+Time to list `100,000` entries with filter query and `--hide-mtime`:
+`~0.9s`
 
 ## Interfaces
 
