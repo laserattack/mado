@@ -134,9 +134,19 @@ mado list 'not (priority < 3 or status = closed)'
 mado list '(priority > 5 and tag = urgent) or status = reopened'
 
 # Syntactic sugar for matching multiple values
-mado list 'status = anyof(opened, reopened)' # Status equals "opened" OR "reopened"
-mado list 'priority = anyof(10, 20, 30)' # Priority equals 10 OR 20 OR 30
-mado list 'tag = allof(bug, critical)' # Entry has BOTH "bug" AND "critical" tags
+mado list 'status in (opened, reopened)' # Status equals "opened" OR "reopened"
+mado list 'priority in (10, 20, 30)' # Priority equals 10 OR 20 OR 30
+mado list 'tag has (bug, critical)' # Entry has BOTH "bug" AND "critical" tags
+mado list 'tag ~~ anyof(lgn, fix, err)' # Tag fuzzy matches ANY of: "lgn", "fix", "err"
+mado list 'tag ^~ allof("namespace1:","namespace2:")' # Entry has tags starting with ALL of the given prefixes
+
+# Syntactic sugar for ranges
+mado list 'priority in [50..100]' # Priority between 50 and 100 inclusive
+mado list 'priority in [..50]' # Priority less than or equal to 50
+mado list 'priority in [50..]' # Priority greater than or equal to 50
+mado list 'deadline in [@today..@today+7]' # Deadline within next 7 days
+mado list 'time in [20260601..20260630]' # Created in June 2026
+mado list 'name in [h..z]' # Name starts with a letter from 'h' to 'z'
 
 # Sort results
 mado list -s +priority 'tag = bug' # bugs sorted by priority
@@ -299,6 +309,10 @@ Precedence (from highest to lowest): `not` > `and` > `xor` > `or`
 > Examples:
 > - `status = anyof(opened, reopened)` is equivalent to `status = opened or status = reopened`
 > - `tag ~ allof(bug, crit, fix)` is equivalent to `tag ~ bug and tag ~ crit and tag ~ fix`
+>
+> For `=` operator there are shorter alternatives:
+> - `status in (opened, reopened)` is equivalent to `status = anyof(opened, reopened)`
+> - `tag has (bug, crit)` is equivalent to `tag = allof(bug, crit)`
 
 > **Note 4:** `in [...]` is syntactic sugar for range conditions.
 > It expands to comparisons joined with `and`.

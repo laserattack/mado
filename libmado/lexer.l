@@ -322,6 +322,7 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
                               {"allof",        TOKEN_ALLOF},
                               {"anyof",        TOKEN_ANYOF},
                               {"in",           TOKEN_IN},
+                              {"has",          TOKEN_HAS},
                               {"any",          TOKEN_ANY},
                               {"all",          TOKEN_ALL},
                               {"untagged",     TOKEN_UNTAGGED},

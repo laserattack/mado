@@ -32,6 +32,7 @@ extern AST_Node *ast_root;
 %token <str> TOKEN_ALLOF "ALLOF"
 %token <str> TOKEN_ANYOF "ANYOF"
 %token <str> TOKEN_IN "IN"
+%token <str> TOKEN_HAS "HAS"
 %token <str> TOKEN_ANY "ANY"
 %token <str> TOKEN_ALL "ALL"
 %token <str> TOKEN_UNTAGGED "UNTAGGED"
@@ -157,6 +158,14 @@ condition_number:
     | number_field cmp_op list_modifier TOKEN_LPAREN number_list TOKEN_RPAREN {
         $$ = expand_list(CMP_PRIORITY, $2, NULL, $5, $3);
     }
+    | number_field TOKEN_IN TOKEN_LPAREN number_list TOKEN_RPAREN {
+        $$ = expand_list(CMP_PRIORITY, CMP_EQ, NULL, $4, LM_ANYOF);
+        free($2);
+    }
+    | number_field TOKEN_HAS TOKEN_LPAREN number_list TOKEN_RPAREN {
+        $$ = expand_list(CMP_PRIORITY, CMP_EQ, NULL, $4, LM_ALLOF);
+        free($2);
+    }
     | number_field TOKEN_IN TOKEN_LBRACKET number_value TOKEN_DOTDOT number_value TOKEN_RBRACKET {
         $$ = expand_range(CMP_PRIORITY, $4, NULL, $6, NULL);
         free($2);
@@ -197,6 +206,14 @@ condition_time:
     }
     | time_field cmp_op list_modifier TOKEN_LPAREN time_list TOKEN_RPAREN {
         $$ = expand_list($1, $2, $5, NULL, $3);
+    }
+    | time_field TOKEN_IN TOKEN_LPAREN time_list TOKEN_RPAREN {
+        $$ = expand_list($1, CMP_EQ, $4, NULL, LM_ANYOF);
+        free($2);
+    }
+    | time_field TOKEN_HAS TOKEN_LPAREN time_list TOKEN_RPAREN {
+        $$ = expand_list($1, CMP_EQ, $4, NULL, LM_ALLOF);
+        free($2);
     }
     | time_field TOKEN_IN TOKEN_LBRACKET time_value TOKEN_DOTDOT time_value TOKEN_RBRACKET {
         $$ = expand_range($1, 0, $4, 0, $6);
@@ -241,6 +258,14 @@ condition_string:
     | string_field cmp_op list_modifier TOKEN_LPAREN string_list TOKEN_RPAREN {
         $$ = expand_list($1, $2, $5, NULL, $3);
     }
+    | string_field TOKEN_IN TOKEN_LPAREN string_list TOKEN_RPAREN {
+        $$ = expand_list($1, CMP_EQ, $4, NULL, LM_ANYOF);
+        free($2);
+    }
+    | string_field TOKEN_HAS TOKEN_LPAREN string_list TOKEN_RPAREN {
+        $$ = expand_list($1, CMP_EQ, $4, NULL, LM_ALLOF);
+        free($2);
+    }
     | string_field TOKEN_IN TOKEN_LBRACKET string_value TOKEN_DOTDOT string_value TOKEN_RBRACKET {
         $$ = expand_range($1, 0, $4, 0, $6);
         free($2);
@@ -278,6 +303,7 @@ string_value:
     | TOKEN_ALLOF         { $$ = $1; }
     | TOKEN_ANYOF         { $$ = $1; }
     | TOKEN_IN            { $$ = $1; }
+    | TOKEN_HAS           { $$ = $1; }
     | TOKEN_AND           { $$ = $1; }
     | TOKEN_OR            { $$ = $1; }
     | TOKEN_XOR           { $$ = $1; }
@@ -333,6 +359,7 @@ any_value:
     | TOKEN_ALLOF         { $$ = $1; }
     | TOKEN_ANYOF         { $$ = $1; }
     | TOKEN_IN            { $$ = $1; }
+    | TOKEN_HAS           { $$ = $1; }
     | TOKEN_AND           { $$ = $1; }
     | TOKEN_OR            { $$ = $1; }
     | TOKEN_XOR           { $$ = $1; }
