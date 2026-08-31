@@ -641,7 +641,9 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
 
             // number field
             if (!c.empty() && c.size() <= 3 && std::all_of(c.begin(), c.end(), ::isdigit)) {
-                return check_number(priority, atoi(c.c_str()));
+                if (check_number(priority, atoi(c.c_str()))) {
+                    return true;
+                }
             }
 
             // string field
