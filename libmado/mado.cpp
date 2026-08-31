@@ -18,6 +18,7 @@
 
 extern "C" {
 #include "fuzzy_match.h"
+#include "glob.h"
 #include "utils.h" // impl in lexer.l
 }
 
@@ -483,6 +484,18 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         return result;
     };
 
+    auto check_glob = [&](const std::string &v, const std::string &p) -> int {
+        Glob glob = {};
+        Glob_Result result = glob_compile(p.c_str(), &glob);
+        if (result.error) {
+            free(glob.items);
+            return -1;
+        }
+        bool match = glob_match(v.c_str(), v.size(), glob.items, glob.count);
+        free(glob.items);
+        return match ? 1 : 0;
+    };
+
     auto check_string = [&](const std::string &v, const std::string &c) -> bool {
         const std::string vn = normalize_string_field(v);
         const std::string cn = normalize_string_field(c);
@@ -508,6 +521,10 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
             return vn.size() >= cn.size() && vn.compare(vn.size() - cn.size(), cn.size(), cn) == 0;
         case CMP_NENDS:
             return !(vn.size() >= cn.size() && vn.compare(vn.size() - cn.size(), cn.size(), cn) == 0);
+        case CMP_GLOB:
+            return check_glob(vn, cn) == 1;
+        case CMP_NGLOB:
+            return check_glob(vn, cn) == 0;
         case CMP_GT:
             return vn > cn;
         case CMP_LT:
@@ -535,12 +552,14 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
         case CMP_SUBSTR:
         case CMP_ENDS:
         case CMP_STARTS:
+        case CMP_GLOB:
         case CMP_EQ:
             return v == c;
         case CMP_NFUZZY:
         case CMP_NSUBSTR:
         case CMP_NSTARTS:
         case CMP_NENDS:
+        case CMP_NGLOB:
         case CMP_NE:
             return v != c;
         default:

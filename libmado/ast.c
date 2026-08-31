@@ -174,6 +174,10 @@ static const char *comparison_operator_to_string(Comparison_Operator op) {
         return "ENDS";
     case CMP_NENDS:
         return "NENDS";
+    case CMP_GLOB:
+        return "GLOB";
+    case CMP_NGLOB:
+        return "NGLOB";
     default:
         return "UNKNOWN";
     }

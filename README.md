@@ -115,6 +115,11 @@ mado list 'name ~ "fix login"' # multiple words — quotes required
 mado list 'name ^~ "Fix"' # Starts with "Fix"
 mado list 'name !~$ "bug"' # NOT ends with "bug"
 
+# Glob patterns (wildcards)
+mado list 'name %~ "add*"' # Names starting with "add"
+mado list 'name !%~ "temp*"' # Names NOT starting with "temp"
+mado list 'name %~ "add\\*"' # Names literally "add*"
+
 # Filter by entry name (fuzzy match)
 mado list 'name ~~ "fx lgn b"' # Finds "Fix login bug"
 mado list 'name !~~ lgn' # Entries that do NOT fuzzy match
@@ -254,6 +259,8 @@ keywords
 | `^!~` or `!~^` | Not starts with | For numbers: alias for `!=` |
 | `$~` or `~$` | Ends with | For numbers: alias for `=` |
 | `$!~` or `!~$` | Not ends with | For numbers: alias for `!=` |
+| `%~` | Glob match (wildcard) | For numbers: alias for `=` |
+| `!%~` | Not glob match | For numbers: alias for `!=` |
 | `~~` | Fuzzy match | For numbers: alias for `=` |
 | `!~~` | Not fuzzy match | For numbers: alias for `!=` |
 
@@ -459,3 +466,5 @@ sections, direct deletion from the buffer, etc
   inspiration
 - [philj56/fuzzy-match](https://github.com/philj56/fuzzy-match) —
   fuzzy matching algorithm used in the query language
+- Based on glob implementation from
+  [Ciremun/password-manager](https://github.com/Ciremun/password-manager)

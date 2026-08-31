@@ -56,10 +56,12 @@ extern AST_Node *ast_root;
 %token TOKEN_NFUZZY "NFUZZY"
 %token TOKEN_SUBSTR "SUBSTR"
 %token TOKEN_NSUBSTR "NSUBSTR"
-%token TOKEN_TOKEN_STARTS "STARTS"
-%token TOKEN_TOKEN_NSTARTS "NSTARTS"
-%token TOKEN_TOKEN_ENDS "ENDS"
-%token TOKEN_TOKEN_NENDS "NENDS"
+%token TOKEN_STARTS "STARTS"
+%token TOKEN_NSTARTS "NSTARTS"
+%token TOKEN_ENDS "ENDS"
+%token TOKEN_NENDS "NENDS"
+%token TOKEN_GLOB "GLOB"
+%token TOKEN_NGLOB "NGLOB"
 
 %token TOKEN_LPAREN "LPAREN"
 %token TOKEN_RPAREN "RPAREN"
@@ -385,10 +387,12 @@ cmp_op:
     | TOKEN_NFUZZY        { $$ = CMP_NFUZZY; }
     | TOKEN_SUBSTR        { $$ = CMP_SUBSTR; }
     | TOKEN_NSUBSTR       { $$ = CMP_NSUBSTR; }
-    | TOKEN_TOKEN_STARTS  { $$ = CMP_STARTS; }
-    | TOKEN_TOKEN_NSTARTS { $$ = CMP_NSTARTS; }
-    | TOKEN_TOKEN_ENDS    { $$ = CMP_ENDS; }
-    | TOKEN_TOKEN_NENDS   { $$ = CMP_NENDS; }
+    | TOKEN_STARTS        { $$ = CMP_STARTS; }
+    | TOKEN_NSTARTS       { $$ = CMP_NSTARTS; }
+    | TOKEN_ENDS          { $$ = CMP_ENDS; }
+    | TOKEN_NENDS         { $$ = CMP_NENDS; }
+    | TOKEN_GLOB          { $$ = CMP_GLOB; }
+    | TOKEN_NGLOB         { $$ = CMP_NGLOB; }
     | TOKEN_GT            { $$ = CMP_GT; }
     | TOKEN_LT            { $$ = CMP_LT; }
     | TOKEN_GE            { $$ = CMP_GE; }

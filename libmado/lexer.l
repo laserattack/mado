@@ -279,15 +279,18 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 "~~"            { yycolno += yyleng; return TOKEN_FUZZY; }
 "!~~"           { yycolno += yyleng; return TOKEN_NFUZZY; }
 
-"^~"            { yycolno += yyleng; return TOKEN_TOKEN_STARTS; }
-"^!~"           { yycolno += yyleng; return TOKEN_TOKEN_NSTARTS; }
-"~^"            { yycolno += yyleng; return TOKEN_TOKEN_STARTS; }
-"!~^"           { yycolno += yyleng; return TOKEN_TOKEN_NSTARTS; }
+"^~"            { yycolno += yyleng; return TOKEN_STARTS; }
+"^!~"           { yycolno += yyleng; return TOKEN_NSTARTS; }
+"~^"            { yycolno += yyleng; return TOKEN_STARTS; }
+"!~^"           { yycolno += yyleng; return TOKEN_NSTARTS; }
 
-"$~"            { yycolno += yyleng; return TOKEN_TOKEN_ENDS; }
-"$!~"           { yycolno += yyleng; return TOKEN_TOKEN_NENDS; }
-"~$"            { yycolno += yyleng; return TOKEN_TOKEN_ENDS; }
-"!~$"           { yycolno += yyleng; return TOKEN_TOKEN_NENDS; }
+"$~"            { yycolno += yyleng; return TOKEN_ENDS; }
+"$!~"           { yycolno += yyleng; return TOKEN_NENDS; }
+"~$"            { yycolno += yyleng; return TOKEN_ENDS; }
+"!~$"           { yycolno += yyleng; return TOKEN_NENDS; }
+
+"%~"            { yycolno += yyleng; return TOKEN_GLOB; }
+"!%~"           { yycolno += yyleng; return TOKEN_NGLOB; }
 
 "~"             { yycolno += yyleng; return TOKEN_SUBSTR; }
 "!~"            { yycolno += yyleng; return TOKEN_NSUBSTR; }

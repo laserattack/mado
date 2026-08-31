@@ -47,6 +47,8 @@ typedef enum {
     CMP_NSTARTS,
     CMP_ENDS,
     CMP_NENDS,
+    CMP_GLOB,
+    CMP_NGLOB,
 } Comparison_Operator;
 
 typedef struct AST_Node {
