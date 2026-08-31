@@ -264,6 +264,16 @@ keywords
 | `$~` | Ends with | For numbers: alias for `=` |
 | `!$~` | Not ends with | For numbers: alias for `!=` |
 
+Glob wildcards:
+
+| Wildcard | Description                                         | Example  | Matches                      | Does not match           |
+|----------|-----------------------------------------------------|----------|------------------------------|--------------------------|
+| `*`      | Matches any number of any characters including none | `Law*`   | `Law`, `Laws`, or `Lawyer`   | `GrokLaw`, `La`, or `aw` |
+| `?`      | Matches any single character                        | `?at`    | `Cat`, `cat`, `Bat` or `bat` | `at`                     |
+| `[abc]`  | Matches one character given in the bracket          | `[CB]at` | `Cat` or `Bat`               | `cat`, `bat` or `CBat`   |
+
+> **Note:** `[a-z]` range syntax is not supported yet
+
 ### Logical Operators
 
 | Operator | Description |
