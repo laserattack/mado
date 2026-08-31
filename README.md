@@ -130,8 +130,8 @@ mado list 'time > 20260516T12' # Entries created after 2026-05-16 12:00:00
 mado list 'time > 2023 and time < @year+1' # Entries created between 2023 and current year (inclusive)
 
 # Search across all fields
-mado list 'any ~ login' # Finds in string, timestamp fields
-mado list 'any ~ 10' # Finds in numeric, string, timestamp fields
+mado list 'any ~ login'
+mado list 'any ~ 10'
 
 # Find entries with complex conditions
 mado list '(tag = bug or tag = critical) and status = opened and deadline < @now'
@@ -463,6 +463,6 @@ sections, direct deletion from the buffer, etc
   compiler](https://youtu.be/8NdRGmp70Go) — the original idea and
   inspiration
 - [philj56/fuzzy-match](https://github.com/philj56/fuzzy-match) —
-  fuzzy matching algorithm used in the query language
-- Based on glob implementation from
+  fuzzy matching algorithm
+- Glob implementation from
   [Ciremun/password-manager](https://github.com/Ciremun/password-manager)
