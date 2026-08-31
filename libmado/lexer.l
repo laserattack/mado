@@ -273,28 +273,27 @@ MACRO              @{IDENT}({WHITESPACE}*[+-]{WHITESPACE}*[0-9]{1,6})?
 "<"             { yycolno += yyleng; return TOKEN_LT; }
 ">="            { yycolno += yyleng; return TOKEN_GE; }
 "<="            { yycolno += yyleng; return TOKEN_LE; }
+
 "="             { yycolno += yyleng; return TOKEN_EQ; }
 "!="            { yycolno += yyleng; return TOKEN_NE; }
 
 "~~"            { yycolno += yyleng; return TOKEN_FUZZY; }
 "!~~"           { yycolno += yyleng; return TOKEN_NFUZZY; }
-
-"^~"            { yycolno += yyleng; return TOKEN_STARTS; }
-"^!~"           { yycolno += yyleng; return TOKEN_NSTARTS; }
-"~^"            { yycolno += yyleng; return TOKEN_STARTS; }
-"!~^"           { yycolno += yyleng; return TOKEN_NSTARTS; }
-
-"$~"            { yycolno += yyleng; return TOKEN_ENDS; }
-"$!~"           { yycolno += yyleng; return TOKEN_NENDS; }
-"~$"            { yycolno += yyleng; return TOKEN_ENDS; }
-"!~$"           { yycolno += yyleng; return TOKEN_NENDS; }
+"f~"            { yycolno += yyleng; return TOKEN_FUZZY; }
+"!f~"           { yycolno += yyleng; return TOKEN_NFUZZY; }
 
 "%~"            { yycolno += yyleng; return TOKEN_GLOB; }
 "!%~"           { yycolno += yyleng; return TOKEN_NGLOB; }
+"g~"            { yycolno += yyleng; return TOKEN_GLOB; }
+"!g~"           { yycolno += yyleng; return TOKEN_NGLOB; }
+
+"^~"            { yycolno += yyleng; return TOKEN_STARTS; }
+"!^~"           { yycolno += yyleng; return TOKEN_NSTARTS; }
+"$~"            { yycolno += yyleng; return TOKEN_ENDS; }
+"!$~"           { yycolno += yyleng; return TOKEN_NENDS; }
 
 "~"             { yycolno += yyleng; return TOKEN_SUBSTR; }
 "!~"            { yycolno += yyleng; return TOKEN_NSUBSTR; }
-
 
 {NUMBER}              {
                           yylval.num = atoi(yytext);

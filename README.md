@@ -113,7 +113,7 @@ mado list 'name = login'
 mado list 'name ~ login'
 mado list 'name ~ "fix login"' # multiple words — quotes required
 mado list 'name ^~ "Fix"' # Starts with "Fix"
-mado list 'name !~$ "bug"' # NOT ends with "bug"
+mado list 'name !$~ "bug"' # NOT ends with "bug"
 
 # Glob patterns (wildcards)
 mado list 'name %~ "add*"' # Names starting with "add"
@@ -255,14 +255,14 @@ keywords
 | `!=` | Not equal | |
 | `~` | Contains | For numbers: alias for `=` |
 | `!~` | Not contains | For numbers: alias for `!=` |
-| `^~` or `~^` | Starts with | For numbers: alias for `=` |
-| `^!~` or `!~^` | Not starts with | For numbers: alias for `!=` |
-| `$~` or `~$` | Ends with | For numbers: alias for `=` |
-| `$!~` or `!~$` | Not ends with | For numbers: alias for `!=` |
-| `%~` | Glob match (wildcard) | For numbers: alias for `=` |
-| `!%~` | Not glob match | For numbers: alias for `!=` |
-| `~~` | Fuzzy match | For numbers: alias for `=` |
-| `!~~` | Not fuzzy match | For numbers: alias for `!=` |
+| `~~` or `f~` | Fuzzy match | For numbers: alias for `=` |
+| `!~~` or `!f~` | Not fuzzy match | For numbers: alias for `!=` |
+| `%~` or `g~` | Glob match (wildcard) | For numbers: alias for `=` |
+| `!%~` or `!g~` | Not glob match | For numbers: alias for `!=` |
+| `^~` | Starts with | For numbers: alias for `=` |
+| `!^~` | Not starts with | For numbers: alias for `!=` |
+| `$~` | Ends with | For numbers: alias for `=` |
+| `!$~` | Not ends with | For numbers: alias for `!=` |
 
 ### Logical Operators
 
