@@ -1010,6 +1010,9 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
         os << "{\"main_dir\":";
         print_json_string(main_dir_path.string(), os);
         os << ",\"entries_count\":" << entries.size()
+           << ",\"statuses_count\":" << counts.status_counts.size()
+           << ",\"tags_count\":" << counts.tag_counts.size()
+           << ",\"priorities_count\":" << counts.priority_counts.size()
            << ",\"statuses\":{";
 
         bool first_status = true;
@@ -1050,19 +1053,19 @@ Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os) {
     os << "Main directory: " << main_dir_path.string() << "\n";
     os << "Entries count: " << entries.size() << "\n";
 
-    os << "Statuses:\n";
+    os << "Statuses (" << counts.status_counts.size() << "):\n";
     if (!counts.status_counts.empty()) {
         for (const auto &[status, count] : counts.status_counts)
             os << "  " << status << ": " << count << "\n";
     }
 
-    os << "Tags:\n";
+    os << "Tags (" << counts.tag_counts.size() << "):\n";
     if (!counts.tag_counts.empty()) {
         for (const auto &[tag, count] : counts.tag_counts)
             os << "  " << tag << ": " << count << "\n";
     }
 
-    os << "Priorities:\n";
+    os << "Priorities (" << counts.priority_counts.size() << "):\n";
     if (!counts.priority_counts.empty()) {
         for (const auto &[priority, count] : counts.priority_counts)
             os << "  " << priority << ": " << count << "\n";
