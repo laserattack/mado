@@ -17,6 +17,12 @@ normal:
 	$(MAKE) -C $(LIB_DIR)
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $(MAIN_SRC) -L$(LIB_DIR) -lmado $(LDLIBS) -o $(TARGET)
 
+test:
+	$(MAKE) -C $(LIB_DIR) clean
+	$(MAKE) -C $(LIB_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) test.cpp -L$(LIB_DIR) -lmado $(LDLIBS) -o test_mado
+	./test_mado
+
 release:
 	$(MAKE) -C $(LIB_DIR) clean
 	$(MAKE) -C $(LIB_DIR)
@@ -28,7 +34,7 @@ etags:
 
 clean:
 	$(MAKE) -C $(LIB_DIR) clean
-	rm -f $(TARGET) TAGS
+	rm -f $(TARGET) test_mado TAGS
 	rm -rf release
 
-.PHONY: all normal release clean etags
+.PHONY: all normal test release clean etags
