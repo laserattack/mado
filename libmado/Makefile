@@ -7,32 +7,32 @@ FLEX = flex
 BISON = bison
 
 LIB = libmado.a
-PARSER_DIR = parser
+QUERY_DIR = query
 COMMON_DIR = common
 
 CPP_OBJS = mado.o
 
-PARSER_OBJS = $(PARSER_DIR)/ast.o \
-              $(PARSER_DIR)/lex.yy.o \
-              $(PARSER_DIR)/parser.tab.o
+PARSER_OBJS = $(QUERY_DIR)/ast.o \
+              $(QUERY_DIR)/lex.yy.o \
+              $(QUERY_DIR)/parser.tab.o
 
 COMMON_OBJS = $(COMMON_DIR)/fuzzy_match.o \
               $(COMMON_DIR)/glob.o
 
 OBJS = $(CPP_OBJS) $(PARSER_OBJS) $(COMMON_OBJS)
 
-INCLUDES = -I. -I$(PARSER_DIR) -I$(COMMON_DIR)
+INCLUDES = -I. -I$(QUERY_DIR) -I$(COMMON_DIR)
 
 all: $(LIB)
 
 # parser
-$(PARSER_DIR)/parser.tab.c $(PARSER_DIR)/parser.tab.h: $(PARSER_DIR)/parser.y
-	cd $(PARSER_DIR) && $(BISON) -d parser.y
+$(QUERY_DIR)/parser.tab.c $(QUERY_DIR)/parser.tab.h: $(QUERY_DIR)/parser.y
+	cd $(QUERY_DIR) && $(BISON) -d parser.y
 
-$(PARSER_DIR)/lex.yy.c: $(PARSER_DIR)/lexer.l $(PARSER_DIR)/parser.tab.h
-	cd $(PARSER_DIR) && $(FLEX) lexer.l
+$(QUERY_DIR)/lex.yy.c: $(QUERY_DIR)/lexer.l $(QUERY_DIR)/parser.tab.h
+	cd $(QUERY_DIR) && $(FLEX) lexer.l
 
-$(PARSER_DIR)/%.o: $(PARSER_DIR)/%.c
+$(QUERY_DIR)/%.o: $(QUERY_DIR)/%.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # common
@@ -49,9 +49,9 @@ $(LIB): $(OBJS)
 
 clean:
 	rm -f $(LIB) *.o
-	rm -f $(PARSER_DIR)/*.o $(PARSER_DIR)/lex.yy.c
-	rm -f $(PARSER_DIR)/parser.tab.c $(PARSER_DIR)/parser.tab.h
-	rm -f $(PARSER_DIR)/*.output
+	rm -f $(QUERY_DIR)/*.o $(QUERY_DIR)/lex.yy.c
+	rm -f $(QUERY_DIR)/parser.tab.c $(QUERY_DIR)/parser.tab.h
+	rm -f $(QUERY_DIR)/*.output
 	rm -f $(COMMON_DIR)/*.o
 
 .PHONY: all clean

@@ -9,7 +9,7 @@
 #include <vector>
 
 extern "C" {
-#include "parser/ast.h"
+#include "query/ast.h"
 }
 
 // make auto-free ast ptr
