@@ -1,4 +1,4 @@
 - NAME: add tests
 - PRIORITY: 60
-- STATUS: opened
+- STATUS: closed
 - TAGS: test, tests
