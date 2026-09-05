@@ -18,7 +18,7 @@
 extern "C" {
 #include "fuzzy_match.h"
 #include "glob.h"
-#include "utils.h" // impl in lexer.l
+#include "utils.h"
 }
 
 // CONFIG
