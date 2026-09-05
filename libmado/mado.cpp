@@ -25,7 +25,7 @@ static void trim(std::string &s) {
     s.erase(s.find_last_not_of(" \t") + 1);
 }
 
-// ================ CONFIG
+// CONFIG
 
 void mado_init_config(Mado_Config *cfg) {
     cfg->main_dir_name = "MADO";
@@ -39,7 +39,7 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->fmt = Mado_Output_Format::DEFAULT;
 }
 
-// ================ ERROR MESSAGE
+// ERROR MESSAGE
 
 const char *mado_strerror(Mado_Error err) {
     switch (err) {
@@ -66,7 +66,7 @@ const char *mado_strerror(Mado_Error err) {
     }
 }
 
-// ================ HELPERS
+// HELPERS
 
 static void print_json_string(const std::string &str, std::ostream &os) {
     os << '"';
@@ -108,7 +108,7 @@ static Comparison_Field mado_field_to_ast_field(Mado_Entry_Field field) {
     }
 }
 
-// ================ ENTRY
+// ENTRY
 
 std::pair<std::filesystem::path, Mado_Error>
 mado_find_main_dir(const Mado_Config *cfg) {
@@ -675,7 +675,7 @@ bool Mado_Entry::matches_condition(const Mado_Config *cfg, const AST_Node *filte
     }
 }
 
-// ================ ENTRIES
+// ENTRIES
 
 static std::vector<std::filesystem::path>
 collect_entry_dirs(const std::filesystem::path &main_dir) {

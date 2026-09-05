@@ -17,7 +17,7 @@ inline auto make_ast_ptr(AST_Node *node) {
     return std::unique_ptr<AST_Node, decltype(&ast_free)>(node, ast_free);
 }
 
-// ================ TYPES
+// TYPES
 
 enum class Mado_Error {
     OK = 0,
@@ -84,7 +84,7 @@ struct Mado_Sort_Criterion {
     Mado_Sort_Order order;
 };
 
-// ================ CONFIG
+// CONFIG
 
 struct Mado_Config {
     std::string main_dir_name;
@@ -98,7 +98,7 @@ struct Mado_Config {
     Mado_Output_Format fmt;
 };
 
-// ================ ENTRY
+// ENTRY
 
 class Mado_Entry {
   public:
@@ -123,7 +123,7 @@ class Mado_Entry {
           const AST_Node *filter);
 };
 
-// ================ ENTRIES
+// ENTRIES
 
 class Mado_Entries {
   public:
@@ -154,23 +154,23 @@ class Mado_Entries {
     std::vector<std::unique_ptr<Mado_Entry>> entries_;
 };
 
-// ================ LIFECYCLE
+// LIFECYCLE
 
 void mado_init_config(Mado_Config *cfg);
 
-// ================ REPO MANAGEMENT
+// REPO MANAGEMENT
 
 std::pair<std::filesystem::path, Mado_Error> mado_find_main_dir(const Mado_Config *cfg);
 std::pair<std::filesystem::path, Mado_Error> mado_main_dir_init(const Mado_Config *cfg, int force);
 Mado_Error mado_templates_dir_init(const Mado_Config *cfg);
 Mado_Error mado_print_repo_info(const Mado_Config *cfg, std::ostream &os = std::cout);
 
-// ================ UTILS
+// UTILS
 
 std::pair<Mado_Output_Format, Mado_Error> mado_parse_format(const std::string &format_str);
 std::pair<std::vector<Mado_Sort_Criterion>, Mado_Error> mado_parse_sort(const std::string &sort_str);
 
-// ================ ERROR MESSAGE
+// ERROR MESSAGE
 
 const char *mado_strerror(Mado_Error err);
 int mado_print_error(Mado_Error err, const char *context, std::ostream &os = std::cerr);

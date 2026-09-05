@@ -16,11 +16,11 @@
 
 static char *argv0;
 
-// ================ GLOBAL CONFIG
+// GLOBAL CONFIG
 
 static Mado_Config g_mado_config;
 
-// ================ COMMAND SYSTEM
+// COMMAND SYSTEM
 
 namespace cmd {
 
@@ -114,7 +114,7 @@ static Command *find_by_name(const char *name, Command *commands) {
 
 } // namespace cmd
 
-// ================ COMMAND TABLE
+// COMMAND TABLE
 
 static int cmd_init(int argc, char **argv);
 static int cmd_new(int argc, char **argv);
@@ -266,7 +266,7 @@ static void print_usage(bool show_aliases) {
     std::cerr << "\nRun '" << argv0 << " help <command>' for more information on a command\n";
 }
 
-// ================ COMMAND HANDLERS
+// COMMAND HANDLERS
 
 static int cmd_init(int argc, char **argv) {
     int force = 0;
@@ -647,7 +647,7 @@ static int cmd_debug(int argc, char **argv) {
     return 0;
 }
 
-// ================ GLOBAL OPTIONS
+// GLOBAL OPTIONS
 
 static int handle_global_options(int argc, char **argv) {
     static struct option global_options[] = {
@@ -682,7 +682,7 @@ static int handle_global_options(int argc, char **argv) {
     return 0;
 }
 
-// ================ ENTRY POINT
+// ENTRY POINT
 
 int main(int argc, char **argv) {
     argv0 = argv[0];
