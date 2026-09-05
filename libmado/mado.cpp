@@ -6,7 +6,6 @@
 #include <iostream>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -266,8 +265,11 @@ Mado_Entry::parse(const Mado_Config *cfg,
         // tzset(3) was called, while localtime_r() does not have this
         // requirement.  For portable code, tzset(3) should be called before
         // localtime_r()
-        static std::once_flag flag;
-        std::call_once(flag, tzset);
+        static bool tzset_called = false;
+        if (!tzset_called) {
+            tzset();
+            tzset_called = true;
+        }
         //
 
         struct stat st;
