@@ -407,13 +407,6 @@ Clone the repository and build:
 make
 ```
 
-If your standard library requires TBB for parallel algorithms, build
-with:
-
-``` bash
-make USE_TBB=1
-```
-
 This will produce an executable file `./mado`
 
 To build a statically linked binary:
@@ -461,8 +454,7 @@ sections, direct deletion from the buffer, etc
   source)
 - **Build dependencies**:
   - C compiler
-  - C++ compiler (TBB may be required depending on the standard
-    library implementation — see [Installation](#installation))
+  - C++ compiler
   - `make`
   - `flex`
   - `bison`
