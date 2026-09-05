@@ -5,11 +5,6 @@ MAIN_SRC = main.cpp
 LIB_DIR = libmado
 INCLUDES = -I$(LIB_DIR)
 
-# Enable TBB support: make USE_TBB=1
-ifdef USE_TBB
-LDLIBS = -ltbb
-endif
-
 all: normal
 
 normal:

@@ -1,13 +1,11 @@
 #include <algorithm>
 #include <cstring>
 #include <ctime>
-#include <execution>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -37,8 +35,6 @@ void mado_init_config(Mado_Config *cfg) {
     cfg->max_header_lines = 30;
     cfg->hide_fields = Mado_Entry_Field::NONE;
     cfg->case_insensitive_search = false;
-    cfg->parallel = false;
-    cfg->load_all_first = false;
     cfg->sort_criteria.clear();
     cfg->fmt = Mado_Output_Format::DEFAULT;
 }
@@ -269,8 +265,11 @@ Mado_Entry::parse(const Mado_Config *cfg,
         // tzset(3) was called, while localtime_r() does not have this
         // requirement.  For portable code, tzset(3) should be called before
         // localtime_r()
-        static std::once_flag flag;
-        std::call_once(flag, tzset);
+        static bool tzset_called = false;
+        if (!tzset_called) {
+            tzset();
+            tzset_called = true;
+        }
         //
 
         struct stat st;
@@ -711,26 +710,10 @@ Mado_Entries::load_all(const Mado_Config *cfg,
     std::vector<std::filesystem::path> dirs = collect_entry_dirs(main_dir);
     Mado_Entries result;
 
-    if (cfg->parallel) {
-        std::vector<std::unique_ptr<Mado_Entry>> entries(dirs.size());
-
-        std::for_each(std::execution::par, dirs.begin(), dirs.end(),
-                      [&](const auto &dir) {
-                          size_t idx = &dir - dirs.data();
-                          entries[idx] = Mado_Entry::parse(cfg, dir, filter);
-                      });
-
-        for (auto &entry : entries) {
-            if (entry) {
-                result.entries_.push_back(std::move(entry));
-            }
-        }
-    } else {
-        for (const auto &dir : dirs) {
-            auto entry = Mado_Entry::parse(cfg, dir, filter);
-            if (entry) {
-                result.entries_.push_back(std::move(entry));
-            }
+    for (const auto &dir : dirs) {
+        auto entry = Mado_Entry::parse(cfg, dir, filter);
+        if (entry) {
+            result.entries_.push_back(std::move(entry));
         }
     }
 
@@ -745,23 +728,10 @@ Mado_Entries::load_matching(const Mado_Config *cfg,
     std::vector<std::filesystem::path> dirs = collect_entry_dirs(main_dir);
     Mado_Entries result;
 
-    if (cfg->parallel) {
-        std::mutex mtx;
-
-        std::for_each(std::execution::par, dirs.begin(), dirs.end(),
-                      [&](const auto &dir) {
-                          auto entry = Mado_Entry::parse(cfg, dir, filter);
-                          if (entry && entry->matches_condition(cfg, filter)) {
-                              std::lock_guard<std::mutex> lock(mtx);
-                              result.entries_.push_back(std::move(entry));
-                          }
-                      });
-    } else {
-        for (const auto &dir : dirs) {
-            auto entry = Mado_Entry::parse(cfg, dir, filter);
-            if (entry && entry->matches_condition(cfg, filter)) {
-                result.entries_.push_back(std::move(entry));
-            }
+    for (const auto &dir : dirs) {
+        auto entry = Mado_Entry::parse(cfg, dir, filter);
+        if (entry && entry->matches_condition(cfg, filter)) {
+            result.entries_.push_back(std::move(entry));
         }
     }
 
@@ -772,20 +742,12 @@ Mado_Entries &Mado_Entries::filter(const Mado_Config *cfg, const AST_Node *filte
     if (!filter)
         return *this;
 
-    if (cfg->parallel) {
-        auto it = std::remove_if(std::execution::par, entries_.begin(), entries_.end(),
-                                 [&](const std::unique_ptr<Mado_Entry> &entry) {
-                                     return !entry->matches_condition(cfg, filter);
-                                 });
-        entries_.erase(it, entries_.end());
-    } else {
-        auto it = entries_.begin();
-        while (it != entries_.end()) {
-            if ((*it)->matches_condition(cfg, filter))
-                ++it;
-            else
-                it = entries_.erase(it);
-        }
+    auto it = entries_.begin();
+    while (it != entries_.end()) {
+        if ((*it)->matches_condition(cfg, filter))
+            ++it;
+        else
+            it = entries_.erase(it);
     }
 
     return *this;
@@ -849,11 +811,7 @@ Mado_Entries &Mado_Entries::sort(const Mado_Config *cfg) {
         return false;
     };
 
-    if (cfg->parallel) {
-        std::sort(std::execution::par, entries_.begin(), entries_.end(), comparator);
-    } else {
-        std::stable_sort(entries_.begin(), entries_.end(), comparator);
-    }
+    std::stable_sort(entries_.begin(), entries_.end(), comparator);
 
     return *this;
 }

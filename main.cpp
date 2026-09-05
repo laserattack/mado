@@ -251,8 +251,6 @@ static void print_usage(bool show_aliases) {
               << g_mado_config.main_dir_name << "\n";
     std::cerr << "  -E, --entry-file <NAME>   Custom entry file name. Currently: "
               << g_mado_config.entry_file_name << "\n";
-    std::cerr << "  -p, --parallel            Enable parallel parsing\n";
-    std::cerr << "  -F, --load-all-first      Load all entries before filtering\n";
     std::cerr << "\nCommands:\n";
     for (int i = 0; commands[i].name; i++) {
         fprintf(stderr, "  %-12s %s\n", commands[i].name, commands[i].description);
@@ -439,16 +437,9 @@ static int cmd_list(int argc, char **argv) {
         return mado_print_error(err, "finding main directory");
     }
 
-    if (g_mado_config.load_all_first) {
-        Mado_Entries::load_all(&g_mado_config, main_dir, filter.get())
-            .filter(&g_mado_config, filter.get())
-            .sort(&g_mado_config)
-            .print(&g_mado_config);
-    } else {
-        Mado_Entries::load_matching(&g_mado_config, main_dir, filter.get())
-            .sort(&g_mado_config)
-            .print(&g_mado_config);
-    }
+    Mado_Entries::load_matching(&g_mado_config, main_dir, filter.get())
+        .sort(&g_mado_config)
+        .print(&g_mado_config);
 
     return 0;
 }
@@ -485,14 +476,7 @@ static int cmd_remove(int argc, char **argv) {
     }
 
     std::vector<std::string> removed;
-    if (g_mado_config.load_all_first) {
-        removed = Mado_Entries::load_all(&g_mado_config, main_dir, filter.get())
-                      .filter(&g_mado_config, filter.get())
-                      .remove();
-    } else {
-        removed = Mado_Entries::load_matching(&g_mado_config, main_dir, filter.get())
-                      .remove();
-    }
+    removed = Mado_Entries::load_matching(&g_mado_config, main_dir, filter.get()).remove();
 
     for (const auto &path : removed)
         std::cout << path << "\n";
@@ -671,11 +655,9 @@ static int handle_global_options(int argc, char **argv) {
         {"working-dir", required_argument, 0, 'C'},
         {"main-dir", required_argument, 0, 'D'},
         {"entry-file", required_argument, 0, 'E'},
-        {"parallel", no_argument, 0, 'p'},
-        {"load-all-first", no_argument, 0, 'F'},
         {0, 0, 0, 0}};
     int opt;
-    while ((opt = getopt_long(argc, argv, "+C:D:E:hpF", global_options, nullptr)) != -1) {
+    while ((opt = getopt_long(argc, argv, "+C:D:E:h", global_options, nullptr)) != -1) {
         switch (opt) {
         case 'h':
             print_usage(false);
@@ -692,12 +674,6 @@ static int handle_global_options(int argc, char **argv) {
             break;
         case 'E':
             g_mado_config.entry_file_name = optarg;
-            break;
-        case 'p':
-            g_mado_config.parallel = true;
-            break;
-        case 'F':
-            g_mado_config.load_all_first = true;
             break;
         default:
             return -1;
