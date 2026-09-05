@@ -17,7 +17,8 @@ PARSER_OBJS = $(QUERY_DIR)/ast.o \
               $(QUERY_DIR)/parser.tab.o
 
 COMMON_OBJS = $(COMMON_DIR)/fuzzy_match.o \
-              $(COMMON_DIR)/glob.o
+              $(COMMON_DIR)/glob.o \
+              $(COMMON_DIR)/utils.o
 
 OBJS = $(CPP_OBJS) $(PARSER_OBJS) $(COMMON_OBJS)
 

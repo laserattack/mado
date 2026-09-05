@@ -4,7 +4,6 @@
 #include <strings.h>
 #include <time.h>
 
-#define MADO_UTILS_IMPL
 #include "utils.h"
 
 #include "parser.tab.h"
