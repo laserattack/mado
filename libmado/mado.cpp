@@ -13,16 +13,12 @@
 #include <vector>
 
 #include "mado.hpp"
+#include "string_utils.hpp"
 
 extern "C" {
 #include "fuzzy_match.h"
 #include "glob.h"
 #include "utils.h" // impl in lexer.l
-}
-
-static void trim(std::string &s) {
-    s.erase(0, s.find_first_not_of(" \t"));
-    s.erase(s.find_last_not_of(" \t") + 1);
 }
 
 // CONFIG
@@ -67,23 +63,6 @@ const char *mado_strerror(Mado_Error err) {
 }
 
 // HELPERS
-
-static void print_json_string(const std::string &str, std::ostream &os) {
-    os << '"';
-    for (char c : str) {
-        switch (c) {
-        case '"':
-            os << "\\\"";
-            break;
-        case '\\':
-            os << "\\\\";
-            break;
-        default:
-            os << c;
-        }
-    }
-    os << '"';
-}
 
 static Comparison_Field mado_field_to_ast_field(Mado_Entry_Field field) {
     switch (field) {

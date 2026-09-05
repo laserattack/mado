@@ -10,7 +10,7 @@ LIB = libmado.a
 QUERY_DIR = query
 COMMON_DIR = common
 
-CPP_OBJS = mado.o
+CPP_OBJS = mado.o string_utils.o
 
 PARSER_OBJS = $(QUERY_DIR)/ast.o \
               $(QUERY_DIR)/lex.yy.o \
