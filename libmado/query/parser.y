@@ -1,5 +1,10 @@
 %{
 #define _GNU_SOURCE
+
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

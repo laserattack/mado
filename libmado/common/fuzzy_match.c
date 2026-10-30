@@ -6,6 +6,10 @@
  */
 
 #define _GNU_SOURCE /* Required for strcasestr. */
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#endif
+
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
