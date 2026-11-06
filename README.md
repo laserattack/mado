@@ -1,5 +1,7 @@
 # mado — markdown organizer
 
+> **Archived repository.** The current version is available at [mado2](https://github.com/laserattack/mado2).
+
 A command-line tool that stores entries (tasks, notes) as markdown
 files and supports powerful filtering with a query language
 
